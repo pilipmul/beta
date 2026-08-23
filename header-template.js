@@ -62,6 +62,16 @@ function renderHeader({ subtitle, hamburgerItems = [] }) {
                         <a id="nav-access" href="access.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition">
                             <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Access Control
                         </a>
+
+                        <div class="my-1 border-t border-slate-800"></div>
+
+                        <!-- Tombol Keluar (Logout) -->
+                        <button onclick="handleLogout()" class="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition cursor-pointer font-medium">
+                            <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            Keluar
+                        </button>
                     </div>
                 </div>
 
@@ -112,7 +122,15 @@ function renderHamburgerContent(items) {
     `).join('');
 }
 
-// Global Click Listener untuk menutupsemua dropdown saat klik di luar
+// Fungsi Logout Pengguna
+function handleLogout() {
+    if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
+        localStorage.removeItem("user");
+        window.location.replace("login.html");
+    }
+}
+
+// Global Click Listener untuk menutup semua dropdown saat klik di luar
 document.addEventListener('click', () => {
     closeConnDropdown();
     closeNavDropdown();
