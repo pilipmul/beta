@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Database Eskalasi - SOT PBC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        (function() {
+            const session = localStorage.getItem("user");
+            const userData = session ? JSON.parse(session) : null;
+            if (!userData || !userData.akses || userData.akses.eskalasi !== "Y") {
+                window.location.replace("login.html");
+                document.documentElement.style.display = "none";
+            }
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+
+        th { position: relative; padding-right: 32px !important; }
+        th.no-filter { padding-right: 24px !important; }
+        
+        .filter-icon-btn {
+            position: absolute; right: 4px; top: 50%;
+            transform: translateY(-50%);
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; cursor: pointer; transition: all 0.15s;
+            color: #cbd5e1;
+        }
+        .filter-icon-btn:hover { background-color: #334155; color: #60a5fa; }
+        .filter-icon { width: 12px; height: 12px; fill: currentColor; }
+        
+        .filter-active .filter-icon-btn { color: #facc15 !important; }
+        .filter-active .filter-icon { display: none; }
+        .filter-active .filter-icon-btn::after {
+            content: ""; width: 14px; height: 14px; background-color: #facc15;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+        }
+        
+        /* Redesain Popover Menu Filter */
+        .filter-menu {
+            position: absolute; 
+            background: #ffffff; 
+            color: #0f172a;
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            z-index: 1000; 
+            display: none; 
+            width: 260px; 
+            padding: 14px; 
+            border-radius: 16px;
+            text-transform: none; 
+            font-weight: normal; 
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .filter-sort-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .filter-sort-btn {
+            flex: 1;
+            padding: 7px 10px;
+            background-color: #f1f5f9;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            text-align: center;
+        }
+        .filter-sort-btn:hover {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+
+        /* Teks Box / Input Search Filter */
+        .filter-search-box { 
+            width: 100%; 
+            padding: 8px 12px; 
+            margin-bottom: 12px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            font-size: 12px; 
+            background-color: #f8fafc; 
+            color: #0f172a; 
+            outline: none; 
+            transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+        .filter-search-box::placeholder {
+            color: #94a3b8;
+        }
+        .filter-search-box:focus {
+            border-color: #2563eb;
+            background-color: #ffffff;
+            color: #0f172a;
+        }
+
+        .master-checkbox-container { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            font-size: 12px; 
+            padding: 2px 2px 8px 2px;
+            font-weight: 600; 
+            color: #334155;
+        }
+        .reset-link {
+            color: #2563eb;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+        .reset-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Container Checkbox List (Scrollbar Vertikal Disembunyikan) */
+        .checkbox-list { 
+            max-height: 160px; 
+            overflow-y: auto; 
+            border: 1px solid #e2e8f0; 
+            padding: 8px 10px; 
+            border-radius: 12px; 
+            background-color: #f8fafc;
+            margin-bottom: 14px;
+            scrollbar-width: none; 
+            -ms-overflow-style: none;  
+        }
+        .checkbox-list::-webkit-scrollbar {
+            display: none;
+            width: 0;
+            height: 0;
+        }
+
+        .checkbox-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 12px; 
+            padding: 4px 0;
+            color: #334155;
+            cursor: pointer;
+        }
+        .checkbox-item span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-action-cancel {
+            flex: 1;
+            padding: 8px;
+            background-color: #f1f5f9;
+            color: #475569;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        .btn-action-cancel:hover {
+            background-color: #e2e8f0;
+            color: #0f172a;
+        }
+        .btn-action-apply {
+            flex: 1;
+            padding: 8px;
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        .btn-action-apply:hover {
+            background-color: #1d4ed8;
+        }
+
+        /* Dark Mode Styling Popover Filter */
+        @media (prefers-color-scheme: dark) {
+            .filter-menu {
+                background: #0f172a; 
+                color: #f8fafc;
+                border-color: #334155; 
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+            }
+            .filter-sort-btn {
+                background-color: #1e293b;
+                color: #cbd5e1;
+                border-color: #334155;
+            }
+            .filter-sort-btn:hover {
+                background-color: #334155;
+                color: #ffffff;
+            }
+            .filter-search-box { 
+                border-color: #334155; 
+                background-color: #1e293b; 
+                color: #f8fafc; 
+            }
+            .filter-search-box::placeholder {
+                color: #64748b;
+            }
+            .filter-search-box:focus {
+                border-color: #3b82f6;
+                background-color: #1e293b;
+                color: #ffffff;
+            }
+            .master-checkbox-container { 
+                color: #cbd5e1; 
+            }
+            .reset-link {
+                color: #60a5fa;
+            }
+            .checkbox-list { 
+                border-color: #334155; 
+                background-color: #1e293b; 
+            }
+            .checkbox-item {
+                color: #e2e8f0;
+            }
+            .btn-action-cancel {
+                background-color: #1e293b;
+                color: #94a3b8;
+            }
+            .btn-action-cancel:hover {
+                background-color: #334155;
+                color: #ffffff;
+            }
+            .btn-action-apply {
+                background-color: #3b82f6;
+                color: #ffffff;
+            }
+            .btn-action-apply:hover {
+                background-color: #2563eb;
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#121417] text-slate-100 min-h-screen p-4 sm:p-6 transition-colors duration-200">
+
+    <!-- HEADER DESAIN FLOATING CARD SESUAI ACUAN GAMBAR -->
+    <header class="bg-[#212429] border border-slate-700/50 rounded-2xl p-4 sm:p-5 mb-6 max-w-7xl mx-auto shadow-lg">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-4">
+                <!-- Tombol Navigasi Circular (Hamburger) -->
+                <div class="relative">
+                    <button id="navDropdownBtn" onclick="toggleNavDropdown(event)" class="w-12 h-12 bg-slate-800 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-full transition flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    <!-- Menu Dropdown Navigasi -->
+                    <div id="navDropdownMenu" class="hidden absolute left-0 mt-3 w-56 bg-[#1a1d21] border border-slate-700/80 rounded-xl shadow-2xl py-2 z-50 text-sm">
+                        <a href="dashboard.html" class="block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Dashboard</a>
+                        <a href="eskalasi.html" id="nav-eskalasi" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Eskalasi</a>
+                        <a href="RKM.html" id="nav-rkm" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">RKM</a>
+                        <a href="sr.html" id="nav-dokPerbaikan" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Dok. Perbaikan</a>
+                        <a href="tasks.html" id="nav-tasks" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Tasks</a>
+                        <a href="syncflow.html" id="nav-syncflow" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Syncflow</a>
+                        <a href="inventory.html" id="nav-inventory" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Inventory</a>
+                        <a href="logistics.html" id="nav-logistics" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Logistics</a>
+                        <a href="access.html" id="nav-access" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Access Control</a>
+                    </div>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Database Eskalasi</h1>
+                    <p class="text-xs text-slate-400 mt-0.5">Atur dan kelola modul eskalasi pengguna aplikasi SOT</p>
+                </div>
+            </div>
+            
+            <!-- Tombol Action Refresh Data (Sesuai Referensi Gambar) -->
+            <div class="flex items-center gap-3">
+                <button onclick="loadData()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-md transition flex items-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto">
+        <div class="bg-[#1a1d21] rounded-2xl shadow-sm border border-slate-800 overflow-hidden transition-colors">
+            <!-- Header Tabel -->
+            <div class="p-5 border-b border-slate-800/80 bg-[#212429]/50 flex justify-between items-center gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-100 tracking-tight">Database Data Eskalasi</h3>
+                    <p class="text-xs text-slate-400">Data diambil langsung dari tabel Supabase `eskalasi`</p>
+                </div>
+                <a href="eskin.html" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-xl font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Eskalasi Baru
+                </a>
+            </div>
+
+            <div id="tableWrapper" class="overflow-x-auto" style="position: relative;">
+                <table class="min-w-full divide-y divide-slate-800 text-left text-sm" id="eskalasiTable" style="display:none;">
+                    <thead class="bg-[#0f1115] text-slate-200 uppercase text-xs tracking-wider">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 font-semibold text-center w-16 no-filter">No</th>
+                            <th scope="col" class="px-6 py-4 font-semibold">
+                                Kode Eskalasi 
+                                <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
+                                    <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 font-semibold">
+                                Subject 
+                                <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
+                                    <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 font-semibold">
+                                Bulan 
+                                <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
+                                    <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                </div>
+                            </th>
+                            <th scope="col" class="px-6 py-4 font-semibold">
+                                Nilai 
+                                <div class="filter-icon-btn" data-col="4" onclick="toggleFilterMenu(event, this)">
+                                    <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60" id="tableBody"></tbody>
+                </table>
+
+                <div id="filterMenu" class="filter-menu">
+                    <div class="filter-sort-group">
+                        <button class="filter-sort-btn" onclick="execSort('asc')">↑ A-Z</button>
+                        <button class="filter-sort-btn" onclick="execSort('desc')">↓ Z-A</button>
+                    </div>
+
+                    <input type="text" id="menuSearch" class="filter-search-box" placeholder="Cari item..." onkeyup="searchInMenu()">
+
+                    <div class="master-checkbox-container">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)" class="rounded text-blue-600 focus:ring-0">
+                            <span>Pilih Semua</span>
+                        </label>
+                        <span class="reset-link" onclick="resetFilterMenu()">Reset</span>
+                    </div>
+
+                    <div class="checkbox-list" id="checkboxList"></div>
+
+                    <div class="filter-actions">
+                        <button class="btn-action-cancel" onclick="closeFilterMenu()">Batal</button>
+                        <button class="btn-action-apply" onclick="applyCheckboxFilter()">Terapkan</button>
+                    </div>
+                </div>
+
+                <div id="loading" class="px-6 py-12 text-center text-slate-400">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-700 border-t-blue-500 mb-2"></div>
+                    <p class="font-medium">Menghubungkan ke Supabase Database...</p>
+                </div>
+            </div>
+
+            <div class="bg-[#1a1d21] px-6 py-4 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
+                <span id="dbStatusIndicator">Status: Connected</span>
+                <span>Power by: PBC Internal Dev Team</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // LOGIKA NAVIGASI AKUN & HAK AKSES
+        function initNavAccess() {
+            const session = localStorage.getItem("user");
+            const userData = session ? JSON.parse(session) : null;
+            if (!userData) return;
+        
+            const userName = userData.nama || userData.username || "";
+            const isSuperAdmin = userName.toLowerCase() === "dede hidayat";
+        
+            const menuKeys = [
+                "eskalasi", 
+                "rkm", 
+                "dokPerbaikan", 
+                "tasks", 
+                "syncflow", 
+                "inventory", 
+                "logistics", 
+                "access"
+            ];
+        
+            menuKeys.forEach(key => {
+                const navEl = document.getElementById(`nav-${key}`);
+                if (!navEl) return;
+        
+                let hasAccess = false;
+                if (isSuperAdmin) {
+                    hasAccess = true;
+                } else if (userData.akses && userData.akses[key]) {
+                    const val = String(userData.akses[key]).toUpperCase();
+                    hasAccess = (val === "Y" || val === "TRUE" || val === "1");
+                }
+        
+                if (hasAccess) {
+                    navEl.classList.remove("hidden");
+                } else {
+                    navEl.classList.add("hidden");
+                }
+            });
+        }
+
+        function toggleNavDropdown(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById("navDropdownMenu");
+            dropdown.classList.toggle("hidden");
+        }
+
+        // KREDENSIAL SUPABASE
+        const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let fullData = []; 
+        let filteredData = []; 
+        let activeColIndex = -1;
+        let currentAppliedFilters = {};
+
+        function updateConnectionStatus(isConnected) {
+            const container = document.getElementById("dbStatusIndicator");
+            if (isConnected) {
+                container.innerText = "Status: Connected to Supabase";
+                container.className = "text-emerald-400 font-medium";
+            } else {
+                container.innerText = "Status: Disconnected";
+                container.className = "text-rose-400 font-medium";
+            }
+        }
+
+        function parseMonthYear(valStr) {
+            if (!valStr || valStr === '-') return new Date(0);
+            
+            const parts = valStr.split('-');
+            if (parts.length !== 2) return new Date(0);
+            
+            const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+            const monthIdx = monthNames.findIndex(m => m.toLowerCase() === parts[0].toLowerCase().substring(0, 3));
+            
+            if (monthIdx === -1) return new Date(0);
+            
+            let year = parseInt(parts[1], 10);
+            year = year < 100 ? 2000 + year : year;
+            
+            return new Date(year, monthIdx, 1);
+        }
+
+        function parseCleanNumber(valX) {
+            return parseFloat(valX.replace(/[^\d.-]/g, '')) || 0;
+        }
+
+        async function loadData() {
+            try {
+                document.getElementById("loading").style.display = "block";
+                document.getElementById("eskalasiTable").style.display = "none";
+
+                const { data, error } = await supabaseClient
+                    .from('eskalasi')
+                    .select('no, kode, subject, bulan, nilai')
+                    .order('no', { ascending: true });
+
+                if (error) throw error;
+
+                updateConnectionStatus(true);
+
+                fullData = data.map(item => [
+                    String(item.no ?? ''),
+                    String(item.kode ?? ''),
+                    String(item.subject ?? ''),
+                    String(item.bulan ?? '-'),
+                    item.nilai ? 'Rp ' + Number(item.nilai).toLocaleString('id-ID') : '-'
+                ]);
+
+                filteredData = [...fullData];
+                
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("eskalasiTable").style.display = "table";
+                
+                renderTable(filteredData);
+            } catch (e) {
+                console.error(e);
+                updateConnectionStatus(false);
+                document.getElementById("loading").innerHTML = "<p class='text-red-400 font-medium'>Gagal memproses data Supabase. Periksa kredensial / koneksi.</p>";
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            data.forEach((row, index) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition duration-150 odd:bg-[#1a1d21] even:bg-[#15171a]">
+                        <td class="px-6 py-4 text-center whitespace-nowrap text-slate-500 font-medium">${index + 1}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-100 whitespace-nowrap">${row[1]}</td>
+                        <td class="px-6 py-4 text-slate-300">${row[2]}</td>
+                        <td class="px-6 py-4 text-slate-400 whitespace-nowrap">${row[3]}</td>
+                        <td class="px-6 py-4 text-slate-100 font-medium whitespace-nowrap">${row[4]}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        const menu = document.getElementById('filterMenu');
+        const searchBox = document.getElementById('menuSearch');
+        const masterCheckbox = document.getElementById('masterCheckbox');
+        const tableWrapper = document.getElementById('tableWrapper');
+
+        function toggleFilterMenu(e, element) {
+            activeColIndex = parseInt(element.getAttribute('data-col'));
+            const wrapperRect = tableWrapper.getBoundingClientRect();
+            const btnRect = element.getBoundingClientRect();
+            
+            menu.style.display = 'block';
+            menu.style.top = (btnRect.bottom - wrapperRect.top + tableWrapper.scrollTop + 6) + 'px';
+            
+            let leftPos = btnRect.left - wrapperRect.left + tableWrapper.scrollLeft - 100;
+            if (leftPos < 10) leftPos = 10;
+            
+            const menuWidth = 260;
+            const maxLeft = tableWrapper.clientWidth - menuWidth - 15;
+            if (leftPos > maxLeft) {
+                leftPos = maxLeft;
+            }
+            
+            menu.style.left = leftPos + 'px';
+            
+            searchBox.value = '';
+            
+            const dataFilteredByOthers = fullData.filter(r => {
+                for (let colIdx in currentAppliedFilters) {
+                    if (parseInt(colIdx) === activeColIndex) continue; 
+                    if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+                }
+                return true;
+            });
+
+            const availableVals = [...new Set(dataFilteredByOthers.map(r => String(r[activeColIndex])))].sort();
+            const currentlyChecked = currentAppliedFilters[activeColIndex] || availableVals;
+
+            const list = document.getElementById('checkboxList');
+            list.innerHTML = '';
+            availableVals.forEach(v => {
+                const isChecked = currentlyChecked.includes(v);
+                list.innerHTML += `
+                    <label class="checkbox-item">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} value="${v}" onclick="updateMasterCheckbox()" class="rounded text-blue-600 focus:ring-0"> 
+                        <span title="${v}">${v}</span>
+                    </label>`;
+            });
+            updateMasterCheckbox();
+            e.stopPropagation();
+        }
+
+        function searchInMenu() {
+            const filter = searchBox.value.toLowerCase();
+            document.querySelectorAll('.checkbox-item').forEach(item => {
+                item.style.display = item.innerText.toLowerCase().includes(filter) ? "flex" : "none";
+            });
+        }
+
+        function toggleAllCheckboxes(state) {
+            document.querySelectorAll('#checkboxList input[type="checkbox"]').forEach(cb => {
+                if (cb.parentElement.style.display !== 'none') cb.checked = state;
+            });
+        }
+
+        function updateMasterCheckbox() {
+            const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+            masterCheckbox.checked = cbs.length > 0 && cbs.every(cb => cb.checked);
+        }
+
+        function resetFilterMenu() {
+            toggleAllCheckboxes(true);
+            masterCheckbox.checked = true;
+            searchBox.value = '';
+            searchInMenu();
+        }
+
+        function closeFilterMenu() {
+            menu.style.display = 'none';
+        }
+
+        function execSort(dir) {
+            filteredData.sort((a, b) => {
+                let valA = a[activeColIndex], valB = b[activeColIndex];
+                
+                if (activeColIndex === 0 || activeColIndex === 4) { 
+                    valA = parseCleanNumber(valA); 
+                    valB = parseCleanNumber(valB); 
+                } else if (activeColIndex === 3) {
+                    valA = parseMonthYear(valA);
+                    valB = parseMonthYear(valB);
+                }
+
+                return dir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+            });
+            renderTable(filteredData);
+            closeFilterMenu();
+        }
+
+        function applyCheckboxFilter() {
+            const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+            const checkedVals = cbs.filter(i => i.checked).map(i => i.value);
+            const isAllChecked = cbs.every(cb => cb.checked);
+            const targetTh = document.querySelector(`.filter-icon-btn[data-col="${activeColIndex}"]`).closest('th');
+            
+            if (!isAllChecked) {
+                targetTh.classList.add('filter-active');
+                currentAppliedFilters[activeColIndex] = checkedVals;
+            } else {
+                targetTh.classList.remove('filter-active');
+                delete currentAppliedFilters[activeColIndex];
+            }
+
+            filteredData = fullData.filter(r => {
+                for (let colIdx in currentAppliedFilters) {
+                    if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+                }
+                return true;
+            });
+            renderTable(filteredData);
+            closeFilterMenu();
+        }
+
+        document.onclick = () => {
+            closeFilterMenu();
+            document.getElementById("navDropdownMenu").classList.add("hidden");
+        };
+        menu.onclick = (e) => e.stopPropagation();
+
+        window.onload = () => {
+            initNavAccess();
+            loadData();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    // Verifikasi Sesi sebelum halaman dimuat
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
+        }
+        const userData = JSON.parse(session);
+        if (!userData) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
+        }
+        window.currentUser = userData.data || userData;
+      } catch (err) {
+        window.location.replace("https://sotpbc.vercel.app/login.html");
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Control - SOT Portal</title>
+
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body { 
+      font-family: 'Roboto', sans-serif; 
+      overflow-x: hidden;
+    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 8px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #bdc1c6; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+
+    @media (prefers-color-scheme: dark) {
+      .custom-scroll::-webkit-scrollbar-thumb { background: #5f6368; }
+      .custom-scroll::-webkit-scrollbar-thumb:hover { background: #7c7e81; }
+    }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#202124] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-3 sm:p-6 flex flex-col justify-between transition-colors duration-200">
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md">
+    <div id="toast-icon" class="p-1.5 rounded-xl text-white shrink-0"></div>
+    <div>
+      <p id="toast-title" class="font-bold text-xs"></p>
+      <p id="toast-msg" class="text-xs opacity-90 break-words"></p>
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto space-y-4 w-full">
+
+    <!-- ==================== AWAL PAKET NAVBAR & HEADER ==================== -->
+    <header class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
+      <div class="flex items-center gap-3.5">
+        
+        <!-- Tombol Trigger Navigasi Dropdown Vertikal -->
+        <div class="relative" id="sidebarWrapper">
+          <button onclick="toggleSidebarMenu(event)" class="inline-flex items-center justify-center w-10 h-10 bg-[#f1f3f4] dark:bg-[#3c4043] hover:bg-[#e8eaed] dark:hover:bg-[#4a4e51] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full transition-all cursor-pointer focus:outline-none" title="Buka Navigasi">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+
+          <!-- VERTICAL ICON SIDEBAR DROPDOWN WITH ANIMATION -->
+          <div id="sidebarMenu" class="opacity-0 scale-95 -translate-y-2 pointer-events-none transition-all duration-200 ease-out absolute left-0 top-12 z-50 flex flex-col items-center bg-[#09090b] text-gray-400 py-3 px-2 rounded-2xl shadow-2xl border border-gray-800 gap-2.5">
+            
+            <!-- User Avatar -->
+            <div class="relative group">
+              <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-gray-700/50 cursor-pointer">
+                <span id="nav-user-avatar">U</span>
+              </div>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                <span id="nav-user-name">User Profile</span>
+              </div>
+            </div>
+
+            <div class="w-5 h-[1px] bg-gray-800 my-0.5"></div>
+
+            <!-- Home / Dashboard -->
+            <div class="relative group">
+              <a href="dashboard.html" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Dashboard
+              </div>
+            </div>
+
+            <!-- Eskalasi -->
+            <div id="nav-eskalasi" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Eskalasi
+              </div>
+            </div>
+
+            <!-- RKM -->
+            <div id="nav-rkm" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                RKM
+              </div>
+            </div>
+
+            <!-- Dok. Perbaikan -->
+            <div id="nav-dokPerbaikan" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Dok. Perbaikan
+              </div>
+            </div>
+
+            <!-- Tasks -->
+            <div id="nav-tasks" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Tasks
+              </div>
+            </div>
+
+            <div class="w-5 h-[1px] bg-gray-800 my-0.5"></div>
+
+            <!-- Syncflow -->
+            <div id="nav-syncflow" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Syncflow
+              </div>
+            </div>
+
+            <!-- Item -->
+            <div id="nav-inventory" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Item
+              </div>
+            </div>
+
+            <!-- Inventory -->
+            <div id="nav-logistics" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Inventory
+              </div>
+            </div>
+
+            <!-- Access Control (Aktif) -->
+            <div id="nav-accesControl" class="hidden relative group">
+              <a href="#" class="p-2 rounded-xl bg-gray-800 text-blue-400 hover:text-white transition-all flex items-center justify-center">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+              </a>
+              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
+                Access Control
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div>
+          <h1 class="text-lg sm:text-xl font-bold text-[#202124] dark:text-[#e8eaed] leading-tight flex items-center gap-2">
+            <span>Access Control Management</span>
+          </h1>
+          <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Atur dan kelola hak akses modul pengguna aplikasi SOT</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2.5 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#f1f3f4] dark:border-[#3c4043]">
+        <button onclick="fetchUsers()" class="px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full text-xs font-medium transition shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span>Refresh Data</span>
+        </button>
+      </div>
+    </header>
+    <!-- ==================== AKHIR PAKET NAVBAR & HEADER ==================== -->
+
+    <div class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors">
+      <div class="relative w-full sm:w-80">
+        <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Cari Nama atau NIK..." class="w-full bg-[#f1f3f4] dark:bg-[#202124] focus:bg-white dark:focus:bg-[#3c4043] border border-transparent focus:border-[#1a73e8] rounded-full pl-9 pr-4 py-2 text-xs text-[#202124] dark:text-[#e8eaed] placeholder-[#5f6368] dark:placeholder-[#9aa0a6] focus:outline-none transition shadow-inner font-medium">
+        <svg class="w-4 h-4 text-[#5f6368] dark:text-[#9aa0a6] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+      
+      <div class="text-xs text-[#5f6368] dark:text-[#9aa0a6] w-full sm:w-auto text-right font-medium">
+        Total Pengguna: <span id="userCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed]">
+          <thead class="bg-[#f8f9fa] dark:bg-[#202124] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
+            <tr>
+              <th scope="col" class="px-4 py-3.5">No</th>
+              <th scope="col" class="px-4 py-3.5">Nama / NIK</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Eskalasi</th>
+              <th scope="col" class="px-3 py-3.5 text-center">RKM</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Dok. Perbaikan</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Tasks</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Syncflow</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Item</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Inventory</th>
+              <th scope="col" class="px-3 py-3.5 text-center">Access Control</th>
+            </tr>
+          </thead>
+          <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#3c4043] font-medium">
+            <tr>
+              <td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="max-w-7xl mx-auto w-full mt-8 pt-4 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#9aa0a6] flex flex-col sm:flex-row justify-between items-center gap-2">
+    <span>Sistem Operasional Terintegrasi Portal - Access Control</span>
+    <span>Powered by Supabase & Tailwind CSS v4</span>
+  </footer>
+
+  <!-- ==================== AWAL SCRIPT PAKET NAVBAR ==================== -->
+  <script>
+    function toggleSidebarMenu(e) {
+      e.stopPropagation();
+      const menu = document.getElementById("sidebarMenu");
+      if (!menu) return;
+
+      const isHidden = menu.classList.contains("pointer-events-none");
+      if (isHidden) {
+        menu.classList.remove("opacity-0", "scale-95", "-translate-y-2", "pointer-events-none");
+        menu.classList.add("opacity-100", "scale-100", "translate-y-0");
+      } else {
+        closeSidebarMenu();
+      }
+    }
+
+    function closeSidebarMenu() {
+      const menu = document.getElementById("sidebarMenu");
+      if (!menu) return;
+      menu.classList.remove("opacity-100", "scale-100", "translate-y-0");
+      menu.classList.add("opacity-0", "scale-95", "-translate-y-2", "pointer-events-none");
+    }
+
+    document.addEventListener("click", function(e) {
+      const wrapper = document.getElementById("sidebarWrapper");
+      if (wrapper && !wrapper.contains(e.target)) {
+        closeSidebarMenu();
+      }
+    });
+
+    function initNavAccess() {
+      const stored = localStorage.getItem("user");
+      if (!stored) return;
+      try {
+        const parsed = JSON.parse(stored);
+        const user = parsed.data || parsed;
+        const isAdmin = (user.nama || "").trim().toLowerCase() === "dede hidayat";
+        const check = (v) => isAdmin || ["Y", "TRUE", "1"].includes(String(v || "").trim().toUpperCase());
+
+        // Update User Avatar & Name Tooltip
+        const namaUser = user.nama || "User";
+        const avatarEl = document.getElementById("nav-user-avatar");
+        const nameEl = document.getElementById("nav-user-name");
+        
+        if (avatarEl) avatarEl.textContent = namaUser.charAt(0).toUpperCase();
+        if (nameEl) nameEl.textContent = namaUser;
+
+        const mapping = [
+          { id: "nav-eskalasi", file: "eskalasi.html", allow: check(user.eskalasi) },
+          { id: "nav-rkm", file: "RKM.html", allow: check(user.rkm) },
+          { id: "nav-dokPerbaikan", file: "sr.html", allow: check(user.perbaikan) },
+          { id: "nav-tasks", file: "tasks.html", allow: check(user.task) },
+          { id: "nav-syncflow", file: "syncflow.html", allow: check(user.sync) },
+          { id: "nav-inventory", file: "inventory.html", allow: check(user.item) },
+          { id: "nav-logistics", file: "logistics.html", allow: check(user.inventory || user.log) },
+          { id: "nav-accesControl", file: "access.html", allow: check(user.acces) }
+        ];
+
+        mapping.forEach(item => {
+          const el = document.getElementById(item.id);
+          if (el && item.allow) {
+            el.classList.remove("hidden");
+            const anchor = el.querySelector("a");
+            if (anchor) anchor.href = `${item.file}?user=${encodeURIComponent(user.nama)}`;
+          }
+        });
+      } catch(err) { console.error(err); }
+    }
+
+    document.addEventListener("DOMContentLoaded", initNavAccess);
+  </script>
+  <!-- ==================== AKHIR SCRIPT PAKET NAVBAR ==================== -->
+
+  <!-- SCRIPT UTAMA HALAMAN ACCESS CONTROL -->
+  <script>
+    const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
+    
+    let supabaseClient = null;
+    if (window.supabase) {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+
+    let allUsers = [];
+
+    function isAccessTrue(val) {
+      if (!val) return false;
+      const str = String(val).trim().toUpperCase();
+      return str === "Y" || str === "TRUE" || str === "1";
+    }
+
+    async function fetchUsers() {
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data pengguna...</td></tr>`;
+
+      if (!supabaseClient) {
+        showToast("Error", "Koneksi Supabase tidak tersedia.", "error");
+        return;
+      }
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('users')
+          .select('*')
+          .order('nama', { ascending: true });
+        if (error) throw error;
+
+        allUsers = (data || []).filter(u => 
+          (u.nama || "").trim().toLowerCase() !== "dede hidayat"
+        );
+        document.getElementById("userCount").textContent = allUsers.length;
+        renderUsers(allUsers);
+      } catch (err) {
+        console.error("Fetch users error:", err);
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#d93025] dark:text-[#f28b82]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
+        showToast("Gagal Loading", err.message || "Gagal mengambil data dari server.", "error");
+      }
+    }
+
+    function renderUsers(usersList) {
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = "";
+
+      if (usersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data pengguna ditemukan.</td></tr>`;
+        return;
+      }
+
+      usersList.forEach((u, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#3c4043]/50 transition duration-150";
+
+        const eskalasiChecked = isAccessTrue(u.eskalasi) ? "checked" : "";
+        const rkmChecked = isAccessTrue(u.rkm) ? "checked" : "";
+        const perbaikanChecked = isAccessTrue(u.perbaikan) ? "checked" : "";
+        const taskChecked = isAccessTrue(u.task) ? "checked" : "";
+        const syncChecked = isAccessTrue(u.sync) ? "checked" : "";
+        const itemChecked = isAccessTrue(u.item) ? "checked" : "";
+        const inventoryChecked = isAccessTrue(u.log) ? "checked" : "";
+        const accesChecked = isAccessTrue(u.acces) ? "checked" : "";
+
+        const userNik = (u.nik || "").trim();
+        const userNama = (u.nama || "").trim();
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-[#5f6368] dark:text-[#bdc1c6] font-mono">${idx + 1}</td>
+          <td class="px-4 py-3">
+            <div class="font-bold text-[#202124] dark:text-[#e8eaed]">${userNama || '-'}</div>
+            <div class="text-[10px] font-mono text-[#5f6368] dark:text-[#9aa0a6]">NIK: ${userNik || '-'}</div>
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'eskalasi', this.checked)" ${eskalasiChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'rkm', this.checked)" ${rkmChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'perbaikan', this.checked)" ${perbaikanChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'task', this.checked)" ${taskChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'sync', this.checked)" ${syncChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'item', this.checked)" ${itemChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'log', this.checked)" ${inventoryChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-3 py-3 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'acces', this.checked)" ${accesChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function autoSaveAccess(encodedNik, encodedNama, fieldName, isChecked) {
+      const nik = decodeURIComponent(encodedNik).trim();
+      const nama = decodeURIComponent(encodedNama).trim();
+      const updatedValue = isChecked ? "Y" : null;
+
+      try {
+        let query = supabaseClient
+          .from('users')
+          .update({ [fieldName]: updatedValue });
+
+        if (nik) {
+          query = query.ilike('nik', `%${nik}%`);
+        } else {
+          query = query.eq('nama', nama);
+        }
+
+        const { error } = await query;
+        if (error) throw error;
+
+        const targetUser = allUsers.find(u => (nik && u.nik && u.nik.trim() === nik) || (nama && u.nama && u.nama.trim() === nama));
+        if (targetUser) {
+          targetUser[fieldName] = updatedValue;
+        }
+
+        const displayFieldName = fieldName === 'log' ? 'INVENTORY' : fieldName.toUpperCase();
+        showToast("Tersimpan", `Akses modul ${displayFieldName} untuk ${nama} berhasil diperbarui.`, "success");
+      } catch (err) {
+        console.error("Auto save access error:", err);
+        showToast("Gagal Update", err.message || "Gagal memperbarui hak akses ke Supabase.", "error");
+      }
+    }
+
+    function filterUsers() {
+      const q = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = allUsers.filter(u => 
+        (u.nama && u.nama.toLowerCase().includes(q)) || 
+        (u.nik && u.nik.toLowerCase().includes(q))
+      );
+      renderUsers(filtered);
+    }
+
+    function showToast(title, message, type = 'success') {
+      const toast = document.getElementById("toast");
+      const toastIcon = document.getElementById("toast-icon");
+      const toastTitle = document.getElementById("toast-title");
+      const toastMsg = document.getElementById("toast-msg");
+
+      if (type === 'success') {
+        toast.className = "fixed top-5 right-5 z-[100] transform transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-[#e6f4ea] dark:border-[#137333]/40 bg-white dark:bg-[#2d2e30] text-[#137333] dark:text-[#81c995] opacity-100 translate-y-0";
+        toastIcon.className = "p-1.5 rounded-xl bg-[#e6f4ea] dark:bg-[#137333]/30 text-[#137333] dark:text-[#81c995] shrink-0";
+        toastIcon.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`;
+      } else {
+        toast.className = "fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-[#fce8e6] dark:border-[#c5221f]/40 bg-white dark:bg-[#2d2e30] text-[#c5221f] dark:text-[#f28b82] opacity-100 translate-y-0";
+        toastIcon.className = "p-1.5 rounded-xl bg-[#fce8e6] dark:bg-[#c5221f]/30 text-[#c5221f] dark:text-[#f28b82] shrink-0";
+        toastIcon.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+      }
+
+      toastTitle.textContent = title;
+      toastMsg.textContent = message;
+
+      setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "translate-y-[-20px]", "pointer-events-none");
+      }, 3000);
+    }
+
+    fetchUsers();
+  </script>
+</body>
+</html>

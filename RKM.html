@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Work Meeting - SOT</title>
+
+  <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+  <script>
+    (function checkAuth() {
+      const userSessionString = localStorage.getItem("user");
+      
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      try {
+        const userData = JSON.parse(userSessionString);
+        if (!userData || !userData.akses || userData.akses.RKM !== "Y") {
+          window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+        }
+      } catch (err) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    /* Google Palette Variables */
+    :root {
+      --google-blue: #1a73e8;
+      --google-blue-hover: #1557b0;
+      --google-green: #1e8e3e;
+      --google-green-hover: #137333;
+      --google-red: #d93025;
+      --google-yellow: #f9ab00;
+      --google-gray-bg: #f8f9fa;
+      --google-surface: #ffffff;
+      --google-border: #dadce0;
+      --google-text-main: #202124;
+      --google-text-sub: #5f6368;
+      --google-header-bg: #f1f3f4;
+    }
+
+    /* =========================================================
+       MENGHILANGKAN SCROLLBAR/SLIDE-BAR VERTIKAL & HORISONTAL
+       ========================================================= */
+    html, body {
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE dan Edge */
+      overflow-x: hidden;
+    }
+    html::-webkit-scrollbar, body::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, dan Opera */
+    }
+
+    /* Sembunyikan scrollbar pada container tabel */
+    .table-responsive { 
+      max-height: 70vh; 
+      overflow-y: auto; 
+      overflow-x: auto; 
+      border-radius: 8px;
+      border: 1px solid var(--google-border);
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE dan Edge */
+    }
+    .table-responsive::-webkit-scrollbar {
+      display: none; /* Chrome, Safari, dan Opera */
+    }
+
+    body { 
+      background-color: var(--google-gray-bg); 
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      color: var(--google-text-main);
+    }
+
+    .card { 
+      border-radius: 16px; 
+      border: 1px solid var(--google-border);
+      box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); 
+    }
+
+    .hidden { display: none !important; }
+
+    /* Custom Google Primary/Success Buttons */
+    .btn-primary {
+      background-color: var(--google-blue) !important;
+      border-color: var(--google-blue) !important;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .btn-primary:hover {
+      background-color: var(--google-blue-hover) !important;
+    }
+    .btn-success {
+      background-color: var(--google-green) !important;
+      border-color: var(--google-green) !important;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+    .btn-success:hover {
+      background-color: var(--google-green-hover) !important;
+    }
+    .btn-outline-secondary {
+      border-color: var(--google-border);
+      color: var(--google-text-sub);
+      border-radius: 20px;
+    }
+    .btn-outline-secondary:hover {
+      background-color: #f1f3f4;
+      color: var(--google-text-main);
+      border-color: var(--google-border);
+    }
+    
+    .text-primary {
+      color: var(--google-blue) !important;
+    }
+
+    /* Tabel & Header Standar Industri */
+    .table {
+      margin-bottom: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    
+    .table td, .table th {
+      border-color: var(--google-border) !important;
+      padding: 12px 16px;
+      font-size: 0.875rem;
+    }
+
+    /* Tabel Header Google Theme */
+    thead.table-dark {
+      background-color: var(--google-header-bg) !important;
+    }
+    
+    thead.table-dark th {
+      background-color: var(--google-header-bg) !important;
+      color: var(--google-text-sub) !important;
+      font-weight: 600;
+      font-size: 0.8rem;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-bottom: 2px solid var(--google-border) !important;
+      box-shadow: inset 0 -2px 0 var(--google-border);
+    }
+
+    /* Header Center & Styling Filter Header */
+    th.th-header-center {
+      vertical-align: middle;
+      white-space: nowrap;
+      user-select: none;
+    }
+    
+    .header-content {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .btn-filter-header {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid transparent;
+      border-radius: 4px;
+      color: var(--google-text-sub);
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .btn-filter-header:hover {
+      opacity: 1;
+      background: rgba(26, 115, 232, 0.1);
+      color: var(--google-blue);
+      border-color: rgba(26, 115, 232, 0.2);
+    }
+    
+    .btn-filter-header.active {
+      opacity: 1;
+      background: var(--google-blue);
+      color: #ffffff;
+    }
+
+    /* Menu Dropdown Filter */
+    .filter-dropdown-menu {
+      min-width: 240px;
+      padding: 16px;
+      font-size: 0.875rem;
+      border-radius: 8px;
+      border: 1px solid var(--google-border);
+      box-shadow: 0 4px 16px rgba(60,64,67,0.15);
+      background-color: #ffffff;
+    }
+
+    /* Pemaksaan Warna Baris */
+    tr.row-done td { background-color: #e6f4ea !important; color: #137333 !important; }
+    tr.row-close td { background-color: #f1f3f4 !important; color: #5f6368 !important; }
+
+    /* Style Tombol Status Edit */
+    .btn-status-edit {
+      cursor: pointer;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+    }
+    .btn-status-edit:hover {
+      transform: scale(1.08);
+      opacity: 0.85;
+    }
+
+    /* Badges Status Google */
+    .badge.bg-primary {
+      background-color: #e8f0fe !important;
+      color: var(--google-blue) !important;
+      border: 1px solid #aecbfa;
+      padding: 6px 10px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+    .badge.bg-secondary {
+      background-color: #f1f3f4 !important;
+      color: var(--google-text-sub) !important;
+      border: 1px solid var(--google-border);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-weight: 400;
+    }
+
+    /* CUSTOM TAG INPUT STYLE UNTUK PIC */
+    .pic-tag-container {
+      border: 1px solid var(--google-border);
+      border-radius: 8px;
+      padding: 6px;
+      background-color: #fff;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-height: 42px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .pic-tag-container:focus-within {
+      border-color: var(--google-blue);
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+    }
+    .pic-tag {
+      background-color: #e8f0fe;
+      color: var(--google-blue);
+      padding: 2px 10px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #aecbfa;
+    }
+    .pic-tag .btn-remove {
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .pic-tag .btn-remove:hover {
+      opacity: 1;
+      color: var(--google-red);
+    }
+    .pic-input-search {
+      border: none;
+      outline: none;
+      flex-grow: 1;
+      min-width: 120px;
+      padding: 2px 4px;
+      font-size: 0.9rem;
+    }
+
+    /* Form Modern Inputs Google */
+    .form-control, .form-select {
+      border-radius: 8px;
+      border: 1px solid var(--google-border);
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--google-blue);
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+    }
+    .modal-content {
+      border-radius: 16px;
+      border: none;
+      box-shadow: 0 12px 24px rgba(60,64,67,0.2);
+    }
+    .modal-header {
+      border-bottom: 1px solid var(--google-border);
+    }
+    .modal-footer {
+      border-top: 1px solid var(--google-border);
+    }
+  </style>
+
+  <!-- SUPABASE JS SDK VIA CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="container-fluid py-4">
+  <div class="card bg-white p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <a href="https://sotpbc.vercel.app/dashboard.html" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+          </svg>
+          Back
+        </a>
+        <div>
+          <h3 class="fw-bold mb-0">Rapat Kerja Mingguan (RKM)</h3>
+          <p class="text-muted mb-0">Active User: <span id="txtCurrentUser" class="fw-bold text-primary">-</span></p>
+        </div>
+      </div>
+      <button id="btnTambah" class="btn btn-success" onclick="openModal()">
+        + New
+      </button>
+    </div>
+
+    <!-- TABEL RINGKAS 7 KOLOM DENGAN HEADER CENTER & FILTER POPUP -->
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle">
+        <thead class="table-dark sticky-top">
+          <tr>
+            <th class="th-header-center">
+              <div class="header-content">
+                <span>Tanggal</span>
+                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Tanggal')">▼</button>
+              </div>
+            </th>
+            <th class="th-header-center">
+              <div class="header-content">
+                <span>Sumber</span>
+                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Sumber')">▼</button>
+              </div>
+            </th>
+            <th class="th-header-center">
+              <div class="header-content">
+                <span>Case</span>
+                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Case')">▼</button>
+              </div>
+            </th>
+            <th class="th-header-center">
+              <div class="header-content">
+                <span>PIC</span>
+                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'PIC')">▼</button>
+              </div>
+            </th>
+            <th class="th-header-center">
+              <div class="header-content">
+                <span>Update</span>
+                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Update')">▼</button>
+              </div>
+            </th>
+            <th class="th-header-center">
+              <div class="header-content">
+                <span>Target</span>
+                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Target')">▼</button>
+              </div>
+            </th>
+            <th class="th-header-center">
+              <div class="header-content">
+                <span>Status</span>
+                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Status')">▼</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="rkmTableBody">
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">Loading RKM data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- DROPDOWN MENU TEMPLATE FOR SORT & FILTER -->
+<div id="filterDropdown" class="dropdown-menu shadow filter-dropdown-menu" style="display: none; position: absolute; z-index: 1050;">
+  <div class="d-flex flex-column gap-2">
+    <div class="fw-bold text-secondary border-bottom pb-1" id="filterHeaderTitle">Filter Column</div>
+
+    <!-- CONTAINER SHORTING A-Z (DISEMBUNYIKAN PADA KOLOM STATUS) -->
+    <div id="sortContainer">
+      <button class="btn btn-sm btn-outline-primary text-start w-100 mb-1" onclick="applySort('asc')">
+        ▲ Sort A-Z
+      </button>
+      <button class="btn btn-sm btn-outline-primary text-start w-100 mb-1" onclick="applySort('desc')">
+        ▼ Sort Z-A
+      </button>
+      <hr class="my-1">
+    </div>
+
+    <!-- AREA FILTER INPUT TIPE TEKS (UNTUK KOLOM SELAIN STATUS) -->
+    <div id="textFilterContainer">
+      <label class="form-label mb-0 small fw-semibold">Filter Search:</label>
+      <input type="text" id="filterSearchInput" class="form-control form-control-sm" placeholder="Type to filter..." oninput="applyTextFilter()">
+    </div>
+
+    <!-- AREA FILTER MULTIPLE CHOICE CHECKBOX (KHUSUS KOLOM STATUS) -->
+    <div id="statusFilterContainer" style="display: none;">
+      <label class="form-label mb-1 small fw-semibold">Pilih Status (Bisa Multi):</label>
+      <div class="d-flex flex-column gap-1">
+        <div class="form-check">
+          <input class="form-check-input chk-status-filter" type="checkbox" value="Open" id="chkStatusOpen" onchange="applyStatusFilter()">
+          <label class="form-check-label small fw-semibold" for="chkStatusOpen">Open</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input chk-status-filter" type="checkbox" value="Done" id="chkStatusDone" onchange="applyStatusFilter()">
+          <label class="form-check-label small fw-semibold text-success" for="chkStatusDone">Done</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input chk-status-filter" type="checkbox" value="Close" id="chkStatusClose" onchange="applyStatusFilter()">
+          <label class="form-check-label small fw-semibold text-secondary" for="chkStatusClose">Close</label>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-sm btn-link text-danger text-end p-0 mt-1" onclick="clearColumnFilter()">Clear Filter</button>
+  </div>
+</div>
+
+<!-- MODAL FORM EDIT / ADD -->
+<div class="modal fade" id="rkmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="modalTitle">Add New Agenda</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="rkmForm">
+          <input type="hidden" id="inpId">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Tanggal</label>
+              <input type="date" id="inpTanggal" class="form-control" required>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Sumber</label>
+              <input type="text" id="inpSumber" class="form-control" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Case (Rencana & Kendala)</label>
+              <textarea id="inpCase" class="form-control" rows="3" required></textarea>
+            </div>
+            
+            <!-- ISIAN PIC INTERAKTIF -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">PIC</label>
+              <div class="pic-tag-container" id="picTagContainer" onclick="focusPicInput()">
+                <input type="text" id="inpPicSearch" class="pic-input-search" placeholder="Ketik PIC..." list="picDatalist" oninput="handlePicSelect(this)">
+              </div>
+              <small class="text-muted">Ketik nama PIC untuk memilih dari daftar opsi.</small>
+
+              <datalist id="picDatalist">
+                <option value="GA"></option>
+                <option value="Head Ops."></option>
+                <option value="ME"></option>
+                <option value="TRO"></option>
+                <option value="FA"></option>
+                <option value="Head FA"></option>
+                <option value="Security"></option>
+                <option value="All"></option>
+                <option value="CS"></option>
+                <option value="Kasir"></option>
+                <option value="MKT"></option>
+              </datalist>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Target Selesai</label>
+              <input type="text" id="inpTarget" class="form-control" placeholder="Contoh: W3 Juli 2026">
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Update Progress & Realisasi</label>
+              <textarea id="inpUpdate" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Status Case</label>
+              <select id="inpStatus" class="form-select fw-bold">
+                <option value="Open">Open (In Progress)</option>
+                <option value="Done" style="background-color: #00ff00; color: #000;">Done (Completed)</option>
+                <option value="Close" style="background-color: #808080; color: #fff;">Close (Closed)</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer d-flex justify-content-between">
+        <div>
+          <button type="button" id="btnDeleteModal" class="btn btn-danger hidden" onclick="deleteFromModal()">
+            Delete
+          </button>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="submitForm()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // 1. KREDENSIAL SUPABASE
+  const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0";
+  const { createClient } = supabase;
+  const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const TABLE_NAME = "rkm";
+  
+  const VALID_PICS = ["GA", "Head Ops.", "ME", "TRO", "FA", "Head FA", "Security", "All", "CS", "Kasir", "MKT"];
+  let selectedPicsArray = [];
+
+  let usernameFromStorage = "Tamu";
+  try {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (userData && userData.nama) {
+      usernameFromStorage = userData.nama;
+    }
+  } catch (err) {
+    console.error("Gagal membaca session:", err);
+  }
+
+  const CURRENT_USER = usernameFromStorage;
+
+  // DAFTAR NAMA YANG MEMILIKI HAK EDIT / TAMBAH / HAPUS
+  const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
+  const isEditor = ALLOWED_EDITORS.includes(CURRENT_USER);
+
+  let rkmDataCache = [];
+  let rkmDataFiltered = [];
+  let bootstrapModal;
+
+  let activeColumn = "";
+  let filtersState = {
+    Tanggal: "", Sumber: "", Case: "", PIC: "", Update: "", Target: "", Status: ["open", "done", "close"]
+  };
+  let sortState = { col: null, dir: null };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("txtCurrentUser").innerText = CURRENT_USER;
+
+    const btnTambah = document.getElementById("btnTambah");
+    if (!isEditor && btnTambah) {
+      btnTambah.style.display = "none";
+    }
+
+    bootstrapModal = new bootstrap.Modal(document.getElementById('rkmModal'));
+    fetchRKMData();
+
+    document.addEventListener("click", (e) => {
+      const dropdown = document.getElementById("filterDropdown");
+      if (!dropdown.contains(e.target) && !e.target.classList.contains("btn-filter-header")) {
+        dropdown.style.display = "none";
+      }
+    });
+  });
+
+  /* LOGIKA MULTI-TAG INPUT UNTUK PIC */
+  function focusPicInput() {
+    document.getElementById("inpPicSearch").focus();
+  }
+
+  function handlePicSelect(input) {
+    const val = input.value.trim();
+    const match = VALID_PICS.find(p => p.toLowerCase() === val.toLowerCase());
+
+    if (match) {
+      if (!selectedPicsArray.includes(match)) {
+        selectedPicsArray.push(match);
+        renderPicTags();
+      }
+      input.value = "";
+    }
+  }
+
+  function removePic(picName) {
+    selectedPicsArray = selectedPicsArray.filter(p => p !== picName);
+    renderPicTags();
+  }
+
+  function renderPicTags() {
+    const container = document.getElementById("picTagContainer");
+    const inputSearch = document.getElementById("inpPicSearch");
+
+    container.querySelectorAll(".pic-tag").forEach(el => el.remove());
+
+    selectedPicsArray.forEach(pic => {
+      const tag = document.createElement("span");
+      tag.className = "pic-tag";
+      tag.innerHTML = `${pic} <span class="btn-remove" onclick="removePic('${pic}')">&times;</span>`;
+      container.insertBefore(tag, inputSearch);
+    });
+  }
+
+  /* LOGIKA FETCH DATA DARI SUPABASE */
+  async function fetchRKMData() {
+    const tbody = document.getElementById("rkmTableBody");
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Loading RKM data...</td></tr>';
+
+    const { data, error } = await _supabase
+      .from(TABLE_NAME)
+      .select('*')
+      .order('Tanggal', { ascending: false });
+
+    if (error) {
+      console.error("Detail Error:", error);
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Gagal memuat data: ${error.message}</td></tr>`;
+      return;
+    }
+
+    rkmDataCache = data || [];
+    processDataAndRender();
+  }
+
+  /* FITUR POPUP FILTER HEADER */
+  function toggleFilterMenu(e, columnKey) {
+    e.stopPropagation();
+    activeColumn = columnKey;
+    const dropdown = document.getElementById("filterDropdown");
+    
+    document.getElementById("filterHeaderTitle").innerText = `Filter: ${columnKey.toUpperCase()}`;
+
+    const sortContainer = document.getElementById("sortContainer");
+    const textContainer = document.getElementById("textFilterContainer");
+    const statusContainer = document.getElementById("statusFilterContainer");
+
+    if (columnKey === 'Status') {
+      sortContainer.style.display = "none";
+      textContainer.style.display = "none";
+      statusContainer.style.display = "block";
+
+      document.querySelectorAll(".chk-status-filter").forEach(chk => {
+        chk.checked = filtersState.Status.includes(chk.value.toLowerCase());
+      });
+    } else {
+      sortContainer.style.display = "block";
+      textContainer.style.display = "block";
+      statusContainer.style.display = "none";
+      document.getElementById("filterSearchInput").value = filtersState[columnKey] || "";
+    }
+
+    dropdown.style.display = "block";
+
+    const rect = e.target.getBoundingClientRect();
+    const dropdownWidth = dropdown.offsetWidth || 220;
+    const windowWidth = window.innerWidth;
+
+    let leftPos = rect.left - 180;
+    if (leftPos < 10) leftPos = Math.max(10, rect.left);
+    if (leftPos + dropdownWidth > windowWidth - 10) leftPos = windowWidth - dropdownWidth - 10;
+
+    dropdown.style.left = `${leftPos}px`;
+    dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
+    
+    if (columnKey !== 'Status') {
+      setTimeout(() => document.getElementById("filterSearchInput").focus(), 100);
+    }
+  }
+
+  function applySort(direction) {
+    sortState = { col: activeColumn, dir: direction };
+    processDataAndRender();
+    document.getElementById("filterDropdown").style.display = "none";
+  }
+
+  function applyTextFilter() {
+    const val = document.getElementById("filterSearchInput").value;
+    filtersState[activeColumn] = val.toLowerCase();
+    processDataAndRender();
+  }
+
+  function applyStatusFilter() {
+    const checkedValues = [];
+    document.querySelectorAll(".chk-status-filter:checked").forEach(chk => {
+      checkedValues.push(chk.value.toLowerCase());
+    });
+    filtersState.Status = checkedValues;
+    processDataAndRender();
+  }
+
+  function clearColumnFilter() {
+    if (activeColumn === 'Status') {
+      filtersState.Status = ["open", "done", "close"];
+      document.querySelectorAll(".chk-status-filter").forEach(chk => chk.checked = true);
+    } else {
+      filtersState[activeColumn] = "";
+      document.getElementById("filterSearchInput").value = "";
+    }
+    if (sortState.col === activeColumn) sortState = { col: null, dir: null };
+    processDataAndRender();
+    document.getElementById("filterDropdown").style.display = "none";
+  }
+
+  /* MEMPROSES FILTER & SORTING DATA TABEL */
+  function processDataAndRender() {
+    let result = [...rkmDataCache];
+
+    Object.keys(filtersState).forEach(key => {
+      const query = filtersState[key];
+      
+      if (key === 'Status') {
+        if (Array.isArray(query)) {
+          if (query.length === 0) {
+            result = [];
+          } else {
+            result = result.filter(item => {
+              const val = (item.Status || item.status || "Open").toString().toLowerCase();
+              return query.includes(val);
+            });
+          }
+        }
+      } else if (query) {
+        result = result.filter(item => {
+          const val = (item[key] || item[key.toLowerCase()] || "").toString().toLowerCase();
+          return val.includes(query);
+        });
+      }
+    });
+
+    if (sortState.col && sortState.dir) {
+      const key = sortState.col;
+      const isAsc = sortState.dir === 'asc';
+      result.sort((a, b) => {
+        const valA = (a[key] || a[key.toLowerCase()] || "").toString().toLowerCase();
+        const valB = (b[key] || b[key.toLowerCase()] || "").toString().toLowerCase();
+        return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      });
+    }
+
+    rkmDataFiltered = result;
+    renderTable(rkmDataFiltered);
+  }
+
+  /* RENDER TABEL HASIL PROSES */
+  function renderTable(data) {
+    const tbody = document.getElementById("rkmTableBody");
+    tbody.innerHTML = "";
+
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">Tidak ada agenda kerja yang sesuai.</td></tr>`;
+      return;
+    }
+
+    data.forEach((item) => {
+      const originalIndex = rkmDataCache.findIndex(d => d.id === item.id);
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-id", item.id); // PENANDA ID BARIS UNTUK UPDATE LOKAL
+
+      const status = item.Status || item.status || "Open";
+      const tanggal = item.Tanggal || item.tanggal || "-";
+      const sumber = item.Sumber || item.sumber || "-";
+      const caseText = item.Case || item.case || "-";
+      const picText = item.PIC || item.pic || "";
+      const updateText = item.Update || item.update || "-";
+      const targetText = item.Target || item.target || "-";
+
+      if (status === "Done") {
+        tr.classList.add("row-done");
+      } else if (status === "Close") {
+        tr.classList.add("row-close");
+      }
+
+      let statusBadgeClass = "bg-primary";
+      if (status === "Done" || status === "Close") statusBadgeClass = "bg-dark text-white";
+
+      const picBadges = picText 
+        ? picText.split(",").map(p => `<span class="badge bg-secondary me-1 mb-1">${p.trim()}</span>`).join("")
+        : '-';
+
+      const clickAttr = isEditor ? `onclick="openModal(${originalIndex})"` : '';
+      const cursorClass = isEditor ? 'btn-status-edit' : '';
+      const titleAttr = isEditor ? 'Click to edit' : 'Read only';
+
+      tr.innerHTML = `
+        <td><b>${tanggal}</b></td>
+        <td>${sumber}</td>
+        <td>${caseText}</td>
+        <td>${picBadges}</td>
+        <td>${updateText}</td>
+        <td>${targetText}</td>
+        <td class="text-center">
+          <span class="badge ${statusBadgeClass} ${cursorClass} shadow-sm" ${clickAttr} title="${titleAttr}">
+            ${status}
+          </span>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* UPDATE SPESIFIK HANYA ELEMEN BARIS DITERAPKAN KE DOM (TANPA RE-FETCH) */
+  function updateRowInDom(updatedItem) {
+    // 1. Perbarui data cache internal
+    const index = rkmDataCache.findIndex(d => d.id == updatedItem.id);
+    if (index !== -1) {
+      rkmDataCache[index] = updatedItem;
+    }
+
+    // 2. Ambil elemen baris dari DOM berdasarkan data-id
+    const tr = document.querySelector(`tr[data-id="${updatedItem.id}"]`);
+    if (!tr) return;
+
+    const status = updatedItem.Status || updatedItem.status || "Open";
+    const tanggal = updatedItem.Tanggal || updatedItem.tanggal || "-";
+    const sumber = updatedItem.Sumber || updatedItem.sumber || "-";
+    const caseText = updatedItem.Case || updatedItem.case || "-";
+    const picText = updatedItem.PIC || updatedItem.pic || "";
+    const updateText = updatedItem.Update || updatedItem.update || "-";
+    const targetText = updatedItem.Target || updatedItem.target || "-";
+
+    tr.className = "";
+    if (status === "Done") tr.classList.add("row-done");
+    else if (status === "Close") tr.classList.add("row-close");
+
+    let statusBadgeClass = "bg-primary";
+    if (status === "Done" || status === "Close") statusBadgeClass = "bg-dark text-white";
+
+    const picBadges = picText 
+      ? picText.split(",").map(p => `<span class="badge bg-secondary me-1 mb-1">${p.trim()}</span>`).join("")
+      : '-';
+
+    const clickAttr = isEditor ? `onclick="openModal(${index})"` : '';
+    const cursorClass = isEditor ? 'btn-status-edit' : '';
+    const titleAttr = isEditor ? 'Click to edit' : 'Read only';
+
+    tr.innerHTML = `
+      <td><b>${tanggal}</b></td>
+      <td>${sumber}</td>
+      <td>${caseText}</td>
+      <td>${picBadges}</td>
+      <td>${updateText}</td>
+      <td>${targetText}</td>
+      <td class="text-center">
+        <span class="badge ${statusBadgeClass} ${cursorClass} shadow-sm" ${clickAttr} title="${titleAttr}">
+          ${status}
+        </span>
+      </td>
+    `;
+  }
+
+  function openModal(index = null) {
+    if (!isEditor) {
+      alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read-Only).");
+      return;
+    }
+
+    const form = document.getElementById("rkmForm");
+    form.reset();
+    document.getElementById("inpId").value = "";
+    document.getElementById("inpStatus").value = "Open";
+
+    selectedPicsArray = [];
+    renderPicTags();
+
+    const btnDelete = document.getElementById("btnDeleteModal");
+
+    if (index !== null) {
+      document.getElementById("modalTitle").innerText = "Edit Agenda RKM";
+      const item = rkmDataCache[index];
+      
+      document.getElementById("inpId").value = item.id;
+      document.getElementById("inpTanggal").value = item.Tanggal || item.tanggal || "";
+      document.getElementById("inpSumber").value = item.Sumber || item.sumber || "";
+      document.getElementById("inpCase").value = item.Case || item.case || "";
+      document.getElementById("inpTarget").value = item.Target || item.target || "";
+      document.getElementById("inpUpdate").value = item.Update || item.update || "";
+      document.getElementById("inpStatus").value = item.Status || item.status || "Open";
+
+      const picVal = item.PIC || item.pic;
+      if (picVal) {
+        selectedPicsArray = picVal.split(",").map(p => p.trim()).filter(p => p !== "");
+        renderPicTags();
+      }
+
+      btnDelete.classList.remove("hidden");
+    } else {
+      document.getElementById("modalTitle").innerText = "Add New Agenda";
+      btnDelete.classList.add("hidden");
+    }
+    bootstrapModal.show();
+  }
+
+  /* SIMPAN (CREATE / UPDATE) KE SUPABASE */
+  async function submitForm() {
+    if (!isEditor) {
+      alert("Akses Ditolak: Anda tidak memiliki izin untuk menyimpan data.");
+      return;
+    }
+
+    const form = document.getElementById("rkmForm");
+    if(!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    if (selectedPicsArray.length === 0) {
+      alert("Pilih minimal satu PIC.");
+      return;
+    }
+
+    const id = document.getElementById("inpId").value;
+    
+    const payload = {
+      Tanggal: document.getElementById("inpTanggal").value,
+      Sumber: document.getElementById("inpSumber").value,
+      Case: document.getElementById("inpCase").value,
+      PIC: selectedPicsArray.join(", "),
+      Target: document.getElementById("inpTarget").value,
+      Update: document.getElementById("inpUpdate").value,
+      Status: document.getElementById("inpStatus").value
+    };
+
+    if (id) {
+      // PROSES EDIT: HANYA MENGUBAH BARIS YANG BERHUBUNGAN TANPA RENDER ULANG TABEL
+      const { data, error } = await _supabase
+        .from(TABLE_NAME)
+        .update(payload)
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        alert("Gagal menyimpan ke Supabase: " + error.message);
+      } else {
+        bootstrapModal.hide();
+        if (data && data.length > 0) {
+          updateRowInDom(data[0]);
+        }
+      }
+    } else {
+      // PROSES TAMBAH BARU: INSERT DAN MEMUAT ULANG TABEL
+      const { error } = await _supabase
+        .from(TABLE_NAME)
+        .insert([payload]);
+
+      if (error) {
+        alert("Gagal menyimpan ke Supabase: " + error.message);
+      } else {
+        bootstrapModal.hide();
+        fetchRKMData();
+      }
+    }
+  }
+
+  /* HAPUS DATA DARI SUPABASE */
+  async function deleteFromModal() {
+    if (!isEditor) {
+      alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
+      return;
+    }
+
+    const id = document.getElementById("inpId").value;
+    if (!id) return;
+
+    if (!confirm("⚠️ PERINGATAN:\nApakah Anda yakin ingin menghapus agenda kerja ini secara permanen?")) {
+      return;
+    }
+
+    const { error } = await _supabase
+      .from(TABLE_NAME)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert("Gagal menghapus data: " + error.message);
+    } else {
+      bootstrapModal.hide();
+      fetchRKMData();
+    }
+  }
+</script>
+</body>
+</html>
