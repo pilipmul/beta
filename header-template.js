@@ -1,103 +1,68 @@
 /**
- * Header Template Component - Fixed & Isolated Styling
+ * Global Navigation Controller - App Shell Hydration Mode
  * Memuat Header Terpusat dengan Navigasi RBAC & Custom Hamburger Menu
  */
 function renderHeader({ subtitle, hamburgerItems = [] }) {
-    const headerContainer = document.getElementById('global-header');
-    if (!headerContainer) return;
+    // 1. Update Subtitle Modul Aktif secara instan
+    const subtitleEl = document.getElementById('header-subtitle-text');
+    if (subtitleEl) subtitleEl.textContent = subtitle || 'Sistem Terintegrasi';
 
-    // Render HTML Header dengan Style Isolation
-    headerContainer.innerHTML = `
-    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-[9999] text-left leading-normal font-sans" style="font-size: 16px !important;">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
-            
-            <!-- SISI KIRI: Avatar User Navigasi & Judul Modul -->
-            <div class="flex items-center gap-3">
-                <div class="relative inline-block" id="navDropdownWrapper">
-                    <button type="button" onclick="toggleNavDropdown(event)" class="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold text-sm ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95 border-0 p-0 m-0 leading-none" title="Menu Navigasi">
-                        <span id="nav-header-avatar" class="block leading-none m-0 p-0">U</span>
-                    </button>
-
-                    <!-- Dropdown Navigasi Utama -->
-                    <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl z-[10000] overflow-hidden py-2 text-xs">
-                        <div class="px-4 py-2 border-b border-slate-800 flex items-center gap-2.5 mb-1">
-                            <div id="dropdown-user-avatar" class="w-7 h-7 min-w-[28px] min-h-[28px] rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs leading-none">U</div>
-                            <div class="truncate">
-                                <span id="dropdown-user-name" class="font-semibold text-white block truncate text-xs leading-tight">User Profile</span>
-                                <span class="text-[10px] text-slate-400 block leading-tight">Pengguna Aktif</span>
-                            </div>
-                        </div>
-
-                        <a href="dashboard.html" class="px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg>
-                            Dashboard
-                        </a>
-
-                        <div class="my-1 border-t border-slate-800"></div>
-
-                        <a id="nav-eskalasi" href="eskalasi.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Eskalasi
-                        </a>
-                        <a id="nav-rkm" href="RKM.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> RKM
-                        </a>
-                        <a id="nav-dokPerbaikan" href="sr.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Dok. Perbaikan
-                        </a>
-                        <a id="nav-tasks" href="tasks.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Tasks
-                        </a>
-                        <a id="nav-syncflow" href="syncflow.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Syncflow
-                        </a>
-
-                        <div class="my-1 border-t border-slate-800"></div>
-
-                        <a id="nav-inventory" href="inventory.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg> Inventory
-                        </a>
-                        <a id="nav-logistics" href="logistics.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg> Logistics
-                        </a>
-                        <a id="nav-access" href="access.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                            <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Access Control
-                        </a>
-
-                        <div class="my-1 border-t border-slate-800"></div>
-
-                        <!-- Tombol Keluar (Logout) -->
-                        <button type="button" onclick="handleLogout()" class="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition cursor-pointer font-medium text-xs border-0 bg-transparent m-0">
-                            <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Keluar
-                        </button>
-                    </div>
-                </div>
-
-                <div>
-                    <h1 class="text-xl font-bold tracking-wide m-0 p-0 leading-tight text-white" style="font-size: 1.25rem !important;">Sistem Operasional Terintegrasi</h1>
-                    <p class="text-xs text-slate-400 m-0 p-0 leading-tight">${subtitle || 'Sistem Terintegrasi'}</p>
+    // 2. Render Isi Navigasi Utama (Hanya jika belum dirender)
+    const navMenu = document.getElementById('navDropdownMenu');
+    if (navMenu && !navMenu.hasChildNodes()) {
+        navMenu.innerHTML = `
+            <div class="px-4 py-2 border-b border-slate-800 flex items-center gap-2.5 mb-1">
+                <div id="dropdown-user-avatar" class="w-7 h-7 min-w-[28px] min-h-[28px] rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs leading-none">U</div>
+                <div class="truncate">
+                    <span id="dropdown-user-name" class="font-semibold text-white block truncate text-xs leading-tight">User Profile</span>
+                    <span class="text-[10px] text-slate-400 block leading-tight">Pengguna Aktif</span>
                 </div>
             </div>
 
-            <!-- SISI KANAN: Hamburger Button & Dropdown Kustom Modul -->
-            <div class="relative inline-block">
-                <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer m-0">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                    </svg>
-                </button>
+            <a href="dashboard.html" class="px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg> Dashboard
+            </a>
+            <div class="my-1 border-t border-slate-800"></div>
 
-                <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 z-[10000] overflow-hidden py-1">
-                    <div id="custom-hamburger-content"></div>
-                </div>
-            </div>
+            <a id="nav-eskalasi" href="eskalasi.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Eskalasi
+            </a>
+            <a id="nav-rkm" href="RKM.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg> RKM
+            </a>
+            <a id="nav-dokPerbaikan" href="sr.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Dok. Perbaikan
+            </a>
+            <a id="nav-tasks" href="tasks.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Tasks
+            </a>
+            <a id="nav-syncflow" href="syncflow.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Syncflow
+            </a>
+            <div class="my-1 border-t border-slate-800"></div>
 
-        </div>
-    </header>`;
+            <a id="nav-inventory" href="inventory.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg> Inventory
+            </a>
+            <a id="nav-logistics" href="logistics.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg> Logistics
+            </a>
+            <a id="nav-access" href="access.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Access Control
+            </a>
+            <div class="my-1 border-t border-slate-800"></div>
 
+            <button type="button" onclick="handleLogout()" class="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition cursor-pointer font-medium text-xs border-0 bg-transparent m-0">
+                <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg> Keluar
+            </button>`;
+    }
+
+    // 3. Render isi menu hamburger kustom modul
     renderHamburgerContent(hamburgerItems);
+    
+    // 4. Jalankan pengecekan hak akses RBAC
     initNavbarAccess();
 }
 
