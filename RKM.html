@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOT - Rapat Kerja Mingguan</title>
+  <title>Weekly Work Meeting - SOT</title>
 
   <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
   <script>
@@ -26,7 +26,7 @@
     })();
   </script>
 
-  <!-- Tailwind CSS v4 Browser Build (Memastikan Tampilan Header Konsisten) -->
+  <!-- Tailwind CSS v4 Browser Build -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -52,26 +52,28 @@
        MENGHILANGKAN SCROLLBAR/SLIDE-BAR VERTIKAL & HORISONTAL
        ========================================================= */
     html, body {
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE dan Edge */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       overflow-x: hidden;
     }
     html::-webkit-scrollbar, body::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, dan Opera */
+      display: none;
     }
 
-    /* Sembunyikan scrollbar pada container tabel */
+    /* FIX CONFLICT Z-INDEX TABEL AGAR TIDAK MENUTUPI DROPDOWN HEADER */
     .table-responsive { 
       max-height: 70vh; 
       overflow-y: auto; 
       overflow-x: auto; 
       border-radius: 8px;
       border: 1px solid var(--google-border);
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none; /* IE dan Edge */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      position: relative;
+      z-index: 10; /* Menjaga agar z-index tabel di bawah dropdown header (z-50 / z-9999) */
     }
     .table-responsive::-webkit-scrollbar {
-      display: none; /* Chrome, Safari, dan Opera */
+      display: none;
     }
 
     body { 
@@ -135,9 +137,10 @@
       font-size: 0.875rem;
     }
 
-    /* Tabel Header Google Theme */
+    /* Tabel Header Google Theme - Ditentukan z-index rendah agar tidak menutupi header global */
     thead.table-dark {
       background-color: var(--google-header-bg) !important;
+      z-index: 15 !important;
     }
     
     thead.table-dark th {
@@ -312,8 +315,8 @@
 </head>
 <body>
 
-<!-- ELEMEN CONTAINER HEADER TEMPLATE TERPUSAT -->
-<div id="global-header"></div>
+<!-- ELEMEN CONTAINER HEADER TEMPLATE TERPUSAT DENGAN Z-INDEX UTAMA LEBIH TINGGI -->
+<div id="global-header" class="relative z-[100]"></div>
 
 <div class="container-fluid py-4">
   <div class="card bg-white p-4">
