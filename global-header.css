@@ -30,7 +30,7 @@
 }
 
 /* Pengunci Ukuran Button Avatar Navigasi (Mencegah Pembengkakan Bootstrap) */
-#global-header #navDropdownWrapper button {
+#global-header #navDropdownWrapper > button {
     width: 40px !important;
     height: 40px !important;
     min-width: 40px !important;
@@ -109,9 +109,49 @@
 }
 
 /* Kerapihan Tautan di Dalam Dropdown Navigasi */
-#global-header #navDropdownMenu a,
-#global-header #navDropdownMenu button {
+#global-header #navDropdownMenu a {
     text-decoration: none !important;
     box-sizing: border-box !important;
     font-size: 0.75rem !important; /* 12px */
+}
+
+/* =========================================================
+   PENGUNCI KHUSUS TOMBOL LOGOUT KELUAR
+   ========================================================= */
+#global-header #navDropdownMenu button[onclick="handleLogout()"] {
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    padding: 8px 16px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    color: #f87171 !important; /* red-400 */
+    font-size: 0.75rem !important; /* 12px */
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+}
+
+#global-header #navDropdownMenu button[onclick="handleLogout()"]:hover {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #fca5a5 !important;
+}
+
+#global-header #navDropdownMenu button[onclick="handleLogout()"] svg {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    color: #f87171 !important;
+    display: block !important;
+    flex-shrink: 0 !important;
 }
