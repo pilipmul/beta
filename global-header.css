@@ -1,9 +1,3 @@
-/* =========================================================
-   GLOBAL NAVIGATION ISOLATION STYLES
-   Mencegah Konflik Styling Antara Tailwind CSS & Bootstrap
-   ========================================================= */
-
-/* Container Utama Header */
 #global-header {
     min-height: 72px !important;
     position: relative !important;
