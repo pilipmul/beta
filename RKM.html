@@ -70,7 +70,7 @@
       scrollbar-width: none;
       -ms-overflow-style: none;
       position: relative;
-      z-index: 10; /* Menjaga agar z-index tabel di bawah dropdown header (z-50 / z-9999) */
+      z-index: 10;
     }
     .table-responsive::-webkit-scrollbar {
       display: none;
@@ -137,7 +137,7 @@
       font-size: 0.875rem;
     }
 
-    /* Tabel Header Google Theme - Ditentukan z-index rendah agar tidak menutupi header global */
+    /* Tabel Header Google Theme */
     thead.table-dark {
       background-color: var(--google-header-bg) !important;
       z-index: 15 !important;
@@ -315,7 +315,7 @@
 </head>
 <body>
 
-<!-- ELEMEN CONTAINER HEADER TEMPLATE TERPUSAT DENGAN Z-INDEX UTAMA LEBIH TINGGI -->
+<!-- ELEMEN CONTAINER HEADER TEMPLATE TERPUSAT -->
 <div id="global-header" class="relative z-[100]"></div>
 
 <div class="container-fluid py-4">
