@@ -1,15 +1,12 @@
 /**
- * Header Template Component
- * Memuat Header Terpusat dengan Navigasi RBAC & Custom Hamburger Menu
- */
-/**
  * Header Template Component - Fixed & Isolated Styling
+ * Memuat Header Terpusat dengan Navigasi RBAC & Custom Hamburger Menu
  */
 function renderHeader({ subtitle, hamburgerItems = [] }) {
     const headerContainer = document.getElementById('global-header');
     if (!headerContainer) return;
 
-    // Tambahkan pembungkus isolation agar tidak terpengaruh CSS Bootstrap/Global
+    // Render HTML Header dengan Style Isolation
     headerContainer.innerHTML = `
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-[9999] text-left leading-normal font-sans" style="font-size: 16px !important;">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
@@ -104,7 +101,6 @@ function renderHeader({ subtitle, hamburgerItems = [] }) {
     initNavbarAccess();
 }
 
-// Render menu hamburger kustom dari parameter HTML modul
 function renderHamburgerContent(items) {
     const container = document.getElementById('custom-hamburger-content');
     if (!container) return;
@@ -115,14 +111,13 @@ function renderHamburgerContent(items) {
     }
 
     container.innerHTML = items.map(item => `
-        <button onclick="${item.onClick}; closeConnDropdown();" class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition flex items-center gap-2 cursor-pointer">
+        <button type="button" onclick="${item.onClick}; closeConnDropdown();" class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition flex items-center gap-2 cursor-pointer border-0 bg-transparent m-0">
             ${item.icon || ''}
             <span>${item.label}</span>
         </button>
     `).join('');
 }
 
-// Fungsi Logout Pengguna
 function handleLogout() {
     if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
         localStorage.removeItem("user");
@@ -130,7 +125,6 @@ function handleLogout() {
     }
 }
 
-// Global Click Listener untuk menutup semua dropdown saat klik di luar
 document.addEventListener('click', () => {
     closeConnDropdown();
     closeNavDropdown();
@@ -160,7 +154,6 @@ function closeConnDropdown() {
     if (dropdown) dropdown.classList.add('hidden');
 }
 
-// Logika Akses RBAC & Profil User
 function initNavbarAccess() {
     const session = localStorage.getItem("user");
     if (!session) return;
