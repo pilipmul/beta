@@ -26,6 +26,16 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
 
+        /* MENGHILANGKAN SCROLLBAR HASIL PERTUKARAN MODUL */
+        html, body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overflow-x: hidden;
+        }
+        html::-webkit-scrollbar, body::-webkit-scrollbar {
+            display: none;
+        }
+
         /* --- CSS FILTER & ICON --- */
         th { position: relative; padding-right: 32px !important; }
         th.no-filter { padding-right: 24px !important; }
@@ -57,7 +67,7 @@
             mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
         }
         
-        /* --- DESAIN POP-UP FILTER BARU --- */
+        /* --- DESAIN POP-UP FILTER --- */
         .filter-menu {
             position: fixed;
             background: white; color: #1e293b;
@@ -137,8 +147,42 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
-    <!-- ELEMEN CONTAINER HEADER TEMPLATE TERPUSAT -->
-    <div id="global-header"></div>
+    <!-- GLOBAL NAVIGATION SHELL (PRESISI STABIL TIDAK BERGERAK SAAT PINDAH HALAMAN) -->
+    <div id="global-header" class="relative z-[100]" style="min-height: 72px;">
+        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-[9999] text-left leading-normal font-sans" style="font-size: 16px !important;">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
+                
+                <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
+                <div class="flex items-center gap-3">
+                    <div class="relative inline-block" id="navDropdownWrapper">
+                        <button type="button" onclick="toggleNavDropdown(event)" class="w-10 h-10 min-w-[40px] min-h-[40px] max-w-[40px] max-h-[40px] rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold text-sm ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95 border-0 p-0 m-0 leading-none" title="Menu Navigasi">
+                            <span id="nav-header-avatar" class="block leading-none m-0 p-0">U</span>
+                        </button>
+                        <!-- Container Dropdown Menu Navigasi Global -->
+                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl z-[10000] overflow-hidden py-2 text-xs"></div>
+                    </div>
+
+                    <div>
+                        <h1 class="text-xl font-bold tracking-wide m-0 p-0 leading-tight text-white" style="font-size: 1.25rem !important;">Sistem Operasional Terintegrasi</h1>
+                        <p class="text-xs text-slate-400 m-0 p-0 leading-tight" id="header-subtitle-text">Sistem Terintegrasi</p>
+                    </div>
+                </div>
+
+                <!-- SISI KANAN: Hamburger Control Modul -->
+                <div class="relative inline-block">
+                    <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer m-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 z-[10000] overflow-hidden py-1">
+                        <div id="custom-hamburger-content"></div>
+                    </div>
+                </div>
+
+            </div>
+        </header>
+    </div>
 
     <!-- Main Body -->
     <main class="max-w-7xl mx-auto px-4 py-8">
@@ -318,11 +362,23 @@
         </div>
     </div>
 
-    <!-- Script Template Header Terpusat (Harus berada di folder yang sama) -->
+    <!-- Script Template Header Terpusat -->
     <script src="header-template.js"></script>
 
     <!-- JavaScript Logic Modul SR -->
     <script>
+    // 1. INISIALISASI HEADER INSTAN (SEBELUM DOM LOAD SELESAI AGAR TIDAK ADA KEDIPAN)
+    renderHeader({
+        subtitle: "Dokumentasi Perbaikan Gedung",
+        hamburgerItems: [
+            {
+                label: "Add Report",
+                icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+                onClick: "openFormModal()"
+            }
+        ]
+    });
+
     // --- KONFIGURASI SUPABASE & GOOGLE APPS SCRIPT ---
     const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
@@ -850,18 +906,6 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-        // Inisialisasi Template Header Terpusat
-        renderHeader({
-            subtitle: "Dokumentasi Perbaikan Gedung",
-            hamburgerItems: [
-                {
-                    label: "Add Report",
-                    icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-                    onClick: "openFormModal()"
-                }
-            ]
-        });
-
         setupDropzone('dropzoneBefore', 'before');
         setupDropzone('dropzoneAfter', 'after');
     });
