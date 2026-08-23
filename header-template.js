@@ -34,7 +34,7 @@ function renderHeader({ subtitle, hamburgerItems = [] }) {
                 <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Dok. Perbaikan
             </a>
             <a id="nav-tasks" href="tasks.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Tasks
+                <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Tasks
             </a>
             <a id="nav-syncflow" href="syncflow.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
                 <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Syncflow
@@ -52,10 +52,12 @@ function renderHeader({ subtitle, hamburgerItems = [] }) {
             </a>
             <div class="my-1 border-t border-slate-800"></div>
 
-            <button type="button" onclick="handleLogout()" class="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition cursor-pointer font-medium text-xs border-0 bg-transparent m-0">
-                <svg class="w-4 h-4 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Tombol Keluar (Logout) Terisolasi Murni -->
+            <button type="button" onclick="handleLogout()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg> Keluar
+                </svg>
+                <span>Keluar</span>
             </button>`;
     }
 
