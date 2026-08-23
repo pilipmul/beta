@@ -5,8 +5,8 @@
 
 /* Container Utama Header */
 #global-header {
-    min-height: 72px;
-    position: relative;
+    min-height: 72px !important;
+    position: relative !important;
     z-index: 9999 !important;
 }
 
@@ -15,6 +15,18 @@
     line-height: 1.5 !important;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     box-sizing: border-box !important;
+    background-color: #0f172a !important; /* slate-900 */
+}
+
+/* Penetralisir Container Flex Kiri & Kanan */
+#global-header .flex {
+    display: flex !important;
+}
+#global-header .items-center {
+    align-items: center !important;
+}
+#global-header .justify-between {
+    justify-content: space-between !important;
 }
 
 /* Pengunci Ukuran Button Avatar Navigasi (Mencegah Pembengkakan Bootstrap) */
@@ -30,6 +42,11 @@
     border: 0 !important;
     line-height: 1 !important;
     box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 9999px !important;
+    background-color: #2563eb !important; /* blue-600 */
 }
 
 /* Pengunci Ukuran Teks Avatar Inside Button */
@@ -39,6 +56,8 @@
     margin: 0 !important;
     padding: 0 !important;
     display: block !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
 }
 
 /* Pengunci Judul & Subtitle Utama */
@@ -60,10 +79,33 @@
     color: #94a3b8 !important; /* slate-400 */
 }
 
+/* Pengunci Tombol Hamburger Kanan Modul */
+#global-header #hamburgerBtn {
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 0.5rem !important;
+}
+
+/* Pengunci Ukuran Icon SVG Hamburger */
+#global-header #hamburgerBtn svg {
+    width: 24px !important;
+    height: 24px !important;
+    display: block !important;
+}
+
 /* Pengunci Menu Dropdown Layering (Z-Index Tertinggi) */
 #global-header #navDropdownMenu,
 #global-header #connDropdown {
     z-index: 10000 !important;
+    position: absolute !important;
 }
 
 /* Kerapihan Tautan di Dalam Dropdown Navigasi */
@@ -72,10 +114,4 @@
     text-decoration: none !important;
     box-sizing: border-box !important;
     font-size: 0.75rem !important; /* 12px */
-}
-
-/* Pengunci Tombol Hamburger Kanan Modul */
-#global-header #hamburgerBtn {
-    margin: 0 !important;
-    box-sizing: border-box !important;
 }
