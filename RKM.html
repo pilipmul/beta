@@ -29,27 +29,12 @@
   <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
   <link rel="stylesheet" href="global-header.css">
 
-  <!-- Tailwind CSS v4 Browser Build & Bootstrap 5 -->
+  <!-- Tailwind CSS v4 Browser Build -->
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* Google Palette Variables */
-    :root {
-      --google-blue: #1a73e8;
-      --google-blue-hover: #1557b0;
-      --google-green: #1e8e3e;
-      --google-green-hover: #137333;
-      --google-red: #d93025;
-      --google-yellow: #f9ab00;
-      --google-gray-bg: #f8f9fa;
-      --google-surface: #ffffff;
-      --google-border: #dadce0;
-      --google-text-main: #202124;
-      --google-text-sub: #5f6368;
-      --google-header-bg: #f1f3f4;
-    }
+    body { font-family: 'Inter', sans-serif; }
 
     /* MENGHILANGKAN SCROLLBAR HASIL PERTUKARAN MODUL */
     html, body {
@@ -61,184 +46,9 @@
       display: none;
     }
 
-    /* FIX CONFLICT Z-INDEX TABEL AGAR TIDAK MENUTUPI DROPDOWN HEADER */
-    .table-responsive { 
-      max-height: 70vh; 
-      overflow-y: auto; 
-      overflow-x: auto; 
-      border-radius: 8px;
-      border: 1px solid var(--google-border);
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-      position: relative;
-      z-index: 10;
-    }
-    .table-responsive::-webkit-scrollbar {
-      display: none;
-    }
-
-    body { 
-      background-color: var(--google-gray-bg); 
-      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      color: var(--google-text-main);
-    }
-
-    .card { 
-      border-radius: 16px; 
-      border: 1px solid var(--google-border);
-      box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); 
-    }
-
-    .hidden { display: none !important; }
-
-    /* Custom Google Buttons */
-    .btn-primary {
-      background-color: var(--google-blue) !important;
-      border-color: var(--google-blue) !important;
-      border-radius: 20px;
-      font-weight: 500;
-    }
-    .btn-primary:hover {
-      background-color: var(--google-blue-hover) !important;
-    }
-    .btn-success {
-      background-color: var(--google-green) !important;
-      border-color: var(--google-green) !important;
-      border-radius: 20px;
-      font-weight: 500;
-    }
-    .btn-success:hover {
-      background-color: var(--google-green-hover) !important;
-    }
-    .btn-outline-secondary {
-      border-color: var(--google-border);
-      color: var(--google-text-sub);
-      border-radius: 20px;
-    }
-    .btn-outline-secondary:hover {
-      background-color: #f1f3f4;
-      color: var(--google-text-main);
-      border-color: var(--google-border);
-    }
-    
-    .text-primary {
-      color: var(--google-blue) !important;
-    }
-
-    /* Tabel & Header Standar */
-    .table {
-      margin-bottom: 0;
-      border-collapse: separate;
-      border-spacing: 0;
-    }
-    
-    .table td, .table th {
-      border-color: var(--google-border) !important;
-      padding: 12px 16px;
-      font-size: 0.875rem;
-    }
-
-    thead.table-dark {
-      background-color: var(--google-header-bg) !important;
-      z-index: 15 !important;
-    }
-    
-    thead.table-dark th {
-      background-color: var(--google-header-bg) !important;
-      color: var(--google-text-sub) !important;
-      font-weight: 600;
-      font-size: 0.8rem;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      border-bottom: 2px solid var(--google-border) !important;
-      box-shadow: inset 0 -2px 0 var(--google-border);
-    }
-
-    th.th-header-center {
-      vertical-align: middle;
-      white-space: nowrap;
-      user-select: none;
-    }
-    
-    .header-content {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      width: 100%;
-    }
-
-    .btn-filter-header {
-      background: rgba(0, 0, 0, 0.04);
-      border: 1px solid transparent;
-      border-radius: 4px;
-      color: var(--google-text-sub);
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .btn-filter-header:hover {
-      opacity: 1;
-      background: rgba(26, 115, 232, 0.1);
-      color: var(--google-blue);
-      border-color: rgba(26, 115, 232, 0.2);
-    }
-    
-    .btn-filter-header.active {
-      opacity: 1;
-      background: var(--google-blue);
-      color: #ffffff;
-    }
-
-    /* Menu Dropdown Filter */
-    .filter-dropdown-menu {
-      min-width: 240px;
-      padding: 16px;
-      font-size: 0.875rem;
-      border-radius: 8px;
-      border: 1px solid var(--google-border);
-      box-shadow: 0 4px 16px rgba(60,64,67,0.15);
-      background-color: #ffffff;
-    }
-
-    tr.row-done td { background-color: #e6f4ea !important; color: #137333 !important; }
-    tr.row-close td { background-color: #f1f3f4 !important; color: #5f6368 !important; }
-
-    .btn-status-edit {
-      cursor: pointer;
-      transition: transform 0.1s ease, opacity 0.2s ease;
-    }
-    .btn-status-edit:hover {
-      transform: scale(1.08);
-      opacity: 0.85;
-    }
-
-    .badge.bg-primary {
-      background-color: #e8f0fe !important;
-      color: var(--google-blue) !important;
-      border: 1px solid #aecbfa;
-      padding: 6px 10px;
-      border-radius: 12px;
-      font-weight: 500;
-    }
-    .badge.bg-secondary {
-      background-color: #f1f3f4 !important;
-      color: var(--google-text-sub) !important;
-      border: 1px solid var(--google-border);
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-weight: 400;
-    }
-
     /* CUSTOM TAG INPUT STYLE UNTUK PIC */
     .pic-tag-container {
-      border: 1px solid var(--google-border);
+      border: 1px solid #cbd5e1;
       border-radius: 8px;
       padding: 6px;
       background-color: #fff;
@@ -250,12 +60,12 @@
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .pic-tag-container:focus-within {
-      border-color: var(--google-blue);
-      box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
     }
     .pic-tag {
-      background-color: #e8f0fe;
-      color: var(--google-blue);
+      background-color: #eff6ff;
+      color: #1d4ed8;
       padding: 2px 10px;
       border-radius: 16px;
       font-size: 0.85rem;
@@ -263,7 +73,7 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      border: 1px solid #aecbfa;
+      border: 1px solid #bfdbfe;
     }
     .pic-tag .btn-remove {
       cursor: pointer;
@@ -273,7 +83,7 @@
     }
     .pic-tag .btn-remove:hover {
       opacity: 1;
-      color: var(--google-red);
+      color: #dc2626;
     }
     .pic-input-search {
       border: none;
@@ -284,31 +94,15 @@
       font-size: 0.9rem;
     }
 
-    .form-control, .form-select {
-      border-radius: 8px;
-      border: 1px solid var(--google-border);
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: var(--google-blue);
-      box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
-    }
-    .modal-content {
-      border-radius: 16px;
-      border: none;
-      box-shadow: 0 12px 24px rgba(60,64,67,0.2);
-    }
-    .modal-header {
-      border-bottom: 1px solid var(--google-border);
-    }
-    .modal-footer {
-      border-top: 1px solid var(--google-border);
-    }
+    /* Style Baris Tabel berdasarkan Status */
+    tr.row-done { background-color: #f0fdf4 !important; color: #15803d !important; }
+    tr.row-close { background-color: #f8fafc !important; color: #64748b !important; }
   </style>
 
   <!-- SUPABASE JS SDK VIA CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
 
 <!-- GLOBAL NAVIGATION SHELL (PRESISI STABIL TIDAK BERGERAK SAAT PINDAH HALAMAN) -->
 <div id="global-header">
@@ -347,196 +141,197 @@
     </header>
 </div>
 
-<div class="container-fluid py-4">
-  <div class="card bg-white p-4">
+<!-- Main Content Area -->
+<main class="max-w-7xl mx-auto px-4 py-8">
+  <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden p-6">
 
-    <!-- TABEL RINGKAS 7 KOLOM DENGAN HEADER CENTER & FILTER POPUP -->
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle">
-        <thead class="table-dark sticky-top">
+    <!-- TABEL RINGKAS 7 KOLOM TAILWIND -->
+    <div class="overflow-x-auto rounded-lg border border-slate-200 max-h-[70vh]">
+      <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+        <thead class="bg-slate-900 text-white uppercase text-xs tracking-wider sticky top-0 z-10">
           <tr>
-            <th class="th-header-center">
-              <div class="header-content">
+            <th scope="col" class="px-4 py-3 font-semibold text-center whitespace-nowrap">
+              <div class="inline-flex items-center justify-center gap-1.5">
                 <span>Tanggal</span>
-                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Tanggal')">▼</button>
+                <button class="p-1 hover:bg-slate-800 rounded transition cursor-pointer text-slate-400 hover:text-white" onclick="toggleFilterMenu(event, 'Tanggal')">▼</button>
               </div>
             </th>
-            <th class="th-header-center">
-              <div class="header-content">
+            <th scope="col" class="px-4 py-3 font-semibold text-center whitespace-nowrap">
+              <div class="inline-flex items-center justify-center gap-1.5">
                 <span>Sumber</span>
-                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Sumber')">▼</button>
+                <button class="p-1 hover:bg-slate-800 rounded transition cursor-pointer text-slate-400 hover:text-white" onclick="toggleFilterMenu(event, 'Sumber')">▼</button>
               </div>
             </th>
-            <th class="th-header-center">
-              <div class="header-content">
+            <th scope="col" class="px-4 py-3 font-semibold text-center whitespace-nowrap">
+              <div class="inline-flex items-center justify-center gap-1.5">
                 <span>Case</span>
-                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Case')">▼</button>
+                <button class="p-1 hover:bg-slate-800 rounded transition cursor-pointer text-slate-400 hover:text-white" onclick="toggleFilterMenu(event, 'Case')">▼</button>
               </div>
             </th>
-            <th class="th-header-center">
-              <div class="header-content">
+            <th scope="col" class="px-4 py-3 font-semibold text-center whitespace-nowrap">
+              <div class="inline-flex items-center justify-center gap-1.5">
                 <span>PIC</span>
-                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'PIC')">▼</button>
+                <button class="p-1 hover:bg-slate-800 rounded transition cursor-pointer text-slate-400 hover:text-white" onclick="toggleFilterMenu(event, 'PIC')">▼</button>
               </div>
             </th>
-            <th class="th-header-center">
-              <div class="header-content">
+            <th scope="col" class="px-4 py-3 font-semibold text-center whitespace-nowrap">
+              <div class="inline-flex items-center justify-center gap-1.5">
                 <span>Update</span>
-                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Update')">▼</button>
+                <button class="p-1 hover:bg-slate-800 rounded transition cursor-pointer text-slate-400 hover:text-white" onclick="toggleFilterMenu(event, 'Update')">▼</button>
               </div>
             </th>
-            <th class="th-header-center">
-              <div class="header-content">
+            <th scope="col" class="px-4 py-3 font-semibold text-center whitespace-nowrap">
+              <div class="inline-flex items-center justify-center gap-1.5">
                 <span>Target</span>
-                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Target')">▼</button>
+                <button class="p-1 hover:bg-slate-800 rounded transition cursor-pointer text-slate-400 hover:text-white" onclick="toggleFilterMenu(event, 'Target')">▼</button>
               </div>
             </th>
-            <th class="th-header-center">
-              <div class="header-content">
+            <th scope="col" class="px-4 py-3 font-semibold text-center whitespace-nowrap">
+              <div class="inline-flex items-center justify-center gap-1.5">
                 <span>Status</span>
-                <button class="btn-filter-header" onclick="toggleFilterMenu(event, 'Status')">▼</button>
+                <button class="p-1 hover:bg-slate-800 rounded transition cursor-pointer text-slate-400 hover:text-white" onclick="toggleFilterMenu(event, 'Status')">▼</button>
               </div>
             </th>
           </tr>
         </thead>
-        <tbody id="rkmTableBody">
+        <tbody id="rkmTableBody" class="divide-y divide-slate-200 bg-white">
           <tr>
-            <td colspan="7" class="text-center text-muted py-4">Loading RKM data...</td>
+            <td colspan="7" class="text-center text-slate-400 py-8">Loading RKM data...</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
-</div>
+</main>
 
-<!-- DROPDOWN MENU TEMPLATE FOR SORT & FILTER -->
-<div id="filterDropdown" class="dropdown-menu shadow filter-dropdown-menu" style="display: none; position: absolute; z-index: 1050;">
-  <div class="d-flex flex-column gap-2">
-    <div class="fw-bold text-secondary border-bottom pb-1" id="filterHeaderTitle">Filter Column</div>
+<!-- DROPDOWN MENU TAILWIND FOR SORT & FILTER -->
+<div id="filterDropdown" class="hidden absolute z-50 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 w-60 text-xs">
+  <div class="flex flex-col gap-2">
+    <div class="font-bold text-slate-700 border-b border-slate-200 pb-2" id="filterHeaderTitle">Filter Column</div>
 
-    <!-- CONTAINER SHORTING A-Z (DISEMBUNYIKAN PADA KOLOM STATUS) -->
-    <div id="sortContainer">
-      <button class="btn btn-sm btn-outline-primary text-start w-100 mb-1" onclick="applySort('asc')">
+    <!-- CONTAINER SORTING A-Z -->
+    <div id="sortContainer" class="flex flex-col gap-1">
+      <button class="w-full text-left px-3 py-1.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-md border border-slate-200 font-medium transition cursor-pointer" onclick="applySort('asc')">
         ▲ Sort A-Z
       </button>
-      <button class="btn btn-sm btn-outline-primary text-start w-100 mb-1" onclick="applySort('desc')">
+      <button class="w-full text-left px-3 py-1.5 bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-md border border-slate-200 font-medium transition cursor-pointer" onclick="applySort('desc')">
         ▼ Sort Z-A
       </button>
-      <hr class="my-1">
+      <div class="my-1 border-t border-slate-200"></div>
     </div>
 
     <!-- AREA FILTER INPUT TIPE TEKS -->
     <div id="textFilterContainer">
-      <label class="form-label mb-0 small fw-semibold">Filter Search:</label>
-      <input type="text" id="filterSearchInput" class="form-control form-control-sm" placeholder="Type to filter..." oninput="applyTextFilter()">
+      <label class="block mb-1 text-[11px] font-semibold text-slate-600">Filter Search:</label>
+      <input type="text" id="filterSearchInput" class="w-full px-2.5 py-1.5 border border-slate-300 rounded-md text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Type to filter..." oninput="applyTextFilter()">
     </div>
 
     <!-- AREA FILTER MULTIPLE CHOICE CHECKBOX -->
-    <div id="statusFilterContainer" style="display: none;">
-      <label class="form-label mb-1 small fw-semibold">Pilih Status (Bisa Multi):</label>
-      <div class="d-flex flex-column gap-1">
-        <div class="form-check">
-          <input class="form-check-input chk-status-filter" type="checkbox" value="Open" id="chkStatusOpen" onchange="applyStatusFilter()">
-          <label class="form-check-label small fw-semibold" for="chkStatusOpen">Open</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input chk-status-filter" type="checkbox" value="Done" id="chkStatusDone" onchange="applyStatusFilter()">
-          <label class="form-check-label small fw-semibold text-success" for="chkStatusDone">Done</label>
-        </div>
-        <div class="form-check">
-          <input class="form-check-input chk-status-filter" type="checkbox" value="Close" id="chkStatusClose" onchange="applyStatusFilter()">
-          <label class="form-check-label small fw-semibold text-secondary" for="chkStatusClose">Close</label>
-        </div>
+    <div id="statusFilterContainer" class="hidden">
+      <label class="block mb-1 text-[11px] font-semibold text-slate-600">Pilih Status (Multi):</label>
+      <div class="flex flex-col gap-1.5">
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input class="chk-status-filter rounded text-blue-600" type="checkbox" value="Open" id="chkStatusOpen" onchange="applyStatusFilter()">
+          <span class="font-semibold text-slate-700">Open</span>
+        </label>
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input class="chk-status-filter rounded text-blue-600" type="checkbox" value="Done" id="chkStatusDone" onchange="applyStatusFilter()">
+          <span class="font-semibold text-emerald-600">Done</span>
+        </label>
+        <label class="inline-flex items-center gap-2 cursor-pointer">
+          <input class="chk-status-filter rounded text-blue-600" type="checkbox" value="Close" id="chkStatusClose" onchange="applyStatusFilter()">
+          <span class="font-semibold text-slate-500">Close</span>
+        </label>
       </div>
     </div>
 
-    <button class="btn btn-sm btn-link text-danger text-end p-0 mt-1" onclick="clearColumnFilter()">Clear Filter</button>
+    <button class="text-red-500 hover:text-red-700 font-medium text-right text-[11px] mt-1 cursor-pointer" onclick="clearColumnFilter()">Clear Filter</button>
   </div>
 </div>
 
-<!-- MODAL FORM EDIT / ADD -->
-<div class="modal fade" id="rkmModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title fw-bold" id="modalTitle">Add New Agenda</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="rkmForm">
-          <input type="hidden" id="inpId">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Tanggal</label>
-              <input type="date" id="inpTanggal" class="form-control" required>
-            </div>
-            <div class="col-md-8">
-              <label class="form-label fw-semibold">Sumber</label>
-              <input type="text" id="inpSumber" class="form-control" required>
-            </div>
-            <div class="col-12">
-              <label class="form-label fw-semibold">Case (Rencana & Kendala)</label>
-              <textarea id="inpCase" class="form-control" rows="3" required></textarea>
-            </div>
-            
-            <!-- ISIAN PIC INTERAKTIF -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">PIC</label>
-              <div class="pic-tag-container" id="picTagContainer" onclick="focusPicInput()">
-                <input type="text" id="inpPicSearch" class="pic-input-search" placeholder="Ketik PIC..." list="picDatalist" oninput="handlePicSelect(this)">
-              </div>
-              <small class="text-muted">Ketik nama PIC untuk memilih dari daftar opsi.</small>
-
-              <datalist id="picDatalist">
-                <option value="GA"></option>
-                <option value="Head Ops."></option>
-                <option value="ME"></option>
-                <option value="TRO"></option>
-                <option value="FA"></option>
-                <option value="Head FA"></option>
-                <option value="Security"></option>
-                <option value="All"></option>
-                <option value="CS"></option>
-                <option value="Kasir"></option>
-                <option value="MKT"></option>
-              </datalist>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Target Selesai</label>
-              <input type="text" id="inpTarget" class="form-control" placeholder="Contoh: W3 Juli 2026">
-            </div>
-            <div class="col-12">
-              <label class="form-label fw-semibold">Update Progress & Realisasi</label>
-              <textarea id="inpUpdate" class="form-control" rows="3"></textarea>
-            </div>
-            <div class="col-12">
-              <label class="form-label fw-semibold">Status Case</label>
-              <select id="inpStatus" class="form-select fw-bold">
-                <option value="Open">Open (In Progress)</option>
-                <option value="Done" style="background-color: #00ff00; color: #000;">Done (Completed)</option>
-                <option value="Close" style="background-color: #808080; color: #fff;">Close (Closed)</option>
-              </select>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer d-flex justify-content-between">
+<!-- MODAL TAILWIND FORM EDIT / ADD -->
+<div id="rkmModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+    <div class="bg-slate-900 px-6 py-4 text-white flex justify-between items-center">
+      <h3 id="modalTitle" class="font-bold text-base">Add New Agenda</h3>
+      <button onclick="closeModalForm()" class="text-slate-400 hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+    </div>
+    
+    <form id="rkmForm" class="p-6 space-y-4">
+      <input type="hidden" id="inpId">
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <button type="button" id="btnDeleteModal" class="btn btn-danger hidden" onclick="deleteFromModal()">
-            Delete
-          </button>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Tanggal</label>
+          <input type="date" id="inpTanggal" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
         </div>
-        <div class="d-flex gap-2">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" onclick="submitForm()">Save</button>
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Sumber</label>
+          <input type="text" id="inpSumber" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
         </div>
       </div>
-    </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Case (Rencana & Kendala)</label>
+        <textarea id="inpCase" rows="3" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required></textarea>
+      </div>
+      
+      <!-- ISIAN PIC INTERAKTIF -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">PIC</label>
+          <div class="pic-tag-container" id="picTagContainer" onclick="focusPicInput()">
+            <input type="text" id="inpPicSearch" class="pic-input-search" placeholder="Ketik PIC..." list="picDatalist" oninput="handlePicSelect(this)">
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1">Ketik nama PIC untuk memilih dari daftar opsi.</p>
+
+          <datalist id="picDatalist">
+            <option value="GA"></option>
+            <option value="Head Ops."></option>
+            <option value="ME"></option>
+            <option value="TRO"></option>
+            <option value="FA"></option>
+            <option value="Head FA"></option>
+            <option value="Security"></option>
+            <option value="All"></option>
+            <option value="CS"></option>
+            <option value="Kasir"></option>
+            <option value="MKT"></option>
+          </datalist>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Target Selesai</label>
+          <input type="text" id="inpTarget" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: W3 Juli 2026">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Update Progress & Realisasi</label>
+        <textarea id="inpUpdate" rows="3" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Status Case</label>
+        <select id="inpStatus" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="Open">Open (In Progress)</option>
+          <option value="Done" class="bg-green-100 text-green-800">Done (Completed)</option>
+          <option value="Close" class="bg-slate-100 text-slate-800">Close (Closed)</option>
+        </select>
+      </div>
+
+      <div class="pt-4 flex justify-between items-center border-t border-slate-100">
+        <button type="button" id="btnDeleteModal" class="hidden px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer" onclick="deleteFromModal()">
+          Delete Agenda
+        </button>
+        <div class="flex gap-3 ml-auto">
+          <button type="button" onclick="closeModalForm()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">Batal</button>
+          <button type="button" onclick="submitForm()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer">Simpan Data</button>
+        </div>
+      </div>
+    </form>
   </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT -->
 <script src="header-template.js"></script>
@@ -564,14 +359,11 @@
   }
 
   const CURRENT_USER = usernameFromStorage;
-
-  // DAFTAR NAMA YANG MEMILIKI HAK EDIT / TAMBAH / HAPUS
   const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
   const isEditor = ALLOWED_EDITORS.includes(CURRENT_USER);
 
   let rkmDataCache = [];
   let rkmDataFiltered = [];
-  let bootstrapModal;
 
   let activeColumn = "";
   let filtersState = {
@@ -595,18 +387,17 @@
   });
 
   document.addEventListener("DOMContentLoaded", () => {
-    bootstrapModal = new bootstrap.Modal(document.getElementById('rkmModal'));
     fetchRKMData();
 
     document.addEventListener("click", (e) => {
       const dropdown = document.getElementById("filterDropdown");
-      if (!dropdown.contains(e.target) && !e.target.classList.contains("btn-filter-header")) {
-        dropdown.style.display = "none";
+      if (!dropdown.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+        dropdown.classList.add("hidden");
       }
     });
   });
 
-  /* LOGIKA MULTI-TAG INPUT UNTUK PIC */
+  /* MULTI-TAG INPUT PIC */
   function focusPicInput() {
     document.getElementById("inpPicSearch").focus();
   }
@@ -643,10 +434,10 @@
     });
   }
 
-  /* LOGIKA FETCH DATA DARI SUPABASE */
+  /* SUPABASE FETCH DATA */
   async function fetchRKMData() {
     const tbody = document.getElementById("rkmTableBody");
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Loading RKM data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-8">Loading RKM data...</td></tr>';
 
     const { data, error } = await _supabase
       .from(TABLE_NAME)
@@ -655,7 +446,7 @@
 
     if (error) {
       console.error("Detail Error:", error);
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Gagal memuat data: ${error.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-500 py-8">Gagal memuat data: ${error.message}</td></tr>`;
       return;
     }
 
@@ -663,7 +454,7 @@
     processDataAndRender();
   }
 
-  /* FITUR POPUP FILTER HEADER */
+  /* POPUP FILTER MENU */
   function toggleFilterMenu(e, columnKey) {
     e.stopPropagation();
     activeColumn = columnKey;
@@ -676,24 +467,24 @@
     const statusContainer = document.getElementById("statusFilterContainer");
 
     if (columnKey === 'Status') {
-      sortContainer.style.display = "none";
-      textContainer.style.display = "none";
-      statusContainer.style.display = "block";
+      sortContainer.classList.add("hidden");
+      textContainer.classList.add("hidden");
+      statusContainer.classList.remove("hidden");
 
       document.querySelectorAll(".chk-status-filter").forEach(chk => {
         chk.checked = filtersState.Status.includes(chk.value.toLowerCase());
       });
     } else {
-      sortContainer.style.display = "block";
-      textContainer.style.display = "block";
-      statusContainer.style.display = "none";
+      sortContainer.classList.remove("hidden");
+      textContainer.classList.remove("hidden");
+      statusContainer.classList.add("hidden");
       document.getElementById("filterSearchInput").value = filtersState[columnKey] || "";
     }
 
-    dropdown.style.display = "block";
+    dropdown.classList.remove("hidden");
 
     const rect = e.target.getBoundingClientRect();
-    const dropdownWidth = dropdown.offsetWidth || 220;
+    const dropdownWidth = dropdown.offsetWidth || 240;
     const windowWidth = window.innerWidth;
 
     let leftPos = rect.left - 180;
@@ -711,7 +502,7 @@
   function applySort(direction) {
     sortState = { col: activeColumn, dir: direction };
     processDataAndRender();
-    document.getElementById("filterDropdown").style.display = "none";
+    document.getElementById("filterDropdown").classList.add("hidden");
   }
 
   function applyTextFilter() {
@@ -739,7 +530,7 @@
     }
     if (sortState.col === activeColumn) sortState = { col: null, dir: null };
     processDataAndRender();
-    document.getElementById("filterDropdown").style.display = "none";
+    document.getElementById("filterDropdown").classList.add("hidden");
   }
 
   function processDataAndRender() {
@@ -786,7 +577,7 @@
     tbody.innerHTML = "";
 
     if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">Tidak ada agenda kerja yang sesuai.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-slate-400 py-6">Tidak ada agenda kerja yang sesuai.</td></tr>`;
       return;
     }
 
@@ -794,6 +585,7 @@
       const originalIndex = rkmDataCache.findIndex(d => d.id === item.id);
       const tr = document.createElement("tr");
       tr.setAttribute("data-id", item.id);
+      tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
 
       const status = item.Status || item.status || "Open";
       const tanggal = item.Tanggal || item.tanggal || "-";
@@ -809,26 +601,27 @@
         tr.classList.add("row-close");
       }
 
-      let statusBadgeClass = "bg-primary";
-      if (status === "Done" || status === "Close") statusBadgeClass = "bg-dark text-white";
+      let statusBadgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+      if (status === "Done") statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
+      if (status === "Close") statusBadgeClass = "bg-slate-200 text-slate-700 border-slate-300";
 
       const picBadges = picText 
-        ? picText.split(",").map(p => `<span class="badge bg-secondary me-1 mb-1">${p.trim()}</span>`).join("")
+        ? picText.split(",").map(p => `<span class="inline-block bg-slate-100 text-slate-700 border border-slate-200 rounded-full px-2.5 py-0.5 text-[11px] font-medium mr-1 mb-1">${p.trim()}</span>`).join("")
         : '-';
 
       const clickAttr = isEditor ? `onclick="openModal(${originalIndex})"` : '';
-      const cursorClass = isEditor ? 'btn-status-edit' : '';
+      const cursorClass = isEditor ? 'cursor-pointer hover:scale-105 transition' : 'cursor-default';
       const titleAttr = isEditor ? 'Click to edit' : 'Read only';
 
       tr.innerHTML = `
-        <td><b>${tanggal}</b></td>
-        <td>${sumber}</td>
-        <td>${caseText}</td>
-        <td>${picBadges}</td>
-        <td>${updateText}</td>
-        <td>${targetText}</td>
-        <td class="text-center">
-          <span class="badge ${statusBadgeClass} ${cursorClass} shadow-sm" ${clickAttr} title="${titleAttr}">
+        <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">${tanggal}</td>
+        <td class="px-4 py-3 text-slate-600">${sumber}</td>
+        <td class="px-4 py-3 text-slate-800">${caseText}</td>
+        <td class="px-4 py-3">${picBadges}</td>
+        <td class="px-4 py-3 text-slate-600">${updateText}</td>
+        <td class="px-4 py-3 text-slate-600 whitespace-nowrap">${targetText}</td>
+        <td class="px-4 py-3 text-center whitespace-nowrap">
+          <span class="inline-block rounded-full border px-3 py-1 text-xs font-semibold shadow-xs ${statusBadgeClass} ${cursorClass}" ${clickAttr} title="${titleAttr}">
             ${status}
           </span>
         </td>
@@ -854,36 +647,38 @@
     const updateText = updatedItem.Update || updatedItem.update || "-";
     const targetText = updatedItem.Target || updatedItem.target || "-";
 
-    tr.className = "";
+    tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
     if (status === "Done") tr.classList.add("row-done");
     else if (status === "Close") tr.classList.add("row-close");
 
-    let statusBadgeClass = "bg-primary";
-    if (status === "Done" || status === "Close") statusBadgeClass = "bg-dark text-white";
+    let statusBadgeClass = "bg-blue-50 text-blue-700 border-blue-200";
+    if (status === "Done") statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
+    if (status === "Close") statusBadgeClass = "bg-slate-200 text-slate-700 border-slate-300";
 
     const picBadges = picText 
-      ? picText.split(",").map(p => `<span class="badge bg-secondary me-1 mb-1">${p.trim()}</span>`).join("")
+      ? picText.split(",").map(p => `<span class="inline-block bg-slate-100 text-slate-700 border border-slate-200 rounded-full px-2.5 py-0.5 text-[11px] font-medium mr-1 mb-1">${p.trim()}</span>`).join("")
       : '-';
 
     const clickAttr = isEditor ? `onclick="openModal(${index})"` : '';
-    const cursorClass = isEditor ? 'btn-status-edit' : '';
+    const cursorClass = isEditor ? 'cursor-pointer hover:scale-105 transition' : 'cursor-default';
     const titleAttr = isEditor ? 'Click to edit' : 'Read only';
 
     tr.innerHTML = `
-      <td><b>${tanggal}</b></td>
-      <td>${sumber}</td>
-      <td>${caseText}</td>
-      <td>${picBadges}</td>
-      <td>${updateText}</td>
-      <td>${targetText}</td>
-      <td class="text-center">
-        <span class="badge ${statusBadgeClass} ${cursorClass} shadow-sm" ${clickAttr} title="${titleAttr}">
+      <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">${tanggal}</td>
+      <td class="px-4 py-3 text-slate-600">${sumber}</td>
+      <td class="px-4 py-3 text-slate-800">${caseText}</td>
+      <td class="px-4 py-3">${picBadges}</td>
+      <td class="px-4 py-3 text-slate-600">${updateText}</td>
+      <td class="px-4 py-3 text-slate-600 whitespace-nowrap">${targetText}</td>
+      <td class="px-4 py-3 text-center whitespace-nowrap">
+        <span class="inline-block rounded-full border px-3 py-1 text-xs font-semibold shadow-xs ${statusBadgeClass} ${cursorClass}" ${clickAttr} title="${titleAttr}">
           ${status}
         </span>
       </td>
     `;
   }
 
+  /* CONTROL MODAL TAILWIND FORM */
   function openModal(index = null) {
     if (!isEditor) {
       alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read-Only).");
@@ -923,7 +718,11 @@
       document.getElementById("modalTitle").innerText = "Add New Agenda";
       btnDelete.classList.add("hidden");
     }
-    bootstrapModal.show();
+    document.getElementById("rkmModal").classList.remove("hidden");
+  }
+
+  function closeModalForm() {
+    document.getElementById("rkmModal").classList.add("hidden");
   }
 
   /* SIMPAN KE SUPABASE */
@@ -966,7 +765,7 @@
       if (error) {
         alert("Gagal menyimpan ke Supabase: " + error.message);
       } else {
-        bootstrapModal.hide();
+        closeModalForm();
         if (data && data.length > 0) {
           updateRowInDom(data[0]);
         }
@@ -979,13 +778,13 @@
       if (error) {
         alert("Gagal menyimpan ke Supabase: " + error.message);
       } else {
-        bootstrapModal.hide();
+        closeModalForm();
         fetchRKMData();
       }
     }
   }
 
-  /* HAPUS DATA DARI SUPABASE */
+  /* HAPUS DATA FROM MODAL */
   async function deleteFromModal() {
     if (!isEditor) {
       alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
@@ -1007,7 +806,7 @@
     if (error) {
       alert("Gagal menghapus data: " + error.message);
     } else {
-      bootstrapModal.hide();
+      closeModalForm();
       fetchRKMData();
     }
   }
