@@ -1,15 +1,22 @@
 #global-header {
+    width: 100% !important;
     min-height: 43px !important; /* Dikecilkan 40% dari 72px[cite: 1] */
+    height: auto !important; /* Mencegah konten di dalamnya terpotong */
     position: relative !important; /*[cite: 1] */
     z-index: 9999 !important; /*[cite: 1] */
+    overflow: visible !important; /* MEMASTIKAN dropdown tidak terpotong container header */
 }
 
 #global-header header {
+    width: 100% !important;
+    min-height: 43px !important;
+    padding: 6px 16px !important; /* Menjaga kontainer di dalam tetap proporsional */
     font-size: 10px !important; /* Disesuaikan dari 16px[cite: 1] */
     line-height: 1.4 !important;
     font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; /*[cite: 1] */
     box-sizing: border-box !important; /*[cite: 1] */
     background-color: #0f172a !important; /* slate-900 */ /*[cite: 1] */
+    overflow: visible !important; /* Mencegah penumpukan overlay/modal di bawahnya */
 }
 
 /* Penetralisir Container Flex Kiri & Kanan */
