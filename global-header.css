@@ -1,10 +1,10 @@
 #global-header {
     width: 100% !important;
-    min-height: 43px !important; /* Dikecilkan 40% dari 72px[cite: 1] */
-    height: auto !important; /* Mencegah konten di dalamnya terpotong */
+    min-height: 43px !important; /*[cite: 1] */
+    height: auto !important;
     position: relative !important; /*[cite: 1] */
-    z-index: 9999 !important; /*[cite: 1] */
-    overflow: visible !important; /* MEMASTIKAN dropdown tidak terpotong container header */
+    z-index: 50 !important; /* Diubah dari 9999 ke 50 agar modal berada di atas header */
+    overflow: visible !important;
 }
 
 #global-header header {
