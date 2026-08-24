@@ -34,119 +34,79 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logistics</title>
+  <title>Logistics - SOT</title>
   
+  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
   <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
-  <style>
-    body { 
-      overflow-x: hidden; 
-      font-family: 'Roboto', sans-serif;
-    }
-    table { table-layout: fixed; width: 100%; }
-    
-    /* Scrollbar Styling */
-    .filter-scroll::-webkit-scrollbar, .suggest-scroll::-webkit-scrollbar {
-      width: 6px;
-    }
-    .filter-scroll::-webkit-scrollbar-thumb, .suggest-scroll::-webkit-scrollbar-thumb {
-      background: #dadce0;
-      border-radius: 8px;
-    }
-    .filter-scroll::-webkit-scrollbar-thumb:hover, .suggest-scroll::-webkit-scrollbar-thumb:hover {
-      background: #bdc1c6;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      .filter-scroll::-webkit-scrollbar-thumb, .suggest-scroll::-webkit-scrollbar-thumb {
-        background: #3c4043;
-      }
-      .filter-scroll::-webkit-scrollbar-thumb:hover, .suggest-scroll::-webkit-scrollbar-thumb:hover {
-        background: #5f6368;
-      }
-    }
-  </style>
 </head>
-<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-2 sm:p-4 transition-colors duration-200">
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] min-h-screen font-['Roboto',sans-serif] overflow-x-hidden transition-colors duration-200">
 
-  <div class="w-full mx-auto space-y-4">
-    
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-[#1e1e1e] p-3 sm:p-4 rounded-2xl border border-[#dadce0] dark:border-[#3c4043] shadow-sm">
-      <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
+  <!-- GLOBAL NAVIGATION SHELL -->
+  <div id="global-header">
+    <header class="bg-slate-900 text-white shadow-md sticky top-0">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
+          
+        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
         <div class="flex items-center gap-3">
-          <a href="https://sotpbc.vercel.app/dashboard.html" 
-             title="Kembali ke Dashboard"
-             class="inline-flex items-center justify-center w-10 h-10 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-full transition-all">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-          </a>
+          <div class="relative inline-block" id="navDropdownWrapper">
+            <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
+              <span id="nav-header-avatar">U</span>
+            </button>
+            <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
+          </div>
+
           <div>
-            <h1 class="text-lg sm:text-xl font-bold text-[#202124] dark:text-[#f1f3f4] leading-tight">Logistics</h1>
-            <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Kelola data transaksi masuk & keluar</p>
+            <h1>Sistem Operasional Terintegrasi</h1>
+            <p id="header-subtitle-text">Sistem Terintegrasi</p>
           </div>
         </div>
 
-        <div class="relative sm:hidden">
-          <button id="btnHamburgerMobile" onclick="toggleMainMenu(event)" title="Menu Navigasi"
-                  class="inline-flex items-center justify-center w-9 h-9 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-full transition shadow-sm">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        <!-- SISI KANAN: Hamburger Control Modul -->
+        <div class="relative inline-block">
+          <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
           </button>
+          <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+            <div id="custom-hamburger-content"></div>
+          </div>
         </div>
+
       </div>
+    </header>
+  </div>
 
-      <div class="flex items-center gap-2 w-full sm:w-auto">
-        <div class="relative flex-1 sm:w-72">
-          <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
-                 placeholder="Cari transaksi (User, Item, Note...)..." 
-                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-full pl-9 pr-8 py-2 text-xs text-[#202124] dark:text-[#e8eaed] focus:outline-none transition shadow-inner placeholder-[#5f6368] dark:placeholder-[#9aa0a6]" />
-          
-          <svg class="w-4 h-4 text-[#5f6368] dark:text-[#9aa0a6] absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          
-          <button id="btnClearSearch" onclick="clearGlobalSearch()" 
-                  class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-[#ffffff] text-xs font-bold p-0.5">
-            ✕
-          </button>
-        </div>
-
-        <div class="relative hidden sm:block">
-          <button id="btnHamburger" onclick="toggleMainMenu(event)" title="Menu Navigasi"
-                  class="inline-flex items-center justify-center w-9 h-9 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-full transition shadow-sm">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-            </svg>
-          </button>
-
-          <div id="mainMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-1.5 z-50 text-xs">
-            <button id="btnAddItemMenu" onclick="openModal('add'); closeMainMenu();" 
-                    class="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium">
-              <svg class="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-              </svg>
-              <span>Tambah Item</span>
-            </button>
-            
-            <button onclick="openExportModal(); closeMainMenu();" 
-                    class="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-[#e6f4ea] dark:hover:bg-[#1c3829] text-[#202124] dark:text-[#e8eaed] hover:text-[#137333] dark:hover:text-[#81c995] rounded-xl transition font-medium">
-              <svg class="w-4 h-4 text-[#137333] dark:text-[#81c995]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-              </svg>
-              <span>Export</span>
-            </button>
-          </div>
-        </div>
+  <main class="w-full max-w-7xl mx-auto p-2 sm:p-4 space-y-4">
+    
+    <!-- BAR PENULISAN CARI GLOBAL -->
+    <div class="flex justify-end bg-white dark:bg-[#1e1e1e] p-3 sm:p-4 rounded-2xl border border-[#dadce0] dark:border-[#3c4043] shadow-sm">
+      <div class="relative w-full sm:w-80">
+        <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
+               placeholder="Cari transaksi (User, Item, Note...)..." 
+               class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-full pl-9 pr-8 py-2 text-xs text-[#202124] dark:text-[#e8eaed] focus:outline-none transition shadow-inner placeholder-[#5f6368] dark:placeholder-[#9aa0a6]" />
+        
+        <svg class="w-4 h-4 text-[#5f6368] dark:text-[#9aa0a6] absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        
+        <button id="btnClearSearch" onclick="clearGlobalSearch()" 
+                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-[#ffffff] text-xs font-bold p-0.5">
+          ✕
+        </button>
       </div>
     </div>
 
+    <!-- TABEL LOGISTICS -->
     <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl border border-[#dadce0] dark:border-[#3c4043] shadow-sm overflow-hidden w-full">
-      <table class="w-full text-left border-collapse text-xs">
+      <table class="w-full text-left border-collapse text-xs table-fixed">
         <thead>
           <tr class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
             <th class="p-2.5 w-[5%] relative text-center">
@@ -228,13 +188,13 @@
       </table>
 
       <!-- Filter Popover -->
-      <div id="filterPopover" class="fixed hidden z-50 w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+      <div id="filterPopover" class="fixed hidden z-[10005] w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
         <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
-          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs">
+          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
             <span>↑</span>
             <span>A-Z</span>
           </button>
-          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs">
+          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
             <span>↓</span>
             <span>Z-A</span>
           </button>
@@ -249,19 +209,21 @@
               <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0 bg-transparent" />
               Pilih Semua
             </label>
-            <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium">Reset</button>
+            <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
           </div>
 
-          <div id="filterItemsList" class="max-h-36 overflow-y-auto filter-scroll space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e]">
+          <!-- LIST ITEM FILTER DENGAN TAILWIND SCROLLBAR -->
+          <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full">
           </div>
 
           <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
-            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium">Batal</button>
-            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm">Terapkan</button>
+            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
           </div>
         </div>
       </div>
 
+      <!-- PAGINATION BAR -->
       <div class="flex flex-col sm:flex-row justify-between items-center p-3 bg-[#f8f9fa] dark:bg-[#252525] border-t border-[#dadce0] dark:border-[#3c4043] text-xs gap-3">
         <span id="pageInfo" class="text-[#5f6368] dark:text-[#9aa0a6]">Menampilkan 0 data</span>
         
@@ -273,18 +235,18 @@
                    class="w-12 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-1.5 py-1 text-center text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8]" />
             <span id="totalPagesText">/ 1</span>
             <button onclick="jumpToPage()" 
-                    class="px-2.5 py-1 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-lg font-medium transition">
+                    class="px-2.5 py-1 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-lg font-medium transition cursor-pointer">
               Go
             </button>
           </div>
 
           <div class="inline-flex gap-1.5">
             <button id="btnPrev" onclick="changePage(-1)" 
-                    class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm">
+                    class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm cursor-pointer">
               Prev
             </button>
             <button id="btnNext" onclick="changePage(1)" 
-                    class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm">
+                    class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm cursor-pointer">
               Next
             </button>
           </div>
@@ -292,9 +254,10 @@
       </div>
     </div>
 
-  </div>
+  </main>
 
-  <div id="modal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-50">
+  <!-- MODAL FORM TRANSAKSI -->
+  <div id="modal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
     <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <h3 id="modalTitle" class="text-lg font-bold text-[#202124] dark:text-[#f1f3f4]">Form Transaksi</h3>
       
@@ -306,7 +269,7 @@
           <input type="text" id="inputUser" oninput="handleUserSuggest()"
                  class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" 
                  placeholder="Ketik untuk mencari nama..." />
-          <div id="userSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl max-h-36 overflow-y-auto suggest-scroll z-50 divide-y divide-[#f1f3f4] dark:divide-[#3c4043]"></div>
+          <div id="userSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl max-h-36 overflow-y-auto z-50 divide-y divide-[#f1f3f4] dark:divide-[#3c4043] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full"></div>
         </div>
 
         <div class="relative">
@@ -314,7 +277,7 @@
           <input type="text" id="inputItem" required oninput="handleItemSuggest()"
                  class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" 
                  placeholder="Ketik untuk mencari item..." />
-          <div id="itemSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl max-h-36 overflow-y-auto suggest-scroll z-50 divide-y divide-[#f1f3f4] dark:divide-[#3c4043]"></div>
+          <div id="itemSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl max-h-36 overflow-y-auto z-50 divide-y divide-[#f1f3f4] dark:divide-[#3c4043] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
@@ -347,15 +310,15 @@
         <div class="flex justify-between items-center pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
           <div>
             <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" 
-                    class="px-3.5 py-2 bg-[#fce8e6] dark:bg-[#481c1d] hover:bg-[#fad2cf] dark:hover:bg-[#5c2426] text-[#d93025] dark:text-[#f28b82] rounded-xl font-medium hidden transition">
+                    class="px-3.5 py-2 bg-[#fce8e6] dark:bg-[#481c1d] hover:bg-[#fad2cf] dark:hover:bg-[#5c2426] text-[#d93025] dark:text-[#f28b82] rounded-xl font-medium hidden transition cursor-pointer">
               🗑️ Hapus
             </button>
           </div>
           <div class="flex gap-2">
-            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
               Batal
             </button>
-            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition">
+            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
               Simpan
             </button>
           </div>
@@ -364,13 +327,14 @@
     </div>
   </div>
 
-  <div id="exportModal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-50">
+  <!-- MODAL EXPORT CSV -->
+  <div id="exportModal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
     <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-xs">
       <div class="flex justify-between items-center border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3">
         <h3 class="text-base font-bold text-[#202124] dark:text-[#f1f3f4] flex items-center gap-2">
           <span>📥</span> Export CSV
         </h3>
-        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold">&times;</button>
+        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
       </div>
 
       <div class="space-y-4">
@@ -390,7 +354,7 @@
             </label>
           </div>
 
-          <div id="exportItemsContainer" class="max-h-36 overflow-y-auto suggest-scroll space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-2 bg-[#f8f9fa] dark:bg-[#1e1e1e]">
+          <div id="exportItemsContainer" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-2 bg-[#f8f9fa] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full">
           </div>
         </div>
 
@@ -410,16 +374,19 @@
       </div>
 
       <div class="flex justify-end gap-2 pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
-        <button type="button" onclick="closeExportModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition">
+        <button type="button" onclick="closeExportModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
           Batal
         </button>
-        <button type="button" onclick="processExportCSV()" class="px-4 py-2 bg-[#137333] dark:bg-[#81c995] hover:bg-[#0d652d] dark:hover:bg-[#a8dab5] text-white dark:text-[#202124] rounded-xl font-medium flex items-center gap-1.5 shadow transition">
+        <button type="button" onclick="processExportCSV()" class="px-4 py-2 bg-[#137333] dark:bg-[#81c995] hover:bg-[#0d652d] dark:hover:bg-[#a8dab5] text-white dark:text-[#202124] rounded-xl font-medium flex items-center gap-1.5 shadow transition cursor-pointer">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
            Unduh CSV
         </button>
       </div>
     </div>
   </div>
+
+  <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT -->
+  <script src="header-template.js"></script>
 
   <script>
     const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
@@ -455,16 +422,31 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      if (!isSuperAdmin()) {
-        const btnAdd = document.getElementById('btnAddItemMenu');
-        if (btnAdd) btnAdd.style.display = 'none';
-      }
+    // INISIALISASI HEADER & HAMBURGER ITEMS
+    const hamburgerMenuOptions = [];
+    if (isSuperAdmin()) {
+      hamburgerMenuOptions.push({
+        label: "+ Tambah Item",
+        icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+        onClick: "openModal('add')"
+      });
+    }
+    hamburgerMenuOptions.push({
+      label: "Export CSV",
+      icon: `<svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>`,
+      onClick: "openExportModal()"
+    });
 
+    renderHeader({
+      subtitle: "Kelola data transaksi masuk & keluar",
+      hamburgerItems: hamburgerMenuOptions
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
       fetchTableData();
       preloadSuggestions();
 
-      // Realtime listener khusus UPDATE (Hanya memperbarui sel/baris yang relevan)
+      // Realtime listener khusus UPDATE
       _supabase
         .channel('public:inventory')
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'inventory' }, (payload) => {
@@ -479,30 +461,25 @@
         .subscribe();
     });
 
-    // Fungsi update sel tanpa render ulang seluruh tabel
     function handleRealtimeUpdate(newRow) {
       if (!newRow || !newRow.no) return;
 
-      // Perbarui map data mentah
       rawDataMap.set(newRow.no, newRow);
 
-      // Perbarui array internal
       const idx = fetchedData.findIndex(r => r.no === newRow.no);
       if (idx !== -1) {
         fetchedData[idx] = newRow;
       }
 
-      // Cari elemen DOM baris yang bersangkutan
       const tr = document.querySelector(`tr[data-no="${newRow.no}"]`);
-      if (!tr) return; // Jika baris tidak ada di halaman aktif, lewati
+      if (!tr) return;
 
       const allowEdit = isSuperAdmin();
       const projectText = newRow.project ? escapeHtml(newRow.project) : (allowEdit ? 'Edit' : '-');
       const projectBtn = allowEdit 
-        ? `<button onclick="openModalForNo(${newRow.no})" title="Edit Transaksi #${newRow.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition">${projectText}</button>`
+        ? `<button onclick="openModalForNo(${newRow.no})" title="Edit Transaksi #${newRow.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`
         : `<span class="inline-block max-w-full px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${projectText}</span>`;
 
-      // Kolom mapping sesuai struktur urutan sel di tabel
       const cellValues = [
         { selector: '.cell-no', html: newRow.no },
         { selector: '.cell-user', html: escapeHtml(newRow.user || '-'), title: escapeHtml(newRow.user || '') },
@@ -516,7 +493,6 @@
         { selector: '.cell-project', html: projectBtn }
       ];
 
-      // Perbarui teks/HTML pada masing-masing sel secara presisi
       cellValues.forEach(col => {
         const cell = tr.querySelector(col.selector);
         if (cell) {
@@ -530,25 +506,9 @@
       });
     }
 
-    function toggleMainMenu(event) {
-      event.stopPropagation();
-      const menu = document.getElementById('mainMenuDropdown');
-      menu.classList.toggle('hidden');
-    }
-
-    function closeMainMenu() {
-      const menu = document.getElementById('mainMenuDropdown');
-      if (menu) menu.classList.add('hidden');
-    }
-
     document.addEventListener('click', (e) => {
-      const mainDropdown = document.getElementById('mainMenuDropdown');
-      if (mainDropdown && !mainDropdown.classList.contains('hidden') && !mainDropdown.contains(e.target) && !e.target.closest('#btnHamburger') && !e.target.closest('#btnHamburgerMobile')) {
-        closeMainMenu();
-      }
-
       const popover = document.getElementById('filterPopover');
-      if (!popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+      if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
         closeFilterPopover();
       }
 
@@ -763,7 +723,7 @@
         const projectText = row.project ? escapeHtml(row.project) : (allowEdit ? 'Edit' : '-');
         
         const projectBtn = allowEdit 
-          ? `<button onclick="openModalForNo(${row.no})" title="Edit Transaksi #${row.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition">${projectText}</button>`
+          ? `<button onclick="openModalForNo(${row.no})" title="Edit Transaksi #${row.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`
           : `<span class="inline-block max-w-full px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${projectText}</span>`;
 
         tr.innerHTML = `
