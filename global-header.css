@@ -1,151 +1,151 @@
 #global-header {
-    min-height: 72px !important;
-    position: relative !important;
-    z-index: 9999 !important;
+    min-height: 43px !important; /* Dikecilkan 40% dari 72px[cite: 1] */
+    position: relative !important; /*[cite: 1] */
+    z-index: 9999 !important; /*[cite: 1] */
 }
 
 #global-header header {
-    font-size: 16px !important;
-    line-height: 1.5 !important;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    box-sizing: border-box !important;
-    background-color: #0f172a !important; /* slate-900 */
+    font-size: 10px !important; /* Disesuaikan dari 16px[cite: 1] */
+    line-height: 1.4 !important;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; /*[cite: 1] */
+    box-sizing: border-box !important; /*[cite: 1] */
+    background-color: #0f172a !important; /* slate-900 */ /*[cite: 1] */
 }
 
 /* Penetralisir Container Flex Kiri & Kanan */
 #global-header .flex {
-    display: flex !important;
+    display: flex !important; /*[cite: 1] */
 }
 #global-header .items-center {
-    align-items: center !important;
+    align-items: center !important; /*[cite: 1] */
 }
 #global-header .justify-between {
-    justify-content: space-between !important;
+    justify-content: space-between !important; /*[cite: 1] */
 }
 
-/* Pengunci Ukuran Button Avatar Navigasi (Mencegah Pembengkakan Bootstrap) */
+/* Pengunci Ukuran Button Avatar Navigasi */
 #global-header #navDropdownWrapper > button {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
-    max-width: 40px !important;
-    max-height: 40px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: 0 !important;
-    line-height: 1 !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 9999px !important;
-    background-color: #2563eb !important; /* blue-600 */
+    width: 26px !important; /* Dikecilkan 40% dari 40px[cite: 1] */
+    height: 26px !important; /* Dikecilkan 40% dari 40px[cite: 1] */
+    min-width: 26px !important;
+    min-height: 26px !important;
+    max-width: 26px !important;
+    max-height: 26px !important;
+    padding: 0 !important; /*[cite: 1] */
+    margin: 0 !important; /*[cite: 1] */
+    border: 0 !important; /*[cite: 1] */
+    line-height: 1 !important; /*[cite: 1] */
+    box-sizing: border-box !important; /*[cite: 1] */
+    display: flex !important; /*[cite: 1] */
+    align-items: center !important; /*[cite: 1] */
+    justify-content: center !important; /*[cite: 1] */
+    border-radius: 9999px !important; /*[cite: 1] */
+    background-color: #2563eb !important; /* blue-600 */ /*[cite: 1] */
 }
 
 /* Pengunci Ukuran Teks Avatar Inside Button */
 #global-header #nav-header-avatar {
-    font-size: 0.875rem !important; /* 14px */
-    line-height: 1 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
+    font-size: 0.65rem !important; /* Dikecilkan dari 14px ke ~10.4px[cite: 1] */
+    line-height: 1 !important; /*[cite: 1] */
+    margin: 0 !important; /*[cite: 1] */
+    padding: 0 !important; /*[cite: 1] */
+    display: block !important; /*[cite: 1] */
+    color: #ffffff !important; /*[cite: 1] */
+    font-weight: 700 !important; /*[cite: 1] */
 }
 
 /* Pengunci Judul & Subtitle Utama */
 #global-header h1 {
-    font-size: 1.25rem !important; /* 20px */
-    line-height: 1.25 !important;
-    font-weight: 700 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    color: #ffffff !important;
+    font-size: 0.85rem !important; /* Dikecilkan dari 20px ke ~13.6px[cite: 1] */
+    line-height: 1.2 !important;
+    font-weight: 700 !important; /*[cite: 1] */
+    margin: 0 !important; /*[cite: 1] */
+    padding: 0 !important; /*[cite: 1] */
+    color: #ffffff !important; /*[cite: 1] */
 }
 
 #global-header p#header-subtitle-text,
 #global-header p#header-subtitle {
-    font-size: 0.75rem !important; /* 12px */
-    line-height: 1.25 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    color: #94a3b8 !important; /* slate-400 */
+    font-size: 0.65rem !important; /* Dikecilkan dari 12px ke ~10px[cite: 1] */
+    line-height: 1.2 !important;
+    margin: 0 !important; /*[cite: 1] */
+    padding: 0 !important; /*[cite: 1] */
+    color: #94a3b8 !important; /* slate-400 */ /*[cite: 1] */
 }
 
 /* Pengunci Tombol Hamburger Kanan Modul */
 #global-header #hamburgerBtn {
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 0.5rem !important;
+    margin: 0 !important; /*[cite: 1] */
+    box-sizing: border-box !important; /*[cite: 1] */
+    width: 26px !important; /* Dikecilkan 40% dari 42px[cite: 1] */
+    height: 26px !important; /* Dikecilkan 40% dari 42px[cite: 1] */
+    min-width: 26px !important;
+    min-height: 26px !important;
+    padding: 0 !important; /*[cite: 1] */
+    display: flex !important; /*[cite: 1] */
+    align-items: center !important; /*[cite: 1] */
+    justify-content: center !important; /*[cite: 1] */
+    border-radius: 0.375rem !important;
 }
 
 /* Pengunci Ukuran Icon SVG Hamburger */
 #global-header #hamburgerBtn svg {
-    width: 24px !important;
-    height: 24px !important;
-    display: block !important;
+    width: 16px !important; /* Dikecilkan 40% dari 24px[cite: 1] */
+    height: 16px !important; /* Dikecilkan 40% dari 24px[cite: 1] */
+    display: block !important; /*[cite: 1] */
 }
 
 /* Pengunci Menu Dropdown Layering (Z-Index Tertinggi) */
 #global-header #navDropdownMenu,
 #global-header #connDropdown {
-    z-index: 10000 !important;
-    position: absolute !important;
+    z-index: 10000 !important; /*[cite: 1] */
+    position: absolute !important; /*[cite: 1] */
 }
 
 /* Kerapihan Tautan di Dalam Dropdown Navigasi */
 #global-header #navDropdownMenu a {
-    text-decoration: none !important;
-    box-sizing: border-box !important;
-    font-size: 0.75rem !important; /* 12px */
+    text-decoration: none !important; /*[cite: 1] */
+    box-sizing: border-box !important; /*[cite: 1] */
+    font-size: 0.6875rem !important; /* Dikecilkan dari 12px ke 11px[cite: 1] */
 }
 
 /* =========================================================
    PENGUNCI KHUSUS TOMBOL LOGOUT KELUAR
    ========================================================= */
 #global-header #navDropdownMenu button[onclick="handleLogout()"] {
-    width: 100% !important;
-    height: auto !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    max-width: none !important;
-    max-height: none !important;
-    background-color: transparent !important;
-    border-radius: 0 !important;
-    padding: 8px 16px !important;
-    margin: 0 !important;
-    border: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 10px !important;
-    color: #f87171 !important; /* red-400 */
-    font-size: 0.75rem !important; /* 12px */
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    box-sizing: border-box !important;
+    width: 100% !important; /*[cite: 1] */
+    height: auto !important; /*[cite: 1] */
+    min-width: 0 !important; /*[cite: 1] */
+    min-height: 0 !important; /*[cite: 1] */
+    max-width: none !important; /*[cite: 1] */
+    max-height: none !important; /*[cite: 1] */
+    background-color: transparent !important; /*[cite: 1] */
+    border-radius: 0 !important; /*[cite: 1] */
+    padding: 6px 12px !important; /* Padding disesuaikan */
+    margin: 0 !important; /*[cite: 1] */
+    border: 0 !important; /*[cite: 1] */
+    display: flex !important; /*[cite: 1] */
+    align-items: center !important; /*[cite: 1] */
+    justify-content: flex-start !important; /*[cite: 1] */
+    gap: 8px !important; /* Gap disesuaikan[cite: 1] */
+    color: #f87171 !important; /* red-400 */ /*[cite: 1] */
+    font-size: 0.6875rem !important; /* Dikecilkan dari 12px ke 11px[cite: 1] */
+    font-weight: 500 !important; /*[cite: 1] */
+    cursor: pointer !important; /*[cite: 1] */
+    box-sizing: border-box !important; /*[cite: 1] */
 }
 
 #global-header #navDropdownMenu button[onclick="handleLogout()"]:hover {
-    background-color: rgba(239, 68, 68, 0.15) !important;
-    color: #fca5a5 !important;
+    background-color: rgba(239, 68, 68, 0.15) !important; /*[cite: 1] */
+    color: #fca5a5 !important; /*[cite: 1] */
 }
 
 #global-header #navDropdownMenu button[onclick="handleLogout()"] svg {
-    width: 16px !important;
-    height: 16px !important;
-    min-width: 16px !important;
-    min-height: 16px !important;
-    color: #f87171 !important;
-    display: block !important;
-    flex-shrink: 0 !important;
+    width: 12px !important; /* Dikecilkan dari 16px[cite: 1] */
+    height: 12px !important; /* Dikecilkan dari 16px[cite: 1] */
+    min-width: 12px !important;
+    min-height: 12px !important;
+    color: #f87171 !important; /*[cite: 1] */
+    display: block !important; /*[cite: 1] */
+    flex-shrink: 0 !important; /*[cite: 1] */
 }
