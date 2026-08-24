@@ -68,16 +68,31 @@
           </div>
         </div>
 
-        <!-- SISI KANAN: Hamburger Control Modul -->
-        <div class="relative inline-block">
-          <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
+        <div class="flex items-center gap-2">
+          
+          <!-- INPUT PENCARIAN DI SIKAT/SISI HEADER -->
+          <div class="header-search-container">
+            <svg class="header-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-          </button>
-          <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
-            <div id="custom-hamburger-content"></div>
+            <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
+                   placeholder="Cari transaksi..." 
+                   class="header-search-input" />
+            <button id="btnClearSearch" onclick="clearGlobalSearch()" class="header-search-clear hidden">✕</button>
           </div>
+
+          <div class="relative inline-block">
+            <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+            <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+              <div id="custom-hamburger-content"></div>
+            </div>
+          </div>
+
         </div>
 
       </div>
@@ -85,24 +100,6 @@
   </div>
 
   <main class="w-full max-w-7xl mx-auto p-2 sm:p-4 space-y-4">
-    
-    <!-- BAR PENULISAN CARI GLOBAL -->
-    <div class="flex justify-end bg-white dark:bg-[#1e1e1e] p-3 sm:p-4 rounded-2xl border border-[#dadce0] dark:border-[#3c4043] shadow-sm">
-      <div class="relative w-full sm:w-80">
-        <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
-               placeholder="Cari transaksi (User, Item, Note...)..." 
-               class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-full pl-9 pr-8 py-2 text-xs text-[#202124] dark:text-[#e8eaed] focus:outline-none transition shadow-inner placeholder-[#5f6368] dark:placeholder-[#9aa0a6]" />
-        
-        <svg class="w-4 h-4 text-[#5f6368] dark:text-[#9aa0a6] absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-        
-        <button id="btnClearSearch" onclick="clearGlobalSearch()" 
-                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-[#ffffff] text-xs font-bold p-0.5">
-          ✕
-        </button>
-      </div>
-    </div>
 
     <!-- TABEL LOGISTICS -->
     <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl border border-[#dadce0] dark:border-[#3c4043] shadow-sm overflow-hidden w-full">
@@ -212,7 +209,6 @@
             <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
           </div>
 
-          <!-- LIST ITEM FILTER DENGAN TAILWIND SCROLLBAR -->
           <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full">
           </div>
 
