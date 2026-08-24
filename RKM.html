@@ -36,7 +36,7 @@
   <style>
     body { font-family: 'Inter', sans-serif; }
 
-    /* MENGHILANGKAN SCROLLBAR HASIL PERTUKARAN MODUL */
+    /* MENGHILANGKAN SCROLLBAR HASIL PERTUKARAN MODUL & SLIDE VERTIKAL */
     html, body {
       scrollbar-width: none;
       -ms-overflow-style: none;
@@ -94,9 +94,20 @@
       font-size: 0.9rem;
     }
 
-    /* Style Baris Tabel berdasarkan Status */
-    tr.row-done { background-color: #f0fdf4 !important; color: #15803d !important; }
-    tr.row-close { background-color: #f8fafc !important; color: #64748b !important; }
+    /* Style Baris Tabel & Kolom Berdasarkan Status */
+    /* DONE: Warna Kolom Abu-abu (#f1f5f9), Tulisan Hijau (#16a34a) */
+    tr.row-done,
+    tr.row-done td { 
+      background-color: #f1f5f9 !important; 
+      color: #16a34a !important; 
+    }
+
+    /* CLOSE: Warna Kolom Abu-abu (#f1f5f9), Tulisan Biru (#2563eb) */
+    tr.row-close,
+    tr.row-close td { 
+      background-color: #f1f5f9 !important; 
+      color: #2563eb !important; 
+    }
   </style>
 
   <!-- SUPABASE JS SDK VIA CDN -->
@@ -145,8 +156,8 @@
 <main class="max-w-7xl mx-auto px-4 py-8">
   <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden p-6">
 
-    <!-- TABEL RINGKAS 7 KOLOM TAILWIND -->
-    <div class="overflow-x-auto rounded-lg border border-slate-200 max-h-[70vh]">
+    <!-- TABEL RINGKAS 7 KOLOM TAILWIND (SLIDE VERTIKAL DIHILANGKAN) -->
+    <div class="overflow-x-auto rounded-lg border border-slate-200">
       <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
         <thead class="bg-slate-900 text-white uppercase text-xs tracking-wider sticky top-0 z-10">
           <tr>
@@ -240,7 +251,7 @@
         </label>
         <label class="inline-flex items-center gap-2 cursor-pointer">
           <input class="chk-status-filter rounded text-blue-600" type="checkbox" value="Close" id="chkStatusClose" onchange="applyStatusFilter()">
-          <span class="font-semibold text-slate-500">Close</span>
+          <span class="font-semibold text-blue-600">Close</span>
         </label>
       </div>
     </div>
@@ -250,7 +261,7 @@
 </div>
 
 <!-- MODAL TAILWIND FORM EDIT / ADD -->
-<div id="rkmModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+<div id="rkmModal" class="fixed inset-0 bg-black/60 z-[10005] hidden flex items-center justify-center p-4">
   <div class="bg-white max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
     <div class="bg-slate-900 px-6 py-4 text-white flex justify-between items-center">
       <h3 id="modalTitle" class="font-bold text-base">Add New Agenda</h3>
@@ -315,8 +326,8 @@
         <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Status Case</label>
         <select id="inpStatus" class="w-full text-sm border border-slate-300 rounded-lg px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
           <option value="Open">Open (In Progress)</option>
-          <option value="Done" class="bg-green-100 text-green-800">Done (Completed)</option>
-          <option value="Close" class="bg-slate-100 text-slate-800">Close (Closed)</option>
+          <option value="Done" class="bg-emerald-100 text-emerald-800">Done (Completed)</option>
+          <option value="Close" class="bg-blue-100 text-blue-800">Close (Closed)</option>
         </select>
       </div>
 
@@ -585,7 +596,7 @@
       const originalIndex = rkmDataCache.findIndex(d => d.id === item.id);
       const tr = document.createElement("tr");
       tr.setAttribute("data-id", item.id);
-      tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
+      tr.className = "hover:bg-slate-100 transition border-b border-slate-200";
 
       const status = item.Status || item.status || "Open";
       const tanggal = item.Tanggal || item.tanggal || "-";
@@ -602,11 +613,11 @@
       }
 
       let statusBadgeClass = "bg-blue-50 text-blue-700 border-blue-200";
-      if (status === "Done") statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
-      if (status === "Close") statusBadgeClass = "bg-slate-200 text-slate-700 border-slate-300";
+      if (status === "Done") statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold";
+      if (status === "Close") statusBadgeClass = "bg-blue-100 text-blue-800 border-blue-300 font-bold";
 
       const picBadges = picText 
-        ? picText.split(",").map(p => `<span class="inline-block bg-slate-100 text-slate-700 border border-slate-200 rounded-full px-2.5 py-0.5 text-[11px] font-medium mr-1 mb-1">${p.trim()}</span>`).join("")
+        ? picText.split(",").map(p => `<span class="inline-block bg-white text-slate-700 border border-slate-300 rounded-full px-2.5 py-0.5 text-[11px] font-medium mr-1 mb-1">${p.trim()}</span>`).join("")
         : '-';
 
       const clickAttr = isEditor ? `onclick="openModal(${originalIndex})"` : '';
@@ -614,14 +625,14 @@
       const titleAttr = isEditor ? 'Click to edit' : 'Read only';
 
       tr.innerHTML = `
-        <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">${tanggal}</td>
-        <td class="px-4 py-3 text-slate-600">${sumber}</td>
-        <td class="px-4 py-3 text-slate-800">${caseText}</td>
+        <td class="px-4 py-3 whitespace-nowrap font-medium">${tanggal}</td>
+        <td class="px-4 py-3">${sumber}</td>
+        <td class="px-4 py-3">${caseText}</td>
         <td class="px-4 py-3">${picBadges}</td>
-        <td class="px-4 py-3 text-slate-600">${updateText}</td>
-        <td class="px-4 py-3 text-slate-600 whitespace-nowrap">${targetText}</td>
+        <td class="px-4 py-3">${updateText}</td>
+        <td class="px-4 py-3 whitespace-nowrap">${targetText}</td>
         <td class="px-4 py-3 text-center whitespace-nowrap">
-          <span class="inline-block rounded-full border px-3 py-1 text-xs font-semibold shadow-xs ${statusBadgeClass} ${cursorClass}" ${clickAttr} title="${titleAttr}">
+          <span class="inline-block rounded-full border px-3 py-1 text-xs shadow-xs ${statusBadgeClass} ${cursorClass}" ${clickAttr} title="${titleAttr}">
             ${status}
           </span>
         </td>
@@ -647,16 +658,16 @@
     const updateText = updatedItem.Update || updatedItem.update || "-";
     const targetText = updatedItem.Target || updatedItem.target || "-";
 
-    tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
+    tr.className = "hover:bg-slate-100 transition border-b border-slate-200";
     if (status === "Done") tr.classList.add("row-done");
     else if (status === "Close") tr.classList.add("row-close");
 
     let statusBadgeClass = "bg-blue-50 text-blue-700 border-blue-200";
-    if (status === "Done") statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
-    if (status === "Close") statusBadgeClass = "bg-slate-200 text-slate-700 border-slate-300";
+    if (status === "Done") statusBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold";
+    if (status === "Close") statusBadgeClass = "bg-blue-100 text-blue-800 border-blue-300 font-bold";
 
     const picBadges = picText 
-      ? picText.split(",").map(p => `<span class="inline-block bg-slate-100 text-slate-700 border border-slate-200 rounded-full px-2.5 py-0.5 text-[11px] font-medium mr-1 mb-1">${p.trim()}</span>`).join("")
+      ? picText.split(",").map(p => `<span class="inline-block bg-white text-slate-700 border border-slate-300 rounded-full px-2.5 py-0.5 text-[11px] font-medium mr-1 mb-1">${p.trim()}</span>`).join("")
       : '-';
 
     const clickAttr = isEditor ? `onclick="openModal(${index})"` : '';
@@ -664,14 +675,14 @@
     const titleAttr = isEditor ? 'Click to edit' : 'Read only';
 
     tr.innerHTML = `
-      <td class="px-4 py-3 whitespace-nowrap font-medium text-slate-900">${tanggal}</td>
-      <td class="px-4 py-3 text-slate-600">${sumber}</td>
-      <td class="px-4 py-3 text-slate-800">${caseText}</td>
+      <td class="px-4 py-3 whitespace-nowrap font-medium">${tanggal}</td>
+      <td class="px-4 py-3">${sumber}</td>
+      <td class="px-4 py-3">${caseText}</td>
       <td class="px-4 py-3">${picBadges}</td>
-      <td class="px-4 py-3 text-slate-600">${updateText}</td>
-      <td class="px-4 py-3 text-slate-600 whitespace-nowrap">${targetText}</td>
+      <td class="px-4 py-3">${updateText}</td>
+      <td class="px-4 py-3 whitespace-nowrap">${targetText}</td>
       <td class="px-4 py-3 text-center whitespace-nowrap">
-        <span class="inline-block rounded-full border px-3 py-1 text-xs font-semibold shadow-xs ${statusBadgeClass} ${cursorClass}" ${clickAttr} title="${titleAttr}">
+        <span class="inline-block rounded-full border px-3 py-1 text-xs shadow-xs ${statusBadgeClass} ${cursorClass}" ${clickAttr} title="${titleAttr}">
           ${status}
         </span>
       </td>
