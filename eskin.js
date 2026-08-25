@@ -123,15 +123,15 @@ function tambahBaris() {
     tr.innerHTML = `
         <td class="p-2">
             <div class="relative w-full">
-                <input type="text" class="item-name w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:border-blue-500 transition" placeholder="Ketik nama item..." oninput="showItemSuggestions(this)">
-                <div class="autocomplete-list absolute left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-h-40 overflow-y-auto z-50 shadow-lg hidden divide-y divide-slate-100 dark:divide-slate-800"></div>
+                <input type="text" class="item-name w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:border-blue-500 transition" placeholder="Ketik nama item..." oninput="showItemSuggestions(this)">
+                <div class="autocomplete-list absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl max-h-40 overflow-y-auto z-50 shadow-lg hidden divide-y divide-slate-100"></div>
             </div>
         </td>
         <td class="p-2">
-            <input type="text" inputmode="numeric" class="item-qty w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 text-center focus:outline-none focus:border-blue-500 transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
+            <input type="text" inputmode="numeric" class="item-qty w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-800 text-center focus:outline-none focus:border-blue-500 transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
         </td>
         <td class="p-2">
-            <input type="text" inputmode="numeric" class="item-cost w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 text-right focus:outline-none focus:border-blue-500 transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
+            <input type="text" inputmode="numeric" class="item-cost w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-800 text-right focus:outline-none focus:border-blue-500 transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
         </td>
     `;
     tbody.appendChild(tr);
