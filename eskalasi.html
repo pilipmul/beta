@@ -19,7 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- CDN jsPDF & AutoTable untuk pencetakan PDF -->
+    <!-- CDN jsPDF & AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
@@ -35,9 +35,9 @@
         th.no-filter { padding-right: 24px !important; }
         
         .filter-icon-btn {
-            position: absolute; right: 4px; top: 50%;
+            position: absolute; right: 8px; top: 50%;
             transform: translateY(-50%);
-            width: 24px; height: 24px;
+            width: 20px; height: 20px;
             display: flex; align-items: center; justify-content: center;
             border-radius: 4px; cursor: pointer; transition: all 0.15s;
             color: #cbd5e1;
@@ -98,38 +98,38 @@
         }
     </style>
 </head>
-<body class="bg-[#121417] text-slate-100 min-h-screen p-4 sm:p-6 transition-colors duration-200">
+<body class="bg-[#f8fafc] dark:bg-[#090b0e] text-slate-800 dark:text-slate-100 min-h-screen p-0 m-0 transition-colors duration-200">
 
-    <!-- GLOBAL HEADER TEMPLATE (Tailwind Pure Structure) -->
-    <div id="global-header" class="max-w-7xl mx-auto mb-6">
-        <header class="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3 shadow-lg relative">
+    <!-- GLOBAL HEADER TEMPLATE (Menyesuaikan Referensi Gambar) -->
+    <div id="global-header" class="w-full mb-6">
+        <header class="bg-[#0e1726] border-b border-slate-800 px-6 py-3 shadow-md relative">
             <div class="flex items-center justify-between gap-4">
-                <!-- Navigasi Kiri: Avatar User & Dropdown RBAC Modul -->
+                <!-- Navigasi Kiri: Avatar User & Title Modul -->
                 <div class="flex items-center gap-3">
                     <div id="navDropdownWrapper" class="relative">
-                        <button type="button" onclick="toggleNavDropdown(event)" class="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center font-bold text-xs shadow-md transition cursor-pointer">
-                            <span id="nav-header-avatar">U</span>
+                        <button type="button" onclick="toggleNavDropdown(event)" class="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center font-bold text-sm shadow-md transition cursor-pointer">
+                            <span id="nav-header-avatar">D</span>
                         </button>
                         
                         <!-- Dropdown Navigasi Utama -->
-                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-50 text-xs"></div>
+                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-[#0e1726] border border-slate-800 rounded-xl shadow-2xl py-2 z-50 text-xs"></div>
                     </div>
 
                     <div>
-                        <h1 class="text-base font-bold text-white tracking-wide leading-tight">Database Eskalasi</h1>
-                        <p id="header-subtitle-text" class="text-xs text-slate-400 leading-tight">Atur dan kelola modul eskalasi pengguna aplikasi SOT</p>
+                        <h1 class="text-base font-bold text-white tracking-wide leading-tight">Sistem Operasional Terintegrasi</h1>
+                        <p id="header-subtitle-text" class="text-xs text-slate-400 leading-tight">Database Eskalasi Budget</p>
                     </div>
                 </div>
 
-                <!-- Navigasi Kanan: Custom Hamburger Menu & Aksi Modul -->
+                <!-- Navigasi Kanan: Tombol 3 Garis (Hamburger Menu Popover) -->
                 <div class="flex items-center gap-3">
                     <div class="relative">
-                        <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition flex items-center justify-center cursor-pointer">
+                        <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="w-10 h-10 bg-[#102a36] border border-[#174e5e] hover:bg-[#153a4b] text-[#00e6a8] rounded-xl transition flex items-center justify-center cursor-pointer shadow-sm">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                         </button>
 
-                        <!-- Popover Menu Hamburger Kustom -->
-                        <div id="connDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1 z-50 overflow-hidden">
+                        <!-- Popover Menu Dropdown "Eskalasi Baru" -->
+                        <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-[#0e1726] border border-slate-800 rounded-xl shadow-2xl py-2 z-50 overflow-hidden">
                             <div id="custom-hamburger-content"></div>
                         </div>
                     </div>
@@ -138,62 +138,46 @@
         </header>
     </div>
 
-    <!-- UTAMA: DATABASE & TABEL DATA -->
-    <main class="max-w-7xl mx-auto">
-        <div class="bg-[#1a1d21] rounded-2xl shadow-sm border border-slate-800 overflow-hidden transition-colors">
-            <div class="p-5 border-b border-slate-800/80 bg-[#212429]/50 flex justify-between items-center gap-4">
-                <div>
-                    <h3 class="text-base font-bold text-slate-100 tracking-tight">Database Data Eskalasi</h3>
-                    <p class="text-xs text-slate-400">Data diambil langsung dari tabel Supabase `eskalasi`</p>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                    <button onclick="loadData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2.5 rounded-xl font-medium border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        Refresh Data
-                    </button>
-                    <!-- Tombol Pemicu Pop-up Eskalasi Baru -->
-                    <button type="button" onclick="openModalEskalasi()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-xl font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Eskalasi Baru
-                    </button>
-                </div>
-            </div>
-
+    <!-- UTAMA: TABEL DATA LANGSUNG (TANPA JUDUL & SUBJUDUL DI ATAS TABEL) -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="bg-white dark:bg-[#0e1726] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
+            
             <div id="tableWrapper" class="overflow-x-auto relative">
-                <table class="min-w-full divide-y divide-slate-800 text-left text-sm hidden" id="eskalasiTable">
-                    <thead class="bg-[#0f1115] text-slate-200 uppercase text-xs tracking-wider">
+                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-left text-sm hidden" id="eskalasiTable">
+                    <!-- HEADER TABEL UTAMA SANTAI & PRESISI -->
+                    <thead class="bg-[#0e1726] text-white uppercase text-xs tracking-wider">
                         <tr>
-                            <th scope="col" class="px-6 py-4 font-semibold text-center w-16 no-filter">No</th>
-                            <th scope="col" class="px-6 py-4 font-semibold">
-                                Kode Eskalasi 
+                            <th scope="col" class="px-6 py-4 font-bold text-center w-16 no-filter">NO</th>
+                            <th scope="col" class="px-6 py-4 font-bold">
+                                KODE ESKALASI 
                                 <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
                                     <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                 </div>
                             </th>
-                            <th scope="col" class="px-6 py-4 font-semibold">
-                                Subject 
+                            <th scope="col" class="px-6 py-4 font-bold">
+                                SUBJECT 
                                 <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
                                     <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                 </div>
                             </th>
-                            <th scope="col" class="px-6 py-4 font-semibold">
-                                Bulan 
+                            <th scope="col" class="px-6 py-4 font-bold">
+                                BULAN 
                                 <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
                                     <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                 </div>
                             </th>
-                            <th scope="col" class="px-6 py-4 font-semibold">
-                                Nilai 
+                            <th scope="col" class="px-6 py-4 font-bold">
+                                NILAI 
                                 <div class="filter-icon-btn" data-col="4" onclick="toggleFilterMenu(event, this)">
                                     <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                 </div>
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-800/60" id="tableBody"></tbody>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-[#0b111e]" id="tableBody"></tbody>
                 </table>
 
+                <!-- POPUP FILTER DROPDOWN -->
                 <div id="filterMenu" class="filter-menu">
                     <div class="filter-sort-group">
                         <button class="filter-sort-btn" onclick="execSort('asc')">↑ A-Z</button>
@@ -218,13 +202,14 @@
                     </div>
                 </div>
 
-                <div id="loading" class="px-6 py-12 text-center text-slate-400">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-700 border-t-blue-500 mb-2"></div>
-                    <p class="font-medium">Menghubungkan ke Supabase Database...</p>
+                <!-- STATE LOADING -->
+                <div id="loading" class="px-6 py-16 text-center text-slate-400">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-700 border-t-blue-500 mb-3"></div>
+                    <p class="font-medium text-sm">Menghubungkan ke Supabase Database...</p>
                 </div>
             </div>
 
-            <div class="bg-[#1a1d21] px-6 py-4 border-t border-slate-800 text-xs text-slate-400 flex justify-between items-center">
+            <div class="bg-slate-50 dark:bg-[#0e1726] px-6 py-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex justify-between items-center">
                 <span id="dbStatusIndicator">Status: Connected</span>
                 <span>Power by: PBC Internal Dev Team</span>
             </div>
@@ -318,7 +303,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT HANDLER & MODUL KONTROL -->
+    <!-- SCRIPT HANDLER DATA & HAMBURGER -->
     <script>
         let fullData = []; 
         let filteredData = []; 
@@ -389,12 +374,12 @@
             tbody.innerHTML = "";
             data.forEach((row, index) => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-800/40 transition duration-150 odd:bg-[#1a1d21] even:bg-[#15171a]">
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition duration-150 odd:bg-white dark:odd:bg-[#0b111e] even:bg-slate-50/50 dark:even:bg-[#0e1726]">
                         <td class="px-6 py-4 text-center whitespace-nowrap text-slate-500 font-medium">${index + 1}</td>
-                        <td class="px-6 py-4 font-semibold text-slate-100 whitespace-nowrap">${row[1]}</td>
-                        <td class="px-6 py-4 text-slate-300">${row[2]}</td>
-                        <td class="px-6 py-4 text-slate-400 whitespace-nowrap">${row[3]}</td>
-                        <td class="px-6 py-4 text-slate-100 font-medium whitespace-nowrap">${row[4]}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">${row[1]}</td>
+                        <td class="px-6 py-4 text-slate-600 dark:text-slate-300">${row[2]}</td>
+                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">${row[3]}</td>
+                        <td class="px-6 py-4 text-slate-800 dark:text-slate-100 font-semibold whitespace-nowrap">${row[4]}</td>
                     </tr>
                 `;
             });
@@ -514,20 +499,20 @@
         if (menu) menu.onclick = (e) => e.stopPropagation();
 
         window.onload = () => {
-            // Hidrasi Header Global & Opsi Hamburger Menu
+            // Render Menu Navigasi Utama & Popover "Eskalasi Baru" pada Tombol 3 Garis
             if (typeof renderHeader === 'function') {
                 renderHeader({
-                    subtitle: "Atur dan kelola modul eskalasi pengguna aplikasi SOT",
+                    subtitle: "Database Eskalasi Budget",
                     hamburgerItems: [
                         {
-                            label: "Refresh Data",
-                            icon: `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`,
-                            onClick: "loadData()"
+                            label: "Eskalasi Baru",
+                            icon: `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+                            onClick: "openModalEskalasi()"
                         },
                         {
-                            label: "Eskalasi Baru",
-                            icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-                            onClick: "openModalEskalasi()"
+                            label: "Refresh Data",
+                            icon: `<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`,
+                            onClick: "loadData()"
                         }
                     ]
                 });
@@ -537,7 +522,7 @@
         };
     </script>
 
-    <!-- INKLUSI SCRIPT HEADER TEMPLATE & MODUL ESKALASI -->
+    <!-- INKLUSI SCRIPT HEADER & MODUL JS -->
     <script src="header-template.js"></script>
     <script src="eskin.js"></script>
 </body>
