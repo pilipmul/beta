@@ -19,11 +19,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- CDN jsPDF & AutoTable untuk pembuatan PDF -->
+    <!-- CDN jsPDF & AutoTable untuk pencetakan PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- Modal CSS Khusus Eskalasi Baru -->
+    <!-- CSS Global Header & Modal Eskalasi -->
+    <link rel="stylesheet" href="global-header.css">
     <link rel="stylesheet" href="eskin.css">
 
     <style>
@@ -99,41 +100,45 @@
 </head>
 <body class="bg-[#121417] text-slate-100 min-h-screen p-4 sm:p-6 transition-colors duration-200">
 
-    <!-- HEADER DESAIN -->
-    <header class="bg-[#212429] border border-slate-700/50 rounded-2xl p-4 sm:p-5 mb-6 max-w-7xl mx-auto shadow-lg">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div class="flex items-center gap-4">
-                <div class="relative">
-                    <button id="navDropdownBtn" onclick="toggleNavDropdown(event)" class="w-12 h-12 bg-slate-800 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-full transition flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    </button>
-                    <div id="navDropdownMenu" class="hidden absolute left-0 mt-3 w-56 bg-[#1a1d21] border border-slate-700/80 rounded-xl shadow-2xl py-2 z-50 text-sm">
-                        <a href="dashboard.html" class="block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Dashboard</a>
-                        <a href="eskalasi.html" id="nav-eskalasi" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Eskalasi</a>
-                        <a href="RKM.html" id="nav-rkm" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">RKM</a>
-                        <a href="sr.html" id="nav-dokPerbaikan" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Dok. Perbaikan</a>
-                        <a href="tasks.html" id="nav-tasks" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Tasks</a>
-                        <a href="syncflow.html" id="nav-syncflow" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Syncflow</a>
-                        <a href="inventory.html" id="nav-inventory" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Inventory</a>
-                        <a href="logistics.html" id="nav-logistics" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Logistics</a>
-                        <a href="access.html" id="nav-access" class="hidden block px-4 py-2.5 hover:bg-slate-800 text-slate-200">Access Control</a>
+    <!-- GLOBAL HEADER TEMPLATE (Tailwind Pure Structure) -->
+    <div id="global-header" class="max-w-7xl mx-auto mb-6">
+        <header class="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3 shadow-lg relative">
+            <div class="flex items-center justify-between gap-4">
+                <!-- Navigasi Kiri: Avatar User & Dropdown RBAC Modul -->
+                <div class="flex items-center gap-3">
+                    <div id="navDropdownWrapper" class="relative">
+                        <button type="button" onclick="toggleNavDropdown(event)" class="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center font-bold text-xs shadow-md transition cursor-pointer">
+                            <span id="nav-header-avatar">U</span>
+                        </button>
+                        
+                        <!-- Dropdown Navigasi Utama -->
+                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl py-2 z-50 text-xs"></div>
+                    </div>
+
+                    <div>
+                        <h1 class="text-base font-bold text-white tracking-wide leading-tight">Database Eskalasi</h1>
+                        <p id="header-subtitle-text" class="text-xs text-slate-400 leading-tight">Atur dan kelola modul eskalasi pengguna aplikasi SOT</p>
                     </div>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold text-white tracking-wide">Database Eskalasi</h1>
-                    <p class="text-xs text-slate-400 mt-0.5">Atur dan kelola modul eskalasi pengguna aplikasi SOT</p>
+
+                <!-- Navigasi Kanan: Custom Hamburger Menu & Aksi Modul -->
+                <div class="flex items-center gap-3">
+                    <div class="relative">
+                        <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="w-8 h-8 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition flex items-center justify-center cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        </button>
+
+                        <!-- Popover Menu Hamburger Kustom -->
+                        <div id="connDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1 z-50 overflow-hidden">
+                            <div id="custom-hamburger-content"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-3">
-                <button onclick="loadData()" class="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-md transition flex items-center gap-2 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    Refresh Data
-                </button>
-            </div>
-        </div>
-    </header>
+        </header>
+    </div>
 
+    <!-- UTAMA: DATABASE & TABEL DATA -->
     <main class="max-w-7xl mx-auto">
         <div class="bg-[#1a1d21] rounded-2xl shadow-sm border border-slate-800 overflow-hidden transition-colors">
             <div class="p-5 border-b border-slate-800/80 bg-[#212429]/50 flex justify-between items-center gap-4">
@@ -142,15 +147,21 @@
                     <p class="text-xs text-slate-400">Data diambil langsung dari tabel Supabase `eskalasi`</p>
                 </div>
                 
-                <!-- TOMBOL MEMBUAT POPUP ESKALASI BARU -->
-                <button type="button" onclick="openModalEskalasi()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-xl font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Eskalasi Baru
-                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="loadData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-2.5 rounded-xl font-medium border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Refresh Data
+                    </button>
+                    <!-- Tombol Pemicu Pop-up Eskalasi Baru -->
+                    <button type="button" onclick="openModalEskalasi()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-4 py-2.5 rounded-xl font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Eskalasi Baru
+                    </button>
+                </div>
             </div>
 
-            <div id="tableWrapper" class="overflow-x-auto" style="position: relative;">
-                <table class="min-w-full divide-y divide-slate-800 text-left text-sm" id="eskalasiTable" style="display:none;">
+            <div id="tableWrapper" class="overflow-x-auto relative">
+                <table class="min-w-full divide-y divide-slate-800 text-left text-sm hidden" id="eskalasiTable">
                     <thead class="bg-[#0f1115] text-slate-200 uppercase text-xs tracking-wider">
                         <tr>
                             <th scope="col" class="px-6 py-4 font-semibold text-center w-16 no-filter">No</th>
@@ -220,7 +231,7 @@
         </div>
     </main>
 
-    <!-- CONTAINER POPUP / MODAL FORM ESKALASI BARU -->
+    <!-- POPUP MODAL FORM ESKALASI BARU -->
     <div id="modalEskalasiBaru" class="modal-overlay">
         <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div class="p-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center sticky top-0 bg-slate-900 z-10">
@@ -228,7 +239,7 @@
                     <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">Formulir Pengajuan Eskalasi Budget</h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400">Isi data anggaran dan penanggung jawab untuk mencetak dokumen PDF</p>
                 </div>
-                <button type="button" onclick="closeModalEskalasi()" class="text-slate-400 hover:text-white transition p-1">
+                <button type="button" onclick="closeModalEskalasi()" class="text-slate-400 hover:text-white transition p-1 cursor-pointer">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -307,30 +318,8 @@
         </div>
     </div>
 
-    <!-- LOGIKA TABEL ESKALASI & SCRIPT EXTERNAL ESKIN -->
+    <!-- SCRIPT HANDLER & MODUL KONTROL -->
     <script>
-        function initNavAccess() {
-            const session = localStorage.getItem("user");
-            const userData = session ? JSON.parse(session) : null;
-            if (!userData) return;
-            const userName = userData.nama || userData.username || "";
-            const isSuperAdmin = userName.toLowerCase() === "dede hidayat";
-            const menuKeys = ["eskalasi", "rkm", "dokPerbaikan", "tasks", "syncflow", "inventory", "logistics", "access"];
-        
-            menuKeys.forEach(key => {
-                const navEl = document.getElementById(`nav-${key}`);
-                if (!navEl) return;
-                let hasAccess = isSuperAdmin || (userData.akses && ["Y", "TRUE", "1"].includes(String(userData.akses[key]).toUpperCase()));
-                if (hasAccess) navEl.classList.remove("hidden");
-                else navEl.classList.add("hidden");
-            });
-        }
-
-        function toggleNavDropdown(e) {
-            e.stopPropagation();
-            document.getElementById("navDropdownMenu").classList.toggle("hidden");
-        }
-
         let fullData = []; 
         let filteredData = []; 
         let activeColIndex = -1;
@@ -366,7 +355,7 @@
         async function loadData() {
             try {
                 document.getElementById("loading").style.display = "block";
-                document.getElementById("eskalasiTable").style.display = "none";
+                document.getElementById("eskalasiTable").classList.add("hidden");
 
                 const { data, error } = await supabaseClient
                     .from('eskalasi')
@@ -386,7 +375,7 @@
 
                 filteredData = [...fullData];
                 document.getElementById("loading").style.display = "none";
-                document.getElementById("eskalasiTable").style.display = "table";
+                document.getElementById("eskalasiTable").classList.remove("hidden");
                 renderTable(filteredData);
             } catch (e) {
                 console.error(e);
@@ -522,19 +511,34 @@
             closeFilterMenu();
         }
 
-        document.onclick = () => {
-            closeFilterMenu();
-            document.getElementById("navDropdownMenu").classList.add("hidden");
-        };
-        menu.onclick = (e) => e.stopPropagation();
+        if (menu) menu.onclick = (e) => e.stopPropagation();
 
         window.onload = () => {
-            initNavAccess();
+            // Hidrasi Header Global & Opsi Hamburger Menu
+            if (typeof renderHeader === 'function') {
+                renderHeader({
+                    subtitle: "Atur dan kelola modul eskalasi pengguna aplikasi SOT",
+                    hamburgerItems: [
+                        {
+                            label: "Refresh Data",
+                            icon: `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`,
+                            onClick: "loadData()"
+                        },
+                        {
+                            label: "Eskalasi Baru",
+                            icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+                            onClick: "openModalEskalasi()"
+                        }
+                    ]
+                });
+            }
+
             loadData();
         };
     </script>
 
-    <!-- MEMANGGIL JS KHUSUS ESKALASI BARU -->
+    <!-- INKLUSI SCRIPT HEADER TEMPLATE & MODUL ESKALASI -->
+    <script src="header-template.js"></script>
     <script src="eskin.js"></script>
 </body>
 </html>
