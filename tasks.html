@@ -1,371 +1,567 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <script>
-    (function() {
-      try {
-        const session = localStorage.getItem("user");
-        if (!session) {
-          window.location.replace("login.html");
-          return;
-        }
-
-        const userData = JSON.parse(session);
-        if (!userData || !userData.akses || userData.akses.tasks !== "Y") {
-          window.location.replace("login.html");
-          return;
-        }
-      } catch (err) {
-        console.error("Autentikasi gagal:", err);
-        window.location.replace("login.html");
-      }
-    })();
-  </script>
-
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SOT Tasks - Integrated Operational System</title>
-  
-  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
-  <link rel="stylesheet" href="global-header.css">
-
-  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <style>
-    /* UTILS & CUSTOM CSS BINDING */
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .app-body {
-      display: flex;
-      flex: 1;
-      height: calc(100vh - 65px);
-      overflow: hidden;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* CUSTOM HOVER / ACTIVE UNTUK SIDEBAR TASKS HASIL ADAPTASI LOGISTICS */
-    .nav-item-active {
-      background-color: #e8f0fe !important;
-      color: #1a73e8 !important;
-      font-weight: 600;
-    }
-    .dark .nav-item-active {
-      background-color: #2c384e !important;
-      color: #8ab4f8 !important;
-    }
-
-    .list-delete-icon {
-      display: none;
-    }
-    .nav-item-list:hover .list-delete-icon {
-      display: inline-block;
-    }
-
-    /* SCROLLBAR STYLE SERUPA LOGISTICS */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #dadce0;
-      border-radius: 9999px;
-    }
-    .dark ::webkit-scrollbar-thumb {
-      background: #3c4043;
-    }
-  </style>
-</head>
-<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] font-['Roboto',sans-serif] overflow-hidden transition-colors duration-200">
-
-  <div id="loading-overlay" class="fixed inset-0 bg-white/70 dark:bg-black/70 backdrop-blur-sm z-[9999] flex items-center justify-center font-semibold text-[#1a73e8] dark:text-[#8ab4f8] text-lg" style="display: none;">
-    <i class="fas fa-spinner fa-spin mr-3"></i> Menyinkronkan Data SOT...
-  </div>
-
-  <!-- GLOBAL NAVIGATION SHELL PRECISE LOGISTICS STYLE -->
-  <div id="global-header">
-    <header class="bg-slate-900 text-white shadow-md sticky top-0">
-      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
-          
-        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
-        <div class="flex items-center gap-3">
-          <div class="relative inline-block" id="navDropdownWrapper">
-            <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
-              <span id="nav-header-avatar">U</span>
-            </button>
-            <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs z-[200]"></div>
-          </div>
-
-          <div>
-            <h1>Sistem Operasional Terintegrasi</h1>
-            <p id="header-subtitle-text">Kelola Tugas Terintegrasi</p>
-          </div>
-        </div>
-
-        <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
-        <div class="flex items-center gap-2">
-          
-          <!-- INPUT PENCARIAN SERUPA LOGISTICS -->
-          <div class="header-search-container">
-            <svg class="header-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input type="text" id="globalSearchInput" oninput="handleSearchInput()" 
-                   placeholder="Cari tugas..." 
-                   class="header-search-input" />
-            <button id="btnClearSearch" onclick="clearGlobalSearch()" class="header-search-clear hidden">✕</button>
-          </div>
-
-          <div class="relative inline-block">
-            <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
-            <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white dark:bg-[#1e1e1e] rounded-lg shadow-xl border border-slate-200 dark:border-[#3c4043] overflow-hidden py-1 z-[200]">
-              <div id="custom-hamburger-content"></div>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    </header>
-  </div>
-
-  <div class="app-body">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOT Tasks - Integrated Operational System</title>
     
-    <!-- SIDEBAR LEFT -->
-    <aside class="w-[280px] bg-[#f8f9fa] dark:bg-[#181818] border-r border-[#dadce0] dark:border-[#3c4043] flex flex-col py-4 flex-shrink-0 h-full overflow-y-auto text-xs">
-      <div class="space-y-1 px-2">
-        <div id="nav-all" onclick="switchFilter('all', this)" class="nav-item-active flex items-center px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] transition text-[#202124] dark:text-[#e8eaed]">
-          <i class="fas fa-sun w-5 text-center mr-3 text-sm"></i>
-          <span class="font-medium text-xs">Semua Tugas</span>
-        </div>
-        <div id="nav-important" onclick="switchFilter('important', this)" class="flex items-center px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] transition text-[#202124] dark:text-[#e8eaed]">
-          <i class="far fa-star w-5 text-center mr-3 text-sm"></i>
-          <span class="font-medium text-xs">Penting</span>
-        </div>
-        <div id="nav-recurring" onclick="switchFilter('recurring', this)" class="flex items-center px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] transition text-[#202124] dark:text-[#e8eaed]">
-          <i class="fas fa-sync-alt w-5 text-center mr-3 text-sm"></i>
-          <span class="font-medium text-xs">Tugas Berulang Otomatis</span>
-        </div>
-        <div id="nav-completed" onclick="switchFilter('completed', this)" class="flex items-center px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] transition text-[#202124] dark:text-[#e8eaed]">
-          <i class="far fa-check-circle w-5 text-center mr-3 text-sm"></i>
-          <span class="font-medium text-xs">Selesai</span>
-        </div>
-      </div>
+    <script>
+        (function() {
+            try {
+                const session = localStorage.getItem("user");
+                const userData = session ? JSON.parse(session) : null;
+                if (!userData || !userData.akses || userData.akses.tasks !== "Y") {
+                    window.location.replace("login.html"); 
+                    document.documentElement.style.display = "none";
+                    throw new Error("Akses ditolak");
+                }
+            } catch(e) {
+                window.location.replace("login.html");
+            }
+        })();
+    </script>
 
-      <div class="my-4 border-t border-[#dadce0] dark:border-[#3c4043] mx-3"></div>
-      
-      <div class="px-4 mb-2 text-[11px] font-bold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6]">
-        Grup / List
-      </div>
-      
-      <div id="custom-sidebar-lists" class="space-y-1 px-2"></div>
+    <link rel="stylesheet" href="global-header.css">
 
-      <div onclick="openNewListModal()" class="mt-auto pt-4 px-4 flex items-center gap-3 text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer hover:opacity-80 transition">
-        <i class="fas fa-plus"></i>
-        <span>New List</span>
-      </div>
-    </aside>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- MAIN DASHBOARD CONTENT -->
-    <main class="flex-1 bg-white dark:bg-[#121212] flex flex-col p-4 sm:p-6 h-full overflow-y-auto">
-      <div class="flex items-center justify-between mb-6 gap-4">
-        <h2 id="current-list-title" class="text-2xl font-bold text-[#1a73e8] dark:text-[#8ab4f8]">Semua Tugas</h2>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2564cf;
+            --bg-sidebar: #f3f2f1;
+            --bg-main: #ffffff;
+            --text-color: #323130;
+            --text-muted: #605e5c;
+            --border-color: #edebe9;
+            --hover-color: #edebe9;
+            --active-color: #e1dfdd;
+            --card-bg: #ffffff;
+            --input-bg: #ffffff;
+            --modal-bg: #ffffff;
+        }
+
+        /* DUKUNGAN DARK MODE ADAPTIF */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary-color: #4f8cf6;
+                --bg-sidebar: #181818;
+                --bg-main: #121212;
+                --text-color: #e8eaed;
+                --text-muted: #9aa0a6;
+                --border-color: #2d2d2d;
+                --hover-color: #252525;
+                --active-color: #3c4043;
+                --card-bg: #1e1e1e;
+                --input-bg: #1e1e1e;
+                --modal-bg: #252525;
+            }
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-body {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 65px);
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* SIDEBAR STYLES */
+        .sidebar {
+            width: 290px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            flex-shrink: 0;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .nav-item, .nav-item-list {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .nav-item-list {
+            justify-content: space-between;
+        }
+
+        .nav-item:hover, .nav-item-list:hover {
+            background-color: var(--hover-color);
+        }
+
+        .nav-item.active, .nav-item-list.active {
+            background-color: var(--active-color);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .nav-item i {
+            margin-right: 15px;
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .list-delete-icon {
+            display: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            padding: 4px;
+        }
+
+        .nav-item-list:hover .list-delete-icon {
+            display: inline-block;
+        }
+
+        .list-delete-icon:hover {
+            color: #f87171;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 15px 20px;
+        }
+
+        .list-section-title {
+            padding: 0 20px 5px 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .create-list-btn {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .create-list-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        .create-list-btn i {
+            margin-right: 15px;
+        }
+
+        /* MAIN CONTENT STYLES */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            height: 100%;
+            overflow-y: auto;
+            background-color: var(--bg-main);
+        }
+
+        .header-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sort-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border-radius: 20px;
+            background-color: var(--bg-sidebar);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sort-btn:hover {
+            background-color: var(--hover-color);
+            color: var(--primary-color);
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* TASK INPUT STYLES */
+        .input-container {
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+
+        .input-container i {
+            color: var(--primary-color);
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        .task-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 15px;
+            color: var(--text-color);
+        }
+
+        .add-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 5px 10px;
+        }
+
+        /* TASK LIST STYLES */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .task-item:hover {
+            border-color: var(--primary-color);
+        }
+
+        .task-item.selected-task {
+            border-color: var(--primary-color);
+            background-color: var(--hover-color);
+        }
+
+        .task-checkbox {
+            width: 19px;
+            height: 19px;
+            border: 1px solid var(--text-muted);
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .task-item.completed .task-checkbox {
+            background-color: #107c41;
+            border-color: #107c41;
+        }
+
+        .task-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .task-title {
+            font-size: 15px;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .task-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .task-meta .badge-list {
+            background-color: var(--active-color);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .task-inline-note {
+            flex: 1;
+            margin: 0 20px;
+            font-size: 13px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .star-icon {
+            color: var(--text-muted);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+            flex-shrink: 0;
+        }
+
+        .star-icon.active {
+            color: #ffb900;
+        }
+
+        .trash-icon {
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 5px;
+            flex-shrink: 0;
+        }
+
+        .trash-icon:hover {
+            color: #f87171;
+        }
+
+        /* DETAIL PANEL STYLES */
+        .detail-panel {
+            width: 360px;
+            background-color: var(--bg-sidebar);
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            flex-shrink: 0;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .detail-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-textarea {
+            width: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-color);
+        }
+
+        .detail-action-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            color: var(--text-color);
+            font-size: 14px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: var(--modal-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .method-card {
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .method-card:hover {
+            background-color: var(--hover-color);
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+        }
+    </style>
+</head>
+
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] min-h-screen font-['Roboto',sans-serif] overflow-x-hidden transition-colors duration-200">
+
+    <div id="global-header"></div>
+
+    <div class="app-body">
         
-        <button onclick="toggleSortOrder()" title="Urutkan Berdasarkan Batas Waktu" 
-                class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] border border-[#dadce0] dark:border-[#3c4043] text-xs font-medium cursor-pointer transition">
-          <i class="fas fa-sort-amount-down-alt" id="sort-icon"></i>
-          <span id="sort-text">Due (A-Z)</span>
-        </button>
-      </div>
+        <aside class="sidebar">
+            <div class="nav-item active" onclick="switchView('my-day', this)">
+                <i class="far fa-sun" style="color: #2564cf;"></i>
+                <span>Hari Saya</span>
+            </div>
+            <div class="nav-item" onclick="switchView('important', this)">
+                <i class="far fa-star" style="color: #2564cf;"></i>
+                <span>Penting</span>
+            </div>
+            <div class="nav-item" onclick="switchView('planned', this)">
+                <i class="far fa-calendar-alt" style="color: #2564cf;"></i>
+                <span>Telah Direncanakan</span>
+            </div>
+            <div class="nav-item" onclick="switchView('assigned', this)">
+                <i class="far fa-user" style="color: #2564cf;"></i>
+                <span>Ditugaskan ke saya</span>
+            </div>
+            <div class="nav-item" onclick="switchView('tasks', this)">
+                <i class="fas fa-home" style="color: #2564cf;"></i>
+                <span>Tugas</span>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="list-section-title">Daftar Saya</div>
+            <div id="user-lists-container">
+                </div>
 
-      <!-- TASK INPUT BAR -->
-      <div class="flex items-center bg-[#f1f3f4] dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl px-4 py-2.5 mb-6 shadow-sm focus-within:ring-2 focus-within:ring-[#1a73e8] dark:focus-within:ring-[#8ab4f8]">
-        <i class="fas fa-plus text-[#1a73e8] dark:text-[#8ab4f8] mr-3 text-base"></i>
-        <input type="text" id="task-input" placeholder="New Task..." 
-               onkeydown="if(event.key === 'Enter') addTask()"
-               class="flex-1 bg-transparent border-none outline-none text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed] placeholder-[#5f6368] dark:placeholder-[#9aa0a6]" />
-        <button onclick="addTask()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-bold text-xs px-2 py-1 hover:opacity-80 cursor-pointer">
-          Add
-        </button>
-      </div>
+            <div class="create-list-btn" onclick="promptCreateList()">
+                <i class="fas fa-plus"></i>
+                <span>Daftar baru</span>
+            </div>
+        </aside>
 
-      <!-- ACTIVE TASK CONTAINER -->
-      <div id="active-task-list-container" class="space-y-2"></div>
-      
-      <!-- COMPLETED TASK SECTION -->
-      <div id="completed-section" class="mt-6" style="display: none;">
-        <button onclick="toggleCompletedVisibility()" class="flex items-center gap-2 text-xs font-semibold text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] cursor-pointer mb-2">
-          <i class="fas fa-chevron-right transition-transform duration-200" id="completed-toggle-icon"></i>
-          <span id="completed-toggle-text">Show completed tasks</span>
-        </button>
-        <div id="completed-task-list-container" class="space-y-2 pl-2" style="display: none;"></div>
-      </div>
-    </main>
+        <main class="main-content">
+            <div class="header-area">
+                <div class="header-title" id="current-view-title">Hari Saya</div>
+                <div class="header-controls">
+                    <button class="sort-btn" id="sort-menu-btn" onclick="toggleSortMenu()">
+                        <i class="fas fa-sort-amount-down-alt"></i> Urutkan
+                    </button>
+                </div>
+            </div>
 
-    <!-- PANEL DETAIL & EDIT TUGAS -->
-    <aside id="detailPanel" class="w-[360px] bg-[#f8f9fa] dark:bg-[#1e1e1e] border-l border-[#dadce0] dark:border-[#3c4043] flex-col h-full z-20 shadow-xl transition-all" style="display: none;">
-      <div class="flex justify-between items-center p-4 border-b border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#252525]">
-        <h3 class="font-bold text-sm text-[#1a73e8] dark:text-[#8ab4f8]">Detail & Edit Tugas</h3>
-        <button onclick="closeDetailPanel()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-lg font-bold cursor-pointer">&times;</button>
-      </div>
-      
-      <div class="p-4 space-y-4 overflow-y-auto flex-1 text-xs">
-        <input type="hidden" id="edit-task-id">
-        
-        <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Judul Tugas</label>
-          <input type="text" id="edit-task-title" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8]" />
-        </div>
+            <div class="input-container">
+                <i class="fas fa-plus"></i>
+                <input type="text" id="new-task-input" class="task-input" placeholder="Tambahkan tugas..." onkeydown="handleInputKeyPress(event)">
+                <button class="add-btn" onclick="addNewTask()">Tambah</button>
+            </div>
 
-        <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Batas Waktu (Deadline)</label>
-          <input type="date" id="edit-task-due" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8]" />
-        </div>
+            <div class="task-list" id="task-list-container">
+                </div>
+        </main>
 
-        <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Tanggal Selesai (Completion)</label>
-          <input type="date" id="edit-task-completion" readonly class="w-full bg-[#e8eaed] dark:bg-[#181818] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#5f6368] dark:text-[#9aa0a6] outline-none" />
-        </div>
+        <aside class="detail-panel" id="detail-panel" style="display: none;">
+            </aside>
 
-        <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Pengulangan Otomatis</label>
-          <select id="edit-task-repeat" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8]">
-            <option value="none">Tidak Berulang</option>
-            <option value="daily">Setiap Hari</option>
-            <option value="weekly">Setiap Minggu</option>
-            <option value="monthly">Setiap Bulan</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Pindahkan ke List / Grup</label>
-          <select id="edit-task-list" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8]"></select>
-        </div>
-
-        <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Catatan Tambahan</label>
-          <textarea id="edit-task-note" rows="6" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8] resize-y"></textarea>
-        </div>
-      </div>
-
-      <div class="p-4 border-t border-[#dadce0] dark:border-[#3c4043] bg-white dark:bg-[#252525] flex justify-end gap-2 text-xs">
-        <button onclick="closeDetailPanel()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
-        <button onclick="saveTaskDetails()" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow cursor-pointer">Simpan</button>
-      </div>
-    </aside>
-
-  </div>
-
-  <!-- MODAL BUAT LIST / GRUP -->
-  <div id="newListModal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
-    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-xs">
-      <div class="flex justify-between items-center border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3">
-        <h3 class="text-base font-bold text-[#1a73e8] dark:text-[#8ab4f8]">Buat List / Grup Baru</h3>
-        <button onclick="closeNewListModal()" class="text-[#5f6368] dark:text-[#9aa0a6] text-xl font-bold cursor-pointer">&times;</button>
-      </div>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Nama List / Grup Baru</label>
-          <input type="text" id="new-list-name" placeholder="Contoh: Teknis Listrik, Sipil, Admin..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none" />
-        </div>
-
-        <div id="group-method-section">
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Metode Pengisian Tugas Pertama</label>
-          <div class="space-y-2">
-            <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#252525] cursor-pointer">
-              <input type="radio" name="list-method" id="method-move" value="1" checked onchange="onMethodChange()" class="mt-0.5" />
-              <div>
-                <div class="font-bold text-[#202124] dark:text-[#e8eaed]">Pindahkan Tugas yang Sudah Ada</div>
-                <div class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6]">Memilih salah satu tugas mandiri saat ini untuk dimasukkan ke grup baru.</div>
-              </div>
-            </label>
-
-            <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#252525] cursor-pointer">
-              <input type="radio" name="list-method" id="method-new" value="2" onchange="onMethodChange()" class="mt-0.5" />
-              <div>
-                <div class="font-bold text-[#202124] dark:text-[#e8eaed]">Buat Tugas Baru Langsung</div>
-                <div class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6]">Membuat item tugas kosong baru di dalam lingkup grup ini.</div>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div id="sub-select-task-group" style="display:none;">
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Pilih Tugas Mandiri Tersedia</label>
-          <select id="new-list-task-select" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none"></select>
-        </div>
-
-        <div id="sub-input-task-group" style="display:none;">
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Judul Tugas Baru di List Ini</label>
-          <input type="text" id="new-list-task-title" placeholder="Ketik nama tugas..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none" />
-        </div>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
-        <button onclick="closeNewListModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
-        <button onclick="submitNewListCustom()" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow cursor-pointer">Proses Buat List</button>
-      </div>
     </div>
-  </div>
 
-  <!-- MODAL KONFIRMASI HAPUS LIST -->
-  <div id="deleteListModal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
-    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-xs">
-      <div class="flex justify-between items-center border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3">
-        <h3 class="text-base font-bold text-[#d93025] dark:text-[#f28b82]">Hapus List / Grup</h3>
-        <button onclick="closeDeleteListModal()" class="text-[#5f6368] dark:text-[#9aa0a6] text-xl font-bold cursor-pointer">&times;</button>
-      </div>
-
-      <p id="delete-list-message" class="text-[#202124] dark:text-[#e8eaed] font-medium"></p>
-
-      <div class="space-y-2">
-        <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#252525] cursor-pointer">
-          <input type="radio" name="delete-list-option" id="del-opt-keep" value="keep" checked class="mt-0.5" />
-          <div>
-            <div class="font-bold text-[#202124] dark:text-[#e8eaed]">Hapus List Sahaja</div>
-            <div class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6]">Tugas di dalam list ini akan tetap ada (berubah menjadi tanpa grup/tugas mandiri).</div>
-          </div>
-        </label>
-
-        <label class="flex items-start gap-2.5 p-2.5 rounded-xl border border-[#dadce0] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#252525] cursor-pointer">
-          <input type="radio" name="delete-list-option" id="del-opt-all" value="all" class="mt-0.5" />
-          <div>
-            <div class="font-bold text-[#d93025] dark:text-[#f28b82]">Hapus List Beserta Seluruh Tugasnya</div>
-            <div class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6]">Semua tugas yang ada di dalam list ini akan ikut dihapus secara permanen.</div>
-          </div>
-        </label>
-      </div>
-
-      <div class="flex justify-end gap-2 pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
-        <button onclick="closeDeleteListModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
-        <button onclick="confirmDeleteList()" class="px-4 py-2 bg-[#d93025] dark:bg-[#f28b82] hover:bg-[#a50e0e] text-white dark:text-[#202124] rounded-xl font-medium shadow cursor-pointer">Hapus List</button>
-      </div>
+    <div class="modal-overlay hidden" id="deleteListModal" style="display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center;">
+        <div class="modal-content" style="width: 450px; border-radius: 8px; overflow: hidden;">
+            <div class="modal-header" style="padding: 15px 20px; font-weight: 600;">
+                Hapus List Tugas
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="margin-bottom: 15px; font-size: 14px;">Pilih opsi untuk menghapus list ini:</p>
+                <div class="delete-options">
+                    <div class="method-card" onclick="document.getElementById('del-opt-keep').checked=true;">
+                        <input type="radio" name="delete-list-option" id="del-opt-keep" value="keep" checked>
+                        <div>
+                            <h4 style="font-weight: 600; font-size: 14px;">Hapus List Sahaja</h4>
+                            <p style="font-size: 12px; color: var(--text-muted);">Tugas di dalam list ini akan tetap ada.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="method-card" onclick="document.getElementById('del-opt-all').checked=true;">
+                        <input type="radio" name="delete-list-option" id="del-opt-all" value="all">
+                        <div>
+                            <h4 style="font-weight: 600; font-size: 14px; color: #f87171;">Hapus List Beserta Seluruh Tugasnya</h4>
+                            <p style="font-size: 12px; color: var(--text-muted);">Semua tugas yang ada di dalam list ini akan ikut dihapus secara permanen.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closeDeleteListModal()" style="padding: 6px 14px; border-radius: 4px; border: 1px solid var(--border-color); background: transparent; color: var(--text-color); cursor: pointer;">Batal</button>
+                <button class="btn btn-primary" style="padding: 6px 14px; border-radius: 4px; border: none; background-color: #a80000; color: white; cursor: pointer;" onclick="confirmDeleteList()">Hapus List</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT & UTAMA TASKS -->
-  <script src="header-template.js"></script>
-  <script src="tasks.js"></script>
+    <script src="header-template.js"></script>
+    <script src="tasks.js"></script>
 </body>
 </html>
