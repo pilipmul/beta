@@ -17,11 +17,16 @@
         })();
     </script>
 
-    <!-- Supabase JS Client Library -->
+    <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+    <link rel="stylesheet" href="global-header.css">
+
+    <!-- Tailwind CSS v4 & Supabase JS Client Library -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
             --primary-color: #2564cf;
@@ -42,9 +47,17 @@
 
         body {
             display: flex;
+            flex-direction: column;
             height: 100vh;
             color: var(--text-color);
             background-color: var(--bg-main);
+            overflow: hidden;
+        }
+
+        .app-body {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 65px);
             overflow: hidden;
         }
 
@@ -178,38 +191,6 @@
             gap: 12px;
         }
 
-        .search-box {
-            display: flex;
-            align-items: center;
-            background-color: #f3f2f1;
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 6px 14px;
-            width: 240px;
-            transition: all 0.2s ease;
-        }
-
-        .search-box:focus-within {
-            background-color: #ffffff;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 1px var(--primary-color);
-        }
-
-        .search-box i {
-            color: #605e5c;
-            font-size: 14px;
-            margin-right: 8px;
-        }
-
-        .search-box input {
-            border: none;
-            background: transparent;
-            outline: none;
-            font-size: 13px;
-            color: var(--text-color);
-            width: 100%;
-        }
-
         .sort-btn {
             display: inline-flex;
             align-items: center;
@@ -229,32 +210,6 @@
             background-color: var(--hover-color);
             color: var(--primary-color);
             border-color: #a19f9d;
-        }
-
-        .btn-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background-color: #f3f2f1;
-            color: var(--text-color);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            border: 1px solid var(--border-color);
-        }
-
-        .btn-back:hover {
-            background-color: var(--hover-color);
-            color: var(--primary-color);
-            border-color: #a19f9d;
-            transform: translateY(-1px);
-        }
-
-        .btn-back i {
-            font-size: 14px;
         }
 
         .header-title {
@@ -675,112 +630,155 @@
         <i class="fas fa-spinner fa-spin" style="margin-right: 10px;"></i> Menyinkronkan Data SOT...
     </div>
 
-    <!-- SIDEBAR LEFT -->
-    <div class="sidebar">
-        <div class="nav-item active" id="nav-all" onclick="switchFilter('all', this)">
-            <i class="fas fa-sun"></i> Semua Tugas
-        </div>
-        <div class="nav-item" id="nav-important" onclick="switchFilter('important', this)">
-            <i class="far fa-star"></i> Penting
-        </div>
-        <div class="nav-item" id="nav-recurring" onclick="switchFilter('recurring', this)">
-            <i class="fas fa-sync-alt"></i> Tugas Berulang Otomatis
-        </div>
-        <div class="nav-item" id="nav-completed" onclick="switchFilter('completed', this)">
-            <i class="far fa-check-circle"></i> Selesai
-        </div>
-
-        <div class="divider"></div>
-        <div class="list-section-title">Grup / List</div>
-        <div id="custom-sidebar-lists"></div>
-
-        <div class="create-list-btn" onclick="openNewListModal()">
-            <i class="fas fa-plus"></i> New List
-        </div>
-    </div>
-
-    <!-- MAIN DASHBOARD CONTENT -->
-    <div class="main-content">
-        <div class="header-area">
-            <div class="header-title" id="current-list-title">Semua Tugas</div>
+    <!-- GLOBAL NAVIGATION SHELL -->
+    <div id="global-header">
+      <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
             
-            <div class="header-controls">
-                <!-- KOTAK PENCARIAN SEJAJAR DENGAN TOMBOL BACK -->
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="search-input" placeholder="Cari tugas..." oninput="handleSearchInput()">
-                </div>
-
-                <!-- TOMBOL SORT BY DATE -->
-                <button class="sort-btn" onclick="toggleSortOrder()" title="Urutkan Berdasarkan Batas Waktu">
-                    <i class="fas fa-sort-amount-down-alt" id="sort-icon"></i>
-                    <span id="sort-text">Due (A-Z)</span>
-                </button>
-
-                <a href="https://sotpbc.vercel.app/dashboard.html" class="btn-back" title="Kembali ke Dashboard">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
+          <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
+          <div class="flex items-center gap-3">
+            <div class="relative inline-block" id="navDropdownWrapper">
+              <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
+                <span id="nav-header-avatar">U</span>
+              </button>
+              <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
             </div>
-        </div>
 
-        <div class="input-container">
-            <i class="fas fa-plus"></i>
-            <input type="text" class="task-input" id="task-input" placeholder="New Task" onkeydown="if(event.key === 'Enter') addTask()">
-            <button class="add-btn" onclick="addTask()">Add</button>
-        </div>
+            <div>
+              <h1>SOT Tasks</h1>
+              <p id="header-subtitle-text">Kelola Tugas Terintegrasi</p>
+            </div>
+          </div>
 
-        <div class="task-list" id="active-task-list-container"></div>
-        
-        <div id="completed-section" style="display: none;">
-            <button class="completed-toggle-btn" onclick="toggleCompletedVisibility()">
-                <i class="fas fa-chevron-right" id="completed-toggle-icon"></i>
-                <span id="completed-toggle-text">Show completed tasks</span>
-            </button>
-            <div class="task-list" id="completed-task-list-container" style="display: none;"></div>
+          <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
+          <div class="flex items-center gap-2">
+            
+            <!-- INPUT PENCARIAN DI HEADER (Pencarian Tugas) -->
+            <div class="header-search-container">
+              <svg class="header-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <input type="text" id="globalSearchInput" oninput="handleSearchInput()" 
+                     placeholder="Cari tugas..." 
+                     class="header-search-input" />
+              <button id="btnClearSearch" onclick="clearGlobalSearch()" class="header-search-clear hidden">✕</button>
+            </div>
+
+            <div class="relative inline-block">
+              <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
+              <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+                <div id="custom-hamburger-content"></div>
+              </div>
+            </div>
+
+          </div>
+
         </div>
+      </header>
     </div>
 
-    <!-- PANEL DETAIL & EDIT TUGAS -->
-    <div id="detailPanel" class="detail-panel">
-        <div class="panel-header">
-            <h3>Detail & Edit Tugas</h3>
-            <span class="close-btn" onclick="closeDetailPanel()">&times;</span>
-        </div>
-        <div class="panel-body">
-            <input type="hidden" id="edit-task-id">
-            <div class="form-group">
-                <label>Judul Tugas</label>
-                <input type="text" id="edit-task-title" class="form-control">
+    <div class="app-body">
+        <!-- SIDEBAR LEFT -->
+        <div class="sidebar">
+            <div class="nav-item active" id="nav-all" onclick="switchFilter('all', this)">
+                <i class="fas fa-sun"></i> Semua Tugas
             </div>
-            <div class="form-group">
-                <label>Batas Waktu (Deadline)</label>
-                <input type="date" id="edit-task-due" class="form-control">
+            <div class="nav-item" id="nav-important" onclick="switchFilter('important', this)">
+                <i class="far fa-star"></i> Penting
             </div>
-            <div class="form-group">
-                <label>Tanggal Selesai (Completion)</label>
-                <input type="date" id="edit-task-completion" class="form-control" readonly style="background-color: #edebe9;">
+            <div class="nav-item" id="nav-recurring" onclick="switchFilter('recurring', this)">
+                <i class="fas fa-sync-alt"></i> Tugas Berulang Otomatis
             </div>
-            <div class="form-group">
-                <label>Pengulangan Otomatis</label>
-                <select id="edit-task-repeat" class="form-control">
-                    <option value="none">Tidak Berulang</option>
-                    <option value="daily">Setiap Hari</option>
-                    <option value="weekly">Setiap Minggu</option>
-                    <option value="monthly">Setiap Bulan</option>
-                </select>
+            <div class="nav-item" id="nav-completed" onclick="switchFilter('completed', this)">
+                <i class="far fa-check-circle"></i> Selesai
             </div>
-            <div class="form-group">
-                <label>Pindahkan ke List / Grup</label>
-                <select id="edit-task-list" class="form-control"></select>
-            </div>
-            <div class="form-group">
-                <label>Catatan Tambahan</label>
-                <textarea id="edit-task-note" class="form-control" rows="8" style="resize: vertical;"></textarea>
+
+            <div class="divider"></div>
+            <div class="list-section-title">Grup / List</div>
+            <div id="custom-sidebar-lists"></div>
+
+            <div class="create-list-btn" onclick="openNewListModal()">
+                <i class="fas fa-plus"></i> New List
             </div>
         </div>
-        <div class="panel-footer">
-            <button class="btn btn-secondary" onclick="closeDetailPanel()">Batal</button>
-            <button class="btn btn-primary" onclick="saveTaskDetails()">Simpan</button>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <div class="main-content">
+            <div class="header-area">
+                <div class="header-title" id="current-list-title">Semua Tugas</div>
+                
+                <div class="header-controls">
+                    <!-- TOMBOL SORT BY DATE -->
+                    <button class="sort-btn" onclick="toggleSortOrder()" title="Urutkan Berdasarkan Batas Waktu">
+                        <i class="fas fa-sort-amount-down-alt" id="sort-icon"></i>
+                        <span id="sort-text">Due (A-Z)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <i class="fas fa-plus"></i>
+                <input type="text" class="task-input" id="task-input" placeholder="New Task" onkeydown="if(event.key === 'Enter') addTask()">
+                <button class="add-btn" onclick="addTask()">Add</button>
+            </div>
+
+            <div class="task-list" id="active-task-list-container"></div>
+            
+            <div id="completed-section" style="display: none;">
+                <button class="completed-toggle-btn" onclick="toggleCompletedVisibility()">
+                    <i class="fas fa-chevron-right" id="completed-toggle-icon"></i>
+                    <span id="completed-toggle-text">Show completed tasks</span>
+                </button>
+                <div class="task-list" id="completed-task-list-container" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- PANEL DETAIL & EDIT TUGAS -->
+        <div id="detailPanel" class="detail-panel">
+            <div class="panel-header">
+                <h3>Detail & Edit Tugas</h3>
+                <span class="close-btn" onclick="closeDetailPanel()">&times;</span>
+            </div>
+            <div class="panel-body">
+                <input type="hidden" id="edit-task-id">
+                <div class="form-group">
+                    <label>Judul Tugas</label>
+                    <input type="text" id="edit-task-title" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Batas Waktu (Deadline)</label>
+                    <input type="date" id="edit-task-due" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Selesai (Completion)</label>
+                    <input type="date" id="edit-task-completion" class="form-control" readonly style="background-color: #edebe9;">
+                </div>
+                <div class="form-group">
+                    <label>Pengulangan Otomatis</label>
+                    <select id="edit-task-repeat" class="form-control">
+                        <option value="none">Tidak Berulang</option>
+                        <option value="daily">Setiap Hari</option>
+                        <option value="weekly">Setiap Minggu</option>
+                        <option value="monthly">Setiap Bulan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pindahkan ke List / Grup</label>
+                    <select id="edit-task-list" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>Catatan Tambahan</label>
+                    <textarea id="edit-task-note" class="form-control" rows="8" style="resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <button class="btn btn-secondary" onclick="closeDetailPanel()">Batal</button>
+                <button class="btn btn-primary" onclick="saveTaskDetails()">Simpan</button>
+            </div>
         </div>
     </div>
 
@@ -851,7 +849,7 @@
                         <div class="method-card" onclick="document.getElementById('del-opt-keep').checked=true;">
                             <input type="radio" name="delete-list-option" id="del-opt-keep" value="keep" checked>
                             <div class="method-details">
-                                <h4>Hapus List Sahaja</h4>
+                                <h4>Hapus List Saja</h4>
                                 <p>Tugas di dalam list ini akan tetap ada (berubah menjadi tanpa grup/tugas mandiri).</p>
                             </div>
                         </div>
@@ -873,7 +871,8 @@
         </div>
     </div>
 
-    <!-- SKRIP LOGIKA TUGAS TERPISAH -->
+    <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT & UTAMA TASKS -->
+    <script src="header-template.js"></script>
     <script src="tasks.js"></script>
 </body>
 </html>
