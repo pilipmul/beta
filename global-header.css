@@ -63,21 +63,21 @@
 
 /* Pengunci Judul & Subtitle Utama */
 #global-header h1 {
-    font-size: 0.85rem !important; /* Dikecilkan ke ~13.6px[cite: 1] */
-    line-height: 1.2 !important;
-    font-weight: 700 !important; /*[cite: 1] */
-    margin: 0 !important; /*[cite: 1] */
-    padding: 0 !important; /*[cite: 1] */
-    color: #ffffff !important; /*[cite: 1] */
+    font-size: 1.125rem !important; /* Diperbesar dari 0.85rem (~18px) */
+    line-height: 1.25 !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #ffffff !important;
 }
 
 #global-header p#header-subtitle-text,
 #global-header p#header-subtitle {
-    font-size: 0.65rem !important; /* Dikecilkan ke ~10px[cite: 1] */
-    line-height: 1.2 !important;
-    margin: 0 !important; /*[cite: 1] */
-    padding: 0 !important; /*[cite: 1] */
-    color: #94a3b8 !important; /* slate-400 */ /*[cite: 1] */
+    font-size: 0.8125rem !important; /* Diperbesar dari 0.65rem (~13px) */
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #94a3b8 !important; /* slate-400 */
 }
 
 /* Pengunci Tombol Hamburger Kanan Modul */
