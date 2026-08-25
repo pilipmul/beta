@@ -36,7 +36,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
 
-        /* MENGHILANGKAN SCROLLBAR HASIL PERTUKARAN MODUL */
         html, body {
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -94,23 +93,6 @@
         .btn-action-cancel:hover { background-color: #e2e8f0; color: #0f172a; }
         .btn-action-apply { flex: 1; padding: 8px; background-color: #2563eb; color: #ffffff; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease; }
         .btn-action-apply:hover { background-color: #1d4ed8; }
-
-        @media (prefers-color-scheme: dark) {
-            .filter-menu { background: #0f172a; color: #f8fafc; border-color: #334155; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6); }
-            .filter-sort-btn { background-color: #1e293b; color: #cbd5e1; border-color: #334155; }
-            .filter-sort-btn:hover { background-color: #334155; color: #ffffff; }
-            .filter-search-box { border-color: #334155; background-color: #1e293b; color: #f8fafc; }
-            .filter-search-box::placeholder { color: #64748b; }
-            .filter-search-box:focus { border-color: #3b82f6; background-color: #1e293b; color: #ffffff; }
-            .master-checkbox-container { color: #cbd5e1; }
-            .reset-link { color: #60a5fa; }
-            .checkbox-list { border-color: #334155; background-color: #1e293b; }
-            .checkbox-item { color: #e2e8f0; }
-            .btn-action-cancel { background-color: #1e293b; color: #94a3b8; }
-            .btn-action-cancel:hover { background-color: #334155; color: #ffffff; }
-            .btn-action-apply { background-color: #3b82f6; color: #ffffff; }
-            .btn-action-apply:hover { background-color: #2563eb; }
-        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -120,13 +102,11 @@
         <header class="bg-slate-900 text-white shadow-md sticky top-0">
             <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
                 
-                <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
                 <div class="flex items-center gap-3">
                     <div class="relative inline-block" id="navDropdownWrapper">
                         <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
                             <span id="nav-header-avatar">U</span>
                         </button>
-                        <!-- Container Dropdown Menu Navigasi Global -->
                         <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
                     </div>
 
@@ -136,7 +116,6 @@
                     </div>
                 </div>
 
-                <!-- SISI KANAN: Hamburger Control Modul -->
                 <div class="relative inline-block">
                     <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -189,7 +168,6 @@
                     <tbody class="divide-y divide-slate-200 bg-white" id="tableBody"></tbody>
                 </table>
 
-                <!-- POPUP FILTER MENU -->
                 <div id="filterMenu" class="filter-menu">
                     <div class="filter-sort-group">
                         <button class="filter-sort-btn" onclick="execSort('asc')">↑ A-Z</button>
@@ -214,7 +192,6 @@
                     </div>
                 </div>
 
-                <!-- STATE LOADING -->
                 <div id="loading" class="px-6 py-16 text-center text-slate-400">
                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-700 border-t-blue-500 mb-3"></div>
                     <p class="font-medium text-sm">Menghubungkan ke Supabase Database...</p>
@@ -275,7 +252,7 @@
             
                 <div class="border-t border-slate-100 pt-4">
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2 text-center">Daftar Item Pengajuan (Max 10)</label>
-                    <div class="overflow-visible border border-slate-200 rounded-xl shadow-inner bg-slate-50/30">
+                    <div class="overflow-visible border border-slate-200 rounded-xl shadow-inner bg-white">
                         <table class="min-w-full text-sm">
                             <thead class="bg-slate-900 text-white uppercase text-xs tracking-wider rounded-t-xl">
                                 <tr>
@@ -320,7 +297,7 @@
 
     <!-- LOGIKA HAMBURGER, FILTER & DATA -->
     <script>
-        // Inisialisasi Header Instan
+        // Inisialisasi Header (Tanpa Tombol Refresh Data)
         renderHeader({
             subtitle: "Database Eskalasi Budget",
             hamburgerItems: [
@@ -328,11 +305,6 @@
                     label: "Eskalasi Baru",
                     icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
                     onClick: "openModalEskalasi()"
-                },
-                {
-                    label: "Refresh Data",
-                    icon: `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`,
-                    onClick: "loadData()"
                 }
             ]
         });
@@ -401,7 +373,6 @@
             }
         }
 
-        /* DENGAN WARNA BARIS MURNI PUTIH & POLA PERSIKAN SR.HTML */
         function renderTable(data) {
             const tbody = document.getElementById("tableBody");
             tbody.innerHTML = "";
