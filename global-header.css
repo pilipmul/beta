@@ -233,23 +233,24 @@
         width: 100% !important;
     }
 
-    /* Baris 2: Kotak Pencarian & Tombol Hamburger dipindah ke bawah */
+    /* Baris 2: Container Search & Tombol Hamburger */
     #global-header header > .flex > div:last-child {
         display: flex !important;
         align-items: center !important;
-        justify-content: space-between !important;
+        justify-content: flex-end !important; /* Mendorong semua elemen ke kanan secara default */
         width: 100% !important;
         gap: 10px !important;
     }
 
-    /* Membuat pencarian merenggang penuh mengisi area tersisa */
+    /* Jika kotak pencarian ada, dia akan merenggang penuh mengisi sisa ruang di kiri */
     #global-header .header-search-container {
         flex: 1 !important;
         width: 100% !important;
     }
 
-    /* Mengunci ukuran tombol hamburger agar tetap rata kanan */
+    /* Tombol hamburger dikunci rapat di sebelah paling kanan layar */
     #global-header #hamburgerBtn {
         flex-shrink: 0 !important;
+        margin-left: auto !important; /* Memastikan hamburger selalu nempel kanan meskipun search bar tidak ada */
     }
 }
