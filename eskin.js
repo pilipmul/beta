@@ -40,15 +40,21 @@ function formatRupiah(val) {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val || 0);
 }
 
-// Fungsi Modal Pop-up
+// Fungsi Buka & Tutup Modal Pop-up (Dioptimalkan dengan requestAnimationFrame)
 function openModalEskalasi() {
     const modal = document.getElementById("modalEskalasiBaru");
-    if (modal) modal.classList.add("active");
+    if (modal) {
+        requestAnimationFrame(() => {
+            modal.classList.add("active");
+        });
+    }
 }
 
 function closeModalEskalasi() {
     const modal = document.getElementById("modalEskalasiBaru");
-    if (modal) modal.classList.remove("active");
+    if (modal) {
+        modal.classList.remove("active");
+    }
 }
 
 // Logic Auto-fill & Suggestion
@@ -72,7 +78,7 @@ function showUserSuggestions(input) {
 
     filtered.forEach(name => {
         const div = document.createElement("div");
-        div.className = "px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition";
+        div.className = "px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 cursor-pointer transition";
         div.innerHTML = name;
         div.onclick = () => { 
             input.value = name; 
@@ -104,7 +110,7 @@ function showItemSuggestions(input) {
     listContainer.classList.remove("hidden");
     filtered.forEach(item => {
         const div = document.createElement("div");
-        div.className = "px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition";
+        div.className = "px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 cursor-pointer transition";
         div.innerHTML = item;
         div.onclick = () => { 
             input.value = item; 
@@ -115,6 +121,7 @@ function showItemSuggestions(input) {
     });
 }
 
+// Tambah Baris Item (Murni Putih Tanpa Dark Mode Class)
 function tambahBaris() {
     if (rowCount >= 10) return;
     rowCount++;
@@ -135,7 +142,10 @@ function tambahBaris() {
         </td>
     `;
     tbody.appendChild(tr);
-    if (rowCount >= 10) document.getElementById("btnAddRow").disabled = true;
+    if (rowCount >= 10) {
+        const btnAdd = document.getElementById("btnAddRow");
+        if (btnAdd) btnAdd.disabled = true;
+    }
 }
 
 function hitungTotal() {
@@ -340,7 +350,8 @@ async function initEskin() {
             tambahBaris();
         }
         
-        document.getElementById("btnSubmit").disabled = false;
+        const btnSubmit = document.getElementById("btnSubmit");
+        if (btnSubmit) btnSubmit.disabled = false;
     } catch (e) { 
         console.error("Init Error Eskalasi:", e);
     }
@@ -394,13 +405,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 alert("Data Eskalasi Berhasil Disimpan & PDF Berhasil Diunduh!"); 
                 closeModalEskalasi();
-                if (typeof loadData === 'function') loadData(); // Reload tabel eskalasi.html jika ada
+                if (typeof loadData === 'function') loadData(); 
             } catch (err) { 
                 console.error(err);
                 alert("Proses Gagal: " + err.message);
             } finally { 
                 btn.disabled = false;
-                btn.innerText = "Submit";
+                btn.innerText = "Submit & Download PDF";
             }
         };
     }
