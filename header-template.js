@@ -2,12 +2,45 @@
  * Global Navigation Controller - App Shell Hydration Mode
  * Memuat Header Terpusat dengan Navigasi RBAC & Custom Hamburger Menu
  */
-function renderHeader({ subtitle, hamburgerItems = [] }) {
-    // 1. Update Subtitle Modul Aktif secara instan
-    const subtitleEl = document.getElementById('header-subtitle-text');
-    if (subtitleEl) subtitleEl.textContent = subtitle || 'Sistem Terintegrasi';
+function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
+    // 1. Pemetaan Otomatis Nama File URL ke Nama Modul Dashboard
+    const moduleMap = {
+        "eskalasi": "Eskalasi",
+        "rkm": "RKM",
+        "sr": "Dok. Perbaikan",
+        "tasks": "Tasks",
+        "syncflow": "Syncflow",
+        "inventory": "Inventory",
+        "logistics": "Logistics",
+        "access": "Access Control"
+    };
 
-    // 2. Render Isi Navigasi Utama (Hanya jika belum dirender)
+    // 2. Deteksi otomatis lokasi URL jika subtitle tidak diisi manual
+    const path = window.location.pathname.toLowerCase();
+    let autoSubtitle = subtitle;
+
+    if (!autoSubtitle) {
+        if (path.includes("dashboard.html") || path === "/" || path.endsWith("/")) {
+            // Khusus Dashboard: Membiarkan template bawaan/profil user
+            autoSubtitle = null; 
+        } else {
+            // Cari modul berdasarkan keyword URL
+            for (const [key, name] of Object.entries(moduleMap)) {
+                if (path.includes(key)) {
+                    autoSubtitle = name;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Update Subtitle Modul Aktif secara instan (jika ditentukan/ditemukan)
+    const subtitleEl = document.getElementById('header-subtitle-text');
+    if (subtitleEl && autoSubtitle !== null) {
+        subtitleEl.textContent = autoSubtitle;
+    }
+
+    // 3. Render Isi Navigasi Utama (Hanya jika belum dirender)
     const navMenu = document.getElementById('navDropdownMenu');
     if (navMenu && !navMenu.hasChildNodes()) {
         navMenu.innerHTML = `
@@ -52,7 +85,7 @@ function renderHeader({ subtitle, hamburgerItems = [] }) {
             </a>
             <div class="my-1 border-t border-slate-800"></div>
 
-            <!-- Tombol Keluar (Logout) Terisolasi Murni -->
+            <!-- Tombol Keluar (Logout) -->
             <button type="button" onclick="handleLogout()">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -61,10 +94,10 @@ function renderHeader({ subtitle, hamburgerItems = [] }) {
             </button>`;
     }
 
-    // 3. Render isi menu hamburger kustom modul
+    // 4. Render isi menu hamburger kustom modul
     renderHamburgerContent(hamburgerItems);
     
-    // 4. Jalankan pengecekan hak akses RBAC
+    // 5. Jalankan pengecekan hak akses RBAC
     initNavbarAccess();
 }
 
