@@ -55,7 +55,7 @@
     <header class="bg-slate-900 text-white shadow-md sticky top-0">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
         
-        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title (Judul & Sub-judul Tetap) -->
+        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
         <div class="flex items-center gap-3">
           <div class="relative inline-block" id="navDropdownWrapper">
             <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
@@ -67,7 +67,7 @@
 
           <div>
             <!-- Judul Utama -->
-            <h1 class="text-base sm:text-lg font-bold text-white leading-tight">Dashboard Utama</h1>
+            <h1 id="header-title-text" class="text-base sm:text-lg font-bold text-white leading-tight">Dashboard Utama</h1>
             <!-- Sub-judul -->
             <p id="header-subtitle-text" class="text-xs text-slate-400">Halo, <span id="userName" class="text-slate-200 font-semibold">User</span> • <span id="userNik" class="font-mono text-slate-400">NIK: -</span></p>
           </div>
@@ -166,7 +166,7 @@
           <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
             <div class="p-2.5 w-fit bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-100 dark:border-emerald-900/50 mb-3">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
             </div>
             <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Tasks</h3>
             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Monitoring dan daftar penugasan pekerjaan.</p>
@@ -296,8 +296,11 @@
   <script src="header-template.js"></script>
 
   <script>
-    // 1. INISIALISASI HEADER INSTAN
+    // 1. INISIALISASI HEADER TERPUSAT
+    // Mengosongkan title & subtitle di renderHeader agar tidak menimpa HTML bawaan dashboard
     renderHeader({
+        title: "",
+        subtitle: "",
         hamburgerItems: [
             {
                 label: "Ubah Password",
@@ -382,11 +385,17 @@
       localStorage.setItem("user", JSON.stringify(currentUser));
       const nameStr = currentUser.nama || "User";
       
-      // Mengisi nama & NIK ke sub-judul header secara dinamis
-      document.getElementById("userName").textContent = nameStr;
-      document.getElementById("nav-header-avatar").textContent = nameStr.charAt(0).toUpperCase();
-      document.getElementById("userNik").textContent = "NIK: " + (currentUser.nik || "-");
-      
+      // Update data di UI secara eksplisit
+      const titleElem = document.getElementById("header-title-text");
+      const subtitleElem = document.getElementById("header-subtitle-text");
+      const avatarElem = document.getElementById("nav-header-avatar");
+
+      if (titleElem) titleElem.textContent = "Dashboard Utama";
+      if (subtitleElem) {
+        subtitleElem.innerHTML = `Halo, <span id="userName" class="text-slate-200 font-semibold">${nameStr}</span> • <span id="userNik" class="font-mono text-slate-400">NIK: ${currentUser.nik || "-"}</span>`;
+      }
+      if (avatarElem) avatarElem.textContent = nameStr.charAt(0).toUpperCase();
+
       const menuConfig = [
         { id: "eskalasi", file: "eskalasi.html", allowed: checkAccessVal(currentUser.eskalasi) },
         { id: "RKM", file: "RKM.html", allowed: checkAccessVal(currentUser.rkm) },
