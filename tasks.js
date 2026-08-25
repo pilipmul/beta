@@ -13,11 +13,13 @@ let listNameToDelete = null;
 let sortAscending = true; // true = A-Z (Terlama -> Terbaru), false = Z-A (Terbaru -> Terlama)
 let searchQuery = "";
 
-// Inisialisasi Navigation Header Terpusat
-renderHeader({
-  subtitle: "Kelola Tugas Terintegrasi",
-  hamburgerItems: []
-});
+// Inisialisasi Navigation Header Terpusat secara eksplisit
+if (typeof renderHeader === "function") {
+  renderHeader({
+    subtitle: "Kelola Tugas Terintegrasi",
+    hamburgerItems: []
+  });
+}
 
 document.addEventListener("DOMContentLoaded", function() {
     fetchTasksFromSOT();
@@ -103,6 +105,7 @@ async function deleteTaskFromSupabase(taskId) {
 
 function renderSidebarLists() {
     const container = document.getElementById('custom-sidebar-lists');
+    if (!container) return;
     container.innerHTML = '';
 
     const uniqueLists = [];
@@ -413,6 +416,8 @@ function renderTasks() {
     const completedContainer = document.getElementById('completed-task-list-container');
     const completedSection = document.getElementById('completed-section');
     
+    if (!activeContainer || !completedContainer) return;
+
     activeContainer.innerHTML = '';
     completedContainer.innerHTML = '';
 
@@ -439,9 +444,9 @@ function renderTasks() {
         const dateB = b.due ? new Date(b.due).getTime() : (sortAscending ? 9999999999999 : -9999999999999);
 
         if (sortAscending) {
-            return dateA - dateB; // A-Z (Terlama -> Terbaru)
+            return dateA - dateB;
         } else {
-            return dateB - dateA; // Z-A (Terbaru -> Terlama)
+            return dateB - dateA;
         }
     });
 
