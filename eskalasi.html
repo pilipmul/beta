@@ -2,8 +2,10 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Database Eskalasi - SOT PBC</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Eskalasi - SOT PBC</title>
+    
+    <!-- Auth Guard LocalStorage -->
     <script>
         (function() {
             const session = localStorage.getItem("user");
@@ -15,21 +17,34 @@
         })();
     </script>
 
-    <!-- Tailwind CSS & Supabase Client -->
+    <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+    <link rel="stylesheet" href="global-header.css">
+    
+    <!-- Tailwind CSS v4 Browser Build -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Supabase JS Client Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- CDN jsPDF & AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- CSS Global Header & Modal Eskalasi -->
-    <link rel="stylesheet" href="global-header.css">
+    <!-- CSS Modal Eskalasi -->
     <link rel="stylesheet" href="eskin.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
+
+        /* MENGHILANGKAN SCROLLBAR HASIL PERTUKARAN MODUL */
+        html, body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            overflow-x: hidden;
+        }
+        html::-webkit-scrollbar, body::-webkit-scrollbar {
+            display: none;
+        }
 
         th { position: relative; padding-right: 32px !important; }
         th.no-filter { padding-right: 24px !important; }
@@ -98,54 +113,51 @@
         }
     </style>
 </head>
-<body class="bg-[#f8fafc] dark:bg-[#090b0e] text-slate-800 dark:text-slate-100 min-h-screen p-0 m-0 transition-colors duration-200">
+<body class="bg-slate-50 text-slate-800 min-h-screen">
 
-    <!-- GLOBAL HEADER TEMPLATE (Menyesuaikan Referensi Gambar) -->
-    <div id="global-header" class="w-full mb-6">
-        <header class="bg-[#0e1726] border-b border-slate-800 px-6 py-3 shadow-md relative">
-            <div class="flex items-center justify-between gap-4">
-                <!-- Navigasi Kiri: Avatar User & Title Modul -->
+    <!-- GLOBAL NAVIGATION SHELL (PRESISI SAMA DENGAN SR.HTML) -->
+    <div id="global-header">
+        <header class="bg-slate-900 text-white shadow-md sticky top-0">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
+                
+                <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
                 <div class="flex items-center gap-3">
-                    <div id="navDropdownWrapper" class="relative">
-                        <button type="button" onclick="toggleNavDropdown(event)" class="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center font-bold text-sm shadow-md transition cursor-pointer">
-                            <span id="nav-header-avatar">D</span>
+                    <div class="relative inline-block" id="navDropdownWrapper">
+                        <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
+                            <span id="nav-header-avatar">U</span>
                         </button>
-                        
-                        <!-- Dropdown Navigasi Utama -->
-                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-[#0e1726] border border-slate-800 rounded-xl shadow-2xl py-2 z-50 text-xs"></div>
+                        <!-- Container Dropdown Menu Navigasi Global -->
+                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
                     </div>
 
                     <div>
-                        <h1 class="text-base font-bold text-white tracking-wide leading-tight">Sistem Operasional Terintegrasi</h1>
-                        <p id="header-subtitle-text" class="text-xs text-slate-400 leading-tight">Database Eskalasi Budget</p>
+                        <h1>Sistem Operasional Terintegrasi</h1>
+                        <p id="header-subtitle-text">Database Eskalasi Budget</p>
                     </div>
                 </div>
 
-                <!-- Navigasi Kanan: Tombol 3 Garis (Hamburger Menu Popover) -->
-                <div class="flex items-center gap-3">
-                    <div class="relative">
-                        <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="w-10 h-10 bg-[#102a36] border border-[#174e5e] hover:bg-[#153a4b] text-[#00e6a8] rounded-xl transition flex items-center justify-center cursor-pointer shadow-sm">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                        </button>
-
-                        <!-- Popover Menu Dropdown "Eskalasi Baru" -->
-                        <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-[#0e1726] border border-slate-800 rounded-xl shadow-2xl py-2 z-50 overflow-hidden">
-                            <div id="custom-hamburger-content"></div>
-                        </div>
+                <!-- SISI KANAN: Hamburger Control Modul -->
+                <div class="relative inline-block">
+                    <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+                        <div id="custom-hamburger-content"></div>
                     </div>
                 </div>
+
             </div>
         </header>
     </div>
 
-    <!-- UTAMA: TABEL DATA LANGSUNG (TANPA JUDUL & SUBJUDUL DI ATAS TABEL) -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6">
-        <div class="bg-white dark:bg-[#0e1726] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors">
-            
-            <div id="tableWrapper" class="overflow-x-auto relative">
-                <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-left text-sm hidden" id="eskalasiTable">
-                    <!-- HEADER TABEL UTAMA SANTAI & PRESISI -->
-                    <thead class="bg-[#0e1726] text-white uppercase text-xs tracking-wider">
+    <!-- MAIN BODY -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden" id="tableWrapper" style="position: relative;">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-left text-sm hidden" id="eskalasiTable">
+                    <thead class="bg-slate-900 text-white uppercase text-xs tracking-wider">
                         <tr>
                             <th scope="col" class="px-6 py-4 font-bold text-center w-16 no-filter">NO</th>
                             <th scope="col" class="px-6 py-4 font-bold">
@@ -174,10 +186,10 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80 bg-white dark:bg-[#0b111e]" id="tableBody"></tbody>
+                    <tbody class="divide-y divide-slate-200 bg-white dark:bg-[#0b111e]" id="tableBody"></tbody>
                 </table>
 
-                <!-- POPUP FILTER DROPDOWN -->
+                <!-- POPUP FILTER MENU -->
                 <div id="filterMenu" class="filter-menu">
                     <div class="filter-sort-group">
                         <button class="filter-sort-btn" onclick="execSort('asc')">↑ A-Z</button>
@@ -209,7 +221,7 @@
                 </div>
             </div>
 
-            <div class="bg-slate-50 dark:bg-[#0e1726] px-6 py-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 flex justify-between items-center">
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">
                 <span id="dbStatusIndicator">Status: Connected</span>
                 <span>Power by: PBC Internal Dev Team</span>
             </div>
@@ -303,8 +315,28 @@
         </div>
     </div>
 
-    <!-- SCRIPT HANDLER DATA & HAMBURGER -->
+    <!-- SCRIPT TEMPLATE HEADER TERPUSAT (SERUPA DENGAN SR.HTML) -->
+    <script src="header-template.js"></script>
+
+    <!-- LOGIKA HAMBURGER, FILTER & DATA -->
     <script>
+        // Inisialisasi Header Instan Sesuai Pola sr.html
+        renderHeader({
+            subtitle: "Database Eskalasi Budget",
+            hamburgerItems: [
+                {
+                    label: "Eskalasi Baru",
+                    icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+                    onClick: "openModalEskalasi()"
+                },
+                {
+                    label: "Refresh Data",
+                    icon: `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`,
+                    onClick: "loadData()"
+                }
+            ]
+        });
+
         let fullData = []; 
         let filteredData = []; 
         let activeColIndex = -1;
@@ -314,10 +346,10 @@
             const container = document.getElementById("dbStatusIndicator");
             if (isConnected) {
                 container.innerText = "Status: Connected to Supabase";
-                container.className = "text-emerald-400 font-medium";
+                container.className = "text-emerald-500 font-medium";
             } else {
                 container.innerText = "Status: Disconnected";
-                container.className = "text-rose-400 font-medium";
+                container.className = "text-rose-500 font-medium";
             }
         }
 
@@ -365,7 +397,7 @@
             } catch (e) {
                 console.error(e);
                 updateConnectionStatus(false);
-                document.getElementById("loading").innerHTML = "<p class='text-red-400 font-medium'>Gagal memproses data Supabase.</p>";
+                document.getElementById("loading").innerHTML = "<p class='text-red-500 font-medium'>Gagal memproses data Supabase.</p>";
             }
         }
 
@@ -374,12 +406,12 @@
             tbody.innerHTML = "";
             data.forEach((row, index) => {
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition duration-150 odd:bg-white dark:odd:bg-[#0b111e] even:bg-slate-50/50 dark:even:bg-[#0e1726]">
-                        <td class="px-6 py-4 text-center whitespace-nowrap text-slate-500 font-medium">${index + 1}</td>
-                        <td class="px-6 py-4 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">${row[1]}</td>
-                        <td class="px-6 py-4 text-slate-600 dark:text-slate-300">${row[2]}</td>
-                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">${row[3]}</td>
-                        <td class="px-6 py-4 text-slate-800 dark:text-slate-100 font-semibold whitespace-nowrap">${row[4]}</td>
+                    <tr class="hover:bg-slate-50 transition duration-150 odd:bg-white even:bg-slate-50/50">
+                        <td class="px-6 py-4 text-center whitespace-nowrap text-slate-400 font-medium">${index + 1}</td>
+                        <td class="px-6 py-4 font-semibold text-slate-800 whitespace-nowrap">${row[1]}</td>
+                        <td class="px-6 py-4 text-slate-600">${row[2]}</td>
+                        <td class="px-6 py-4 text-slate-500 whitespace-nowrap">${row[3]}</td>
+                        <td class="px-6 py-4 text-slate-800 font-semibold whitespace-nowrap">${row[4]}</td>
                     </tr>
                 `;
             });
@@ -498,32 +530,10 @@
 
         if (menu) menu.onclick = (e) => e.stopPropagation();
 
-        window.onload = () => {
-            // Render Menu Navigasi Utama & Popover "Eskalasi Baru" pada Tombol 3 Garis
-            if (typeof renderHeader === 'function') {
-                renderHeader({
-                    subtitle: "Database Eskalasi Budget",
-                    hamburgerItems: [
-                        {
-                            label: "Eskalasi Baru",
-                            icon: `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-                            onClick: "openModalEskalasi()"
-                        },
-                        {
-                            label: "Refresh Data",
-                            icon: `<svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>`,
-                            onClick: "loadData()"
-                        }
-                    ]
-                });
-            }
-
-            loadData();
-        };
+        window.onload = loadData;
     </script>
 
-    <!-- INKLUSI SCRIPT HEADER & MODUL JS -->
-    <script src="header-template.js"></script>
+    <!-- MODULE ESKALASI SCRIPT -->
     <script src="eskin.js"></script>
 </body>
 </html>
