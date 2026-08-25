@@ -26,9 +26,6 @@
 #global-header .items-center {
     align-items: center !important;
 }
-#global-header .justify-between {
-    justify-between: space-between !important;
-}
 
 /* Pengunci Ukuran Button Avatar Navigasi */
 #global-header #navDropdownWrapper > button {
@@ -204,4 +201,55 @@
     color: #f87171 !important;
     display: block !important;
     flex-shrink: 0 !important;
+}
+
+/* =========================================================
+   DESKTOP ONLY CONFIG
+   ========================================================= */
+@media (min-width: 769px) {
+    #global-header .justify-between {
+        justify-content: space-between !important;
+    }
+}
+
+/* =========================================================
+   MOBILE RESPONSIVE (Hp / Max-width 768px)
+   ========================================================= */
+@media (max-width: 768px) {
+    /* Mendorong pembungkus flex utama agar vertikal di mobile */
+    #global-header header > .flex {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+    }
+
+    /* Baris 1: Judul + Subjudul di Kiri, Avatar di Kanan */
+    #global-header header > .flex > div:first-child {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    /* Baris 2: Kotak Pencarian & Tombol Hamburger dipindah ke bawah */
+    #global-header header > .flex > div:last-child {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 10px !important;
+    }
+
+    /* Membuat pencarian merenggang penuh mengisi area tersisa */
+    #global-header .header-search-container {
+        flex: 1 !important;
+        width: 100% !important;
+    }
+
+    /* Mengunci ukuran tombol hamburger agar tetap rata kanan */
+    #global-header #hamburgerBtn {
+        flex-shrink: 0 !important;
+    }
 }
