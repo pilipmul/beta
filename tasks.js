@@ -10,16 +10,14 @@ let showCompleted = false;
 let listNameToDelete = null;
 
 // State tambahan untuk Sort & Search
-let sortAscending = true; // true = A-Z (Terlama -> Terbaru), false = Z-A (Terbaru -> Terlama)
+let sortAscending = true; 
 let searchQuery = "";
 
-// Inisialisasi Navigation Header Terpusat secara eksplisit
-if (typeof renderHeader === "function") {
-  renderHeader({
-    subtitle: "Kelola Tugas Terintegrasi",
-    hamburgerItems: []
-  });
-}
+// Inisialisasi Navigation Header Terpusat Persis Modul Logistics
+renderHeader({
+  subtitle: "Kelola Tugas Terintegrasi",
+  hamburgerItems: []
+});
 
 document.addEventListener("DOMContentLoaded", function() {
     fetchTasksFromSOT();
@@ -371,7 +369,7 @@ function createTaskElement(t) {
     return item;
 }
 
-// FUNGSI PENCARIAN
+// FUNGSI PENCARIAN GLOBAL
 function handleSearchInput() {
     const globalSearchInput = document.getElementById('globalSearchInput');
     const btnClear = document.getElementById('btnClearSearch');
