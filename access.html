@@ -26,6 +26,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access Control - SOT Portal</title>
 
+  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
   <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -49,7 +52,7 @@
     }
   </style>
 </head>
-<body class="bg-[#f8f9fa] dark:bg-[#202124] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-3 sm:p-6 flex flex-col justify-between transition-colors duration-200">
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] min-h-screen font-sans p-2 sm:p-4 flex flex-col justify-between transition-colors duration-200">
 
   <!-- Notification Toast -->
   <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md">
@@ -60,180 +63,175 @@
     </div>
   </div>
 
-  <!-- Main Content Container -->
-  <div class="max-w-7xl mx-auto space-y-4 w-full">
+  <!-- GLOBAL NAVIGATION SHELL -->
+  <div id="global-header" class="mb-4">
+    <header class="bg-slate-900 text-white shadow-md sticky top-0">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
+          
+        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
+        <div class="flex items-center gap-3">
+          <div class="relative inline-block" id="navDropdownWrapper">
+            <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
+              <span id="nav-header-avatar">U</span>
+            </button>
+            <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
+          </div>
 
-    <!-- ==================== AWAL PAKET NAVBAR & HEADER ==================== -->
-    <header class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-colors">
-      <div class="flex items-center gap-3.5">
-        
-        <!-- Tombol Trigger Navigasi Dropdown Vertikal -->
-        <div class="relative" id="sidebarWrapper">
-          <button onclick="toggleSidebarMenu(event)" class="inline-flex items-center justify-center w-10 h-10 bg-[#f1f3f4] dark:bg-[#3c4043] hover:bg-[#e8eaed] dark:hover:bg-[#4a4e51] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full transition-all cursor-pointer focus:outline-none" title="Buka Navigasi">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          </button>
-
-          <!-- VERTICAL ICON SIDEBAR DROPDOWN WITH ANIMATION -->
-          <div id="sidebarMenu" class="opacity-0 scale-95 -translate-y-2 pointer-events-none transition-all duration-200 ease-out absolute left-0 top-12 z-50 flex flex-col items-center bg-[#09090b] text-gray-400 py-3 px-2 rounded-2xl shadow-2xl border border-gray-800 gap-2.5">
-            
-            <!-- User Avatar -->
-            <div class="relative group">
-              <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-gray-700/50 cursor-pointer">
-                <span id="nav-user-avatar">U</span>
-              </div>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                <span id="nav-user-name">User Profile</span>
-              </div>
-            </div>
-
-            <div class="w-5 h-[1px] bg-gray-800 my-0.5"></div>
-
-            <!-- Home / Dashboard -->
-            <div class="relative group">
-              <a href="dashboard.html" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Dashboard
-              </div>
-            </div>
-
-            <!-- Eskalasi -->
-            <div id="nav-eskalasi" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Eskalasi
-              </div>
-            </div>
-
-            <!-- RKM -->
-            <div id="nav-rkm" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                RKM
-              </div>
-            </div>
-
-            <!-- Dok. Perbaikan -->
-            <div id="nav-dokPerbaikan" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Dok. Perbaikan
-              </div>
-            </div>
-
-            <!-- Tasks -->
-            <div id="nav-tasks" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Tasks
-              </div>
-            </div>
-
-            <div class="w-5 h-[1px] bg-gray-800 my-0.5"></div>
-
-            <!-- Syncflow -->
-            <div id="nav-syncflow" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Syncflow
-              </div>
-            </div>
-
-            <!-- Item -->
-            <div id="nav-inventory" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Item
-              </div>
-            </div>
-
-            <!-- Inventory -->
-            <div id="nav-logistics" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl hover:bg-gray-800 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Inventory
-              </div>
-            </div>
-
-            <!-- Access Control (Aktif) -->
-            <div id="nav-accesControl" class="hidden relative group">
-              <a href="#" class="p-2 rounded-xl bg-gray-800 text-blue-400 hover:text-white transition-all flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-              </a>
-              <div class="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black text-white text-[11px] font-medium py-1 px-2.5 rounded-md whitespace-nowrap opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 pointer-events-none transition-all duration-200 z-50 shadow-xl border border-gray-800">
-                Access Control
-              </div>
-            </div>
-
+          <div>
+            <h1>Access Control Management</h1>
+            <p id="header-subtitle-text">Atur dan kelola hak akses modul pengguna aplikasi SOT</p>
           </div>
         </div>
 
-        <div>
-          <h1 class="text-lg sm:text-xl font-bold text-[#202124] dark:text-[#e8eaed] leading-tight flex items-center gap-2">
-            <span>Access Control Management</span>
-          </h1>
-          <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Atur dan kelola hak akses modul pengguna aplikasi SOT</p>
-        </div>
-      </div>
+        <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
+        <div class="flex items-center gap-2">
+          
+          <!-- INPUT PENCARIAN DI HEADER -->
+          <div class="header-search-container">
+            <svg class="header-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" id="globalSearchInput" oninput="triggerGlobalSearch()" 
+                   placeholder="Cari Nama atau NIK..." 
+                   class="header-search-input" />
+            <button id="btnClearSearch" onclick="clearGlobalSearch()" class="header-search-clear hidden">✕</button>
+          </div>
 
-      <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2.5 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#f1f3f4] dark:border-[#3c4043]">
-        <button onclick="fetchUsers()" class="px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-full text-xs font-medium transition shadow-md hover:shadow-lg flex items-center gap-1.5 cursor-pointer">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          <span>Refresh Data</span>
-        </button>
+          <div class="relative inline-block">
+            <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+            <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+              <div id="custom-hamburger-content"></div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
     </header>
-    <!-- ==================== AKHIR PAKET NAVBAR & HEADER ==================== -->
+  </div>
 
-    <div class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 transition-colors">
-      <div class="relative w-full sm:w-80">
-        <input type="text" id="searchInput" oninput="filterUsers()" placeholder="Cari Nama atau NIK..." class="w-full bg-[#f1f3f4] dark:bg-[#202124] focus:bg-white dark:focus:bg-[#3c4043] border border-transparent focus:border-[#1a73e8] rounded-full pl-9 pr-4 py-2 text-xs text-[#202124] dark:text-[#e8eaed] placeholder-[#5f6368] dark:placeholder-[#9aa0a6] focus:outline-none transition shadow-inner font-medium">
-        <svg class="w-4 h-4 text-[#5f6368] dark:text-[#9aa0a6] absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-      </div>
-      
-      <div class="text-xs text-[#5f6368] dark:text-[#9aa0a6] w-full sm:w-auto text-right font-medium">
+  <!-- Main Content Container -->
+  <div class="max-w-7xl mx-auto space-y-4 w-full">
+
+    <div class="flex justify-between items-center px-1">
+      <div class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-medium">
         Total Pengguna: <span id="userCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
       </div>
     </div>
 
-    <div class="bg-white dark:bg-[#2d2e30] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
+    <!-- TABEL ACCESS CONTROL -->
+    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
       <div class="overflow-x-auto custom-scroll">
         <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed]">
-          <thead class="bg-[#f8f9fa] dark:bg-[#202124] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
+          <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
             <tr>
-              <th scope="col" class="px-4 py-3.5">No</th>
-              <th scope="col" class="px-4 py-3.5">Nama / NIK</th>
-              <th scope="col" class="px-3 py-3.5 text-center">Eskalasi</th>
-              <th scope="col" class="px-3 py-3.5 text-center">RKM</th>
-              <th scope="col" class="px-3 py-3.5 text-center">Dok. Perbaikan</th>
-              <th scope="col" class="px-3 py-3.5 text-center">Tasks</th>
-              <th scope="col" class="px-3 py-3.5 text-center">Syncflow</th>
-              <th scope="col" class="px-3 py-3.5 text-center">Item</th>
-              <th scope="col" class="px-3 py-3.5 text-center">Inventory</th>
-              <th scope="col" class="px-3 py-3.5 text-center">Access Control</th>
+              <th scope="col" class="p-2.5 relative">
+                <div class="flex items-center justify-between gap-0.5">
+                  <span class="truncate">No</span>
+                  <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 relative">
+                <div class="flex items-center justify-between gap-0.5">
+                  <span class="truncate">Nama / NIK</span>
+                  <button onclick="toggleFilterMenu('nama', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">Eskalasi</span>
+                  <button onclick="toggleFilterMenu('eskalasi', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">RKM</span>
+                  <button onclick="toggleFilterMenu('rkm', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">Dok. Perbaikan</span>
+                  <button onclick="toggleFilterMenu('perbaikan', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">Tasks</span>
+                  <button onclick="toggleFilterMenu('task', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">Syncflow</span>
+                  <button onclick="toggleFilterMenu('sync', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">Item</span>
+                  <button onclick="toggleFilterMenu('item', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">Inventory</span>
+                  <button onclick="toggleFilterMenu('log', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
+              <th scope="col" class="p-2.5 text-center relative">
+                <div class="flex items-center justify-center gap-0.5">
+                  <span class="truncate">Access Control</span>
+                  <button onclick="toggleFilterMenu('acces', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                </div>
+              </th>
             </tr>
           </thead>
-          <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#3c4043] font-medium">
+          <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
             <tr>
               <td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Filter Popover -->
+      <div id="filterPopover" class="fixed hidden z-[10005] w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+        <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+            <span>↑</span>
+            <span>A-Z</span>
+          </button>
+          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+            <span>↓</span>
+            <span>Z-A</span>
+          </button>
+        </div>
+
+        <div class="space-y-2 normal-case">
+          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+          
+          <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0 bg-transparent" />
+              Pilih Semua
+            </label>
+            <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
+          </div>
+
+          <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full">
+          </div>
+
+          <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -244,78 +242,8 @@
     <span>Powered by Supabase & Tailwind CSS v4</span>
   </footer>
 
-  <!-- ==================== AWAL SCRIPT PAKET NAVBAR ==================== -->
-  <script>
-    function toggleSidebarMenu(e) {
-      e.stopPropagation();
-      const menu = document.getElementById("sidebarMenu");
-      if (!menu) return;
-
-      const isHidden = menu.classList.contains("pointer-events-none");
-      if (isHidden) {
-        menu.classList.remove("opacity-0", "scale-95", "-translate-y-2", "pointer-events-none");
-        menu.classList.add("opacity-100", "scale-100", "translate-y-0");
-      } else {
-        closeSidebarMenu();
-      }
-    }
-
-    function closeSidebarMenu() {
-      const menu = document.getElementById("sidebarMenu");
-      if (!menu) return;
-      menu.classList.remove("opacity-100", "scale-100", "translate-y-0");
-      menu.classList.add("opacity-0", "scale-95", "-translate-y-2", "pointer-events-none");
-    }
-
-    document.addEventListener("click", function(e) {
-      const wrapper = document.getElementById("sidebarWrapper");
-      if (wrapper && !wrapper.contains(e.target)) {
-        closeSidebarMenu();
-      }
-    });
-
-    function initNavAccess() {
-      const stored = localStorage.getItem("user");
-      if (!stored) return;
-      try {
-        const parsed = JSON.parse(stored);
-        const user = parsed.data || parsed;
-        const isAdmin = (user.nama || "").trim().toLowerCase() === "dede hidayat";
-        const check = (v) => isAdmin || ["Y", "TRUE", "1"].includes(String(v || "").trim().toUpperCase());
-
-        // Update User Avatar & Name Tooltip
-        const namaUser = user.nama || "User";
-        const avatarEl = document.getElementById("nav-user-avatar");
-        const nameEl = document.getElementById("nav-user-name");
-        
-        if (avatarEl) avatarEl.textContent = namaUser.charAt(0).toUpperCase();
-        if (nameEl) nameEl.textContent = namaUser;
-
-        const mapping = [
-          { id: "nav-eskalasi", file: "eskalasi.html", allow: check(user.eskalasi) },
-          { id: "nav-rkm", file: "RKM.html", allow: check(user.rkm) },
-          { id: "nav-dokPerbaikan", file: "sr.html", allow: check(user.perbaikan) },
-          { id: "nav-tasks", file: "tasks.html", allow: check(user.task) },
-          { id: "nav-syncflow", file: "syncflow.html", allow: check(user.sync) },
-          { id: "nav-inventory", file: "inventory.html", allow: check(user.item) },
-          { id: "nav-logistics", file: "logistics.html", allow: check(user.inventory || user.log) },
-          { id: "nav-accesControl", file: "access.html", allow: check(user.acces) }
-        ];
-
-        mapping.forEach(item => {
-          const el = document.getElementById(item.id);
-          if (el && item.allow) {
-            el.classList.remove("hidden");
-            const anchor = el.querySelector("a");
-            if (anchor) anchor.href = `${item.file}?user=${encodeURIComponent(user.nama)}`;
-          }
-        });
-      } catch(err) { console.error(err); }
-    }
-
-    document.addEventListener("DOMContentLoaded", initNavAccess);
-  </script>
-  <!-- ==================== AKHIR SCRIPT PAKET NAVBAR ==================== -->
+  <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT -->
+  <script src="header-template.js"></script>
 
   <!-- SCRIPT UTAMA HALAMAN ACCESS CONTROL -->
   <script>
@@ -328,6 +256,31 @@
     }
 
     let allUsers = [];
+    let displayedUsers = [];
+    let globalSearchQuery = '';
+
+    let activeFilterColumn = null;
+    let filterSelections = {}; 
+    let draftFilterSelections = new Set(); 
+    let dbFilterOptions = {};
+    let sortConfig = { column: null, direction: null };
+
+    // Inisialisasi Template Header Terpusat
+    renderHeader({
+      subtitle: "Atur dan kelola hak akses modul pengguna aplikasi SOT",
+      hamburgerItems: []
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchUsers();
+    });
+
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('filterPopover');
+      if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+        closeFilterPopover();
+      }
+    });
 
     function isAccessTrue(val) {
       if (!val) return false;
@@ -354,13 +307,85 @@
         allUsers = (data || []).filter(u => 
           (u.nama || "").trim().toLowerCase() !== "dede hidayat"
         );
-        document.getElementById("userCount").textContent = allUsers.length;
-        renderUsers(allUsers);
+
+        dbFilterOptions = {};
+        processAndRenderUsers();
       } catch (err) {
         console.error("Fetch users error:", err);
         tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#d93025] dark:text-[#f28b82]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
         showToast("Gagal Loading", err.message || "Gagal mengambil data dari server.", "error");
       }
+    }
+
+    function triggerGlobalSearch() {
+      const val = document.getElementById('globalSearchInput').value.trim();
+      globalSearchQuery = val;
+
+      const btnClear = document.getElementById('btnClearSearch');
+      if (val !== '') {
+        btnClear.classList.remove('hidden');
+      } else {
+        btnClear.classList.add('hidden');
+      }
+
+      processAndRenderUsers();
+    }
+
+    function clearGlobalSearch() {
+      document.getElementById('globalSearchInput').value = '';
+      document.getElementById('btnClearSearch').classList.add('hidden');
+      globalSearchQuery = '';
+      processAndRenderUsers();
+    }
+
+    function processAndRenderUsers() {
+      let filtered = [...allUsers];
+
+      // Filter global search input
+      if (globalSearchQuery) {
+        const q = globalSearchQuery.toLowerCase();
+        filtered = filtered.filter(u => 
+          (u.nama && u.nama.toLowerCase().includes(q)) || 
+          (u.nik && u.nik.toLowerCase().includes(q))
+        );
+      }
+
+      // Filter per kolom
+      for (const colKey in filterSelections) {
+        const selectedSet = filterSelections[colKey];
+        if (selectedSet && selectedSet.size > 0) {
+          filtered = filtered.filter(u => {
+            let val = u[colKey];
+            if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'acces'].includes(colKey)) {
+              val = isAccessTrue(val) ? 'Aktif' : 'Tidak';
+            } else {
+              val = (val !== null && val !== undefined && val !== '') ? String(val) : '-';
+            }
+            return selectedSet.has(val);
+          });
+        }
+      }
+
+      // Sorting
+      if (sortConfig.column && sortConfig.direction) {
+        const key = sortConfig.column;
+        const dir = sortConfig.direction === 'asc' ? 1 : -1;
+        filtered.sort((a, b) => {
+          let valA = a[key] || '';
+          let valB = b[key] || '';
+
+          if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'acces'].includes(key)) {
+            valA = isAccessTrue(valA) ? 'Aktif' : 'Tidak';
+            valB = isAccessTrue(valB) ? 'Aktif' : 'Tidak';
+          }
+
+          return String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' }) * dir;
+        });
+      }
+
+      displayedUsers = filtered;
+      document.getElementById("userCount").textContent = displayedUsers.length;
+      renderUsers(displayedUsers);
     }
 
     function renderUsers(usersList) {
@@ -374,7 +399,7 @@
 
       usersList.forEach((u, idx) => {
         const tr = document.createElement("tr");
-        tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#3c4043]/50 transition duration-150";
+        tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] transition duration-150";
 
         const eskalasiChecked = isAccessTrue(u.eskalasi) ? "checked" : "";
         const rkmChecked = isAccessTrue(u.rkm) ? "checked" : "";
@@ -447,6 +472,7 @@
           targetUser[fieldName] = updatedValue;
         }
 
+        dbFilterOptions = {};
         const displayFieldName = fieldName === 'log' ? 'INVENTORY' : fieldName.toUpperCase();
         showToast("Tersimpan", `Akses modul ${displayFieldName} untuk ${nama} berhasil diperbarui.`, "success");
       } catch (err) {
@@ -455,13 +481,158 @@
       }
     }
 
-    function filterUsers() {
-      const q = document.getElementById("searchInput").value.toLowerCase();
-      const filtered = allUsers.filter(u => 
-        (u.nama && u.nama.toLowerCase().includes(q)) || 
-        (u.nik && u.nik.toLowerCase().includes(q))
-      );
-      renderUsers(filtered);
+    // FUNGSI FILTER POPOVER TABLE
+    function toggleFilterMenu(columnKey, event) {
+      event.stopPropagation();
+      activeFilterColumn = columnKey;
+
+      const popover = document.getElementById('filterPopover');
+      const rect = event.currentTarget.getBoundingClientRect();
+      
+      let leftPos = rect.left + window.scrollX - 100;
+      if (leftPos < 8) leftPos = 8;
+      const maxLeft = window.innerWidth - 250;
+      if (leftPos > maxLeft) leftPos = maxLeft;
+
+      popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      popover.style.left = `${leftPos}px`;
+
+      document.getElementById('filterSearchInput').value = '';
+
+      if (!dbFilterOptions[columnKey]) {
+        if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'acces'].includes(columnKey)) {
+          dbFilterOptions[columnKey] = ['Aktif', 'Tidak'];
+        } else if (columnKey === 'nama') {
+          dbFilterOptions[columnKey] = Array.from(new Set(allUsers.map(u => u.nama || '-'))).sort();
+        } else if (columnKey === 'no') {
+          dbFilterOptions[columnKey] = Array.from(new Set(allUsers.map((_, i) => String(i + 1)))).sort((a, b) => Number(a) - Number(b));
+        }
+      }
+
+      const activeSaved = filterSelections[activeFilterColumn];
+      const allOpts = dbFilterOptions[activeFilterColumn] || [];
+
+      if (activeSaved && activeSaved.size > 0) {
+        draftFilterSelections = new Set(activeSaved);
+      } else {
+        draftFilterSelections = new Set(allOpts);
+      }
+
+      renderFilterCheckboxes();
+      popover.classList.remove('hidden');
+    }
+
+    function closeFilterPopover() {
+      document.getElementById('filterPopover').classList.add('hidden');
+    }
+
+    function renderFilterCheckboxes() {
+      const container = document.getElementById('filterItemsList');
+      const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
+
+      const uniqueValues = dbFilterOptions[activeFilterColumn] || [];
+
+      container.innerHTML = '';
+
+      let visibleCount = 0;
+      let visibleCheckedCount = 0;
+
+      uniqueValues.forEach(val => {
+        if (searchVal && !val.toLowerCase().includes(searchVal)) return;
+
+        visibleCount++;
+        const isChecked = draftFilterSelections.has(val);
+        if (isChecked) visibleCheckedCount++;
+
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = val;
+        checkbox.checked = isChecked;
+        checkbox.className = 'filter-cb rounded border-[#dadce0] dark:border-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0 bg-transparent';
+        
+        checkbox.onchange = (e) => {
+          if (e.target.checked) {
+            draftFilterSelections.add(val);
+          } else {
+            draftFilterSelections.delete(val);
+          }
+          updateSelectAllState();
+        };
+
+        label.appendChild(checkbox);
+
+        const span = document.createElement('span');
+        span.className = 'truncate';
+        span.title = val;
+        span.innerText = val;
+        label.appendChild(span);
+
+        container.appendChild(label);
+      });
+
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) {
+        selectAllCb.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
+      }
+    }
+
+    function updateSelectAllState() {
+      const container = document.getElementById('filterItemsList');
+      const cbs = container.querySelectorAll('.filter-cb');
+      let allChecked = cbs.length > 0;
+
+      cbs.forEach(cb => {
+        if (!cb.checked) allChecked = false;
+      });
+
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) selectAllCb.checked = allChecked;
+    }
+
+    function toggleSelectAllFilters(checked) {
+      const container = document.getElementById('filterItemsList');
+      const cbs = container.querySelectorAll('.filter-cb');
+
+      cbs.forEach(cb => {
+        cb.checked = checked;
+        if (checked) {
+          draftFilterSelections.add(cb.value);
+        } else {
+          draftFilterSelections.delete(cb.value);
+        }
+      });
+    }
+
+    function clearFilterColumn() {
+      delete filterSelections[activeFilterColumn];
+      const allOpts = dbFilterOptions[activeFilterColumn] || [];
+      draftFilterSelections = new Set(allOpts);
+      
+      document.getElementById('filterSearchInput').value = '';
+      renderFilterCheckboxes();
+      processAndRenderUsers();
+    }
+
+    function applyFilter() {
+      const allOpts = dbFilterOptions[activeFilterColumn] || [];
+
+      if (draftFilterSelections.size === 0 || draftFilterSelections.size === allOpts.length) {
+        delete filterSelections[activeFilterColumn];
+      } else {
+        filterSelections[activeFilterColumn] = new Set(draftFilterSelections);
+      }
+
+      closeFilterPopover();
+      processAndRenderUsers();
+    }
+
+    function applySort(direction) {
+      sortConfig = { column: activeFilterColumn, direction };
+      closeFilterPopover();
+      processAndRenderUsers();
     }
 
     function showToast(title, message, type = 'success') {
@@ -488,8 +659,6 @@
         toast.classList.add("opacity-0", "translate-y-[-20px]", "pointer-events-none");
       }, 3000);
     }
-
-    fetchUsers();
   </script>
 </body>
 </html>
