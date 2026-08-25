@@ -48,10 +48,17 @@
         body {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            min-height: 100vh;
             color: var(--text-color);
             background-color: var(--bg-main);
             overflow: hidden;
+        }
+
+        /* HEADER FIX LAYER */
+        #global-header {
+            position: relative;
+            z-index: 1000;
+            width: 100%;
         }
 
         .app-body {
@@ -59,6 +66,8 @@
             flex: 1;
             height: calc(100vh - 65px);
             overflow: hidden;
+            position: relative;
+            z-index: 1;
         }
 
         /* SIDEBAR STYLES */
@@ -632,7 +641,7 @@
 
     <!-- GLOBAL NAVIGATION SHELL -->
     <div id="global-header">
-      <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+      <header class="bg-slate-900 text-white shadow-md sticky top-0">
         <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
             
           <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
@@ -641,7 +650,7 @@
               <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
                 <span id="nav-header-avatar">U</span>
               </button>
-              <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
+              <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs z-50"></div>
             </div>
 
             <div>
@@ -653,7 +662,7 @@
           <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
           <div class="flex items-center gap-2">
             
-            <!-- INPUT PENCARIAN DI HEADER (Pencarian Tugas) -->
+            <!-- INPUT PENCARIAN DI HEADER -->
             <div class="header-search-container">
               <svg class="header-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -670,7 +679,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
               </button>
-              <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+              <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1 z-50">
                 <div id="custom-hamburger-content"></div>
               </div>
             </div>
@@ -849,7 +858,7 @@
                         <div class="method-card" onclick="document.getElementById('del-opt-keep').checked=true;">
                             <input type="radio" name="delete-list-option" id="del-opt-keep" value="keep" checked>
                             <div class="method-details">
-                                <h4>Hapus List Saja</h4>
+                                <h4>Hapus List Sahaja</h4>
                                 <p>Tugas di dalam list ini akan tetap ada (berubah menjadi tanpa grup/tugas mandiri).</p>
                             </div>
                         </div>
