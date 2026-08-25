@@ -72,7 +72,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
-  <!-- GLOBAL NAVIGATION SHELL (PRESISI STABIL TIDAK BERGERAK SAAT PINDAH HALAMAN) -->
+  <!-- GLOBAL NAVIGATION SHELL -->
   <div id="global-header">
     <header class="bg-slate-900 text-white shadow-md sticky top-0">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
@@ -93,15 +93,34 @@
           </div>
         </div>
 
-        <!-- SISI KANAN: Hamburger Control Modul -->
-        <div class="relative inline-block">
-          <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        <!-- SISI KANAN: Kotak Pencarian Global & Hamburger Control -->
+        <div class="flex items-center gap-3">
+          <!-- Input Pencarian (Di Sebelah Kiri Hamburger) -->
+          <div class="relative w-48 sm:w-64">
+            <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
+                   placeholder="Cari item, code, project..." 
+                   class="w-full bg-slate-800/80 focus:bg-slate-800 border border-slate-700 focus:border-blue-500 rounded-lg pl-8 pr-7 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none transition shadow-inner" />
+            
+            <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-          </button>
-          <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
-            <div id="custom-hamburger-content"></div>
+            
+            <button id="btnClearSearch" onclick="clearGlobalSearch()" 
+                    class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold p-0.5 cursor-pointer">
+              ✕
+            </button>
+          </div>
+
+          <!-- Tombol Hamburger -->
+          <div class="relative inline-block">
+            <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+            <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+              <div id="custom-hamburger-content"></div>
+            </div>
           </div>
         </div>
 
@@ -110,30 +129,8 @@
   </div>
 
   <!-- Main Body Container -->
-  <main class="max-w-7xl mx-auto px-4 py-8 space-y-4">
+  <main class="max-w-7xl mx-auto px-4 py-8">
     
-    <!-- Global Search Bar Wrapper -->
-    <div class="flex justify-between items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-      <div class="relative flex-1 max-w-md">
-        <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
-               placeholder="Cari item, code, COA, project..." 
-               class="w-full bg-slate-100 focus:bg-white border border-transparent focus:border-blue-500 rounded-lg pl-9 pr-8 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none transition" />
-        
-        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-        </svg>
-        
-        <button id="btnClearSearch" onclick="clearGlobalSearch()" 
-                class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold p-0.5">
-          ✕
-        </button>
-      </div>
-
-      <div class="text-xs text-slate-500">
-        Tekan <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-[10px] font-mono">Enter</kbd> untuk mencari
-      </div>
-    </div>
-
     <!-- Table Container -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden w-full">
       <div class="overflow-x-auto">
@@ -201,18 +198,18 @@
       <!-- Filter Popover -->
       <div id="filterPopover" class="fixed hidden z-50 w-60 bg-white border border-slate-300 rounded-xl shadow-xl p-3 text-xs">
         <div class="grid grid-cols-2 gap-2 mb-3 border-b border-slate-100 pb-3">
-          <button id="btnSortAsc" onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-lg transition font-medium text-xs">
+          <button id="btnSortAsc" onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-lg transition font-medium text-xs cursor-pointer">
             <span>↑</span>
             <span>A-Z</span>
           </button>
-          <button id="btnSortDesc" onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-lg transition font-medium text-xs">
+          <button id="btnSortDesc" onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 rounded-lg transition font-medium text-xs cursor-pointer">
             <span>↓</span>
             <span>Z-A</span>
           </button>
         </div>
 
         <div class="space-y-2">
-          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari nilaii..." 
+          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari nilai..." 
                  class="w-full bg-slate-50 border border-slate-300 focus:border-blue-500 rounded-lg px-2.5 py-1.5 text-slate-800 placeholder-slate-400 focus:outline-none text-xs" />
           
           <div class="flex justify-between items-center text-[11px] text-slate-500 px-1">
@@ -220,15 +217,15 @@
               <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded border-slate-300 text-blue-600 focus:ring-0" />
               Pilih Semua
             </label>
-            <button onclick="clearFilterColumn()" class="text-blue-600 hover:underline font-semibold">Reset</button>
+            <button onclick="clearFilterColumn()" class="text-blue-600 hover:underline font-semibold cursor-pointer">Reset</button>
           </div>
 
           <div id="filterItemsList" class="max-h-36 overflow-y-auto filter-scroll space-y-1 pr-1 border border-slate-200 rounded-lg p-1.5 bg-slate-50">
           </div>
 
           <div class="flex gap-2 pt-2 border-t border-slate-100">
-            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium">Batal</button>
-            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-xs">Terapkan</button>
+            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium cursor-pointer">Batal</button>
+            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-xs cursor-pointer">Terapkan</button>
           </div>
         </div>
       </div>
