@@ -24,7 +24,7 @@
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Portal - SOT</title>
+  <title>Dashboard - SOT</title>
 
   <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
   <link rel="stylesheet" href="global-header.css">
@@ -67,7 +67,7 @@
 
           <div>
             <!-- Judul Utama -->
-            <h1 id="header-title-text" class="text-base sm:text-lg font-bold text-white leading-tight">Dashboard Utama</h1>
+            <h1 id="header-title-text" class="text-base sm:text-lg font-bold text-white leading-tight">Sistem Operasional Terintegrasi</h1>
             <!-- Sub-judul -->
             <p id="header-subtitle-text" class="text-xs text-slate-400">Halo, <span id="userName" class="text-slate-200 font-semibold">User</span> • <span id="userNik" class="font-mono text-slate-400">NIK: -</span></p>
           </div>
@@ -390,7 +390,7 @@
       const subtitleElem = document.getElementById("header-subtitle-text");
       const avatarElem = document.getElementById("nav-header-avatar");
 
-      if (titleElem) titleElem.textContent = "Dashboard Utama";
+      if (titleElem) titleElem.textContent = "Sistem Operasional Terintegrasi";
       if (subtitleElem) {
         subtitleElem.innerHTML = `Halo, <span id="userName" class="text-slate-200 font-semibold">${nameStr}</span> • <span id="userNik" class="font-mono text-slate-400">NIK: ${currentUser.nik || "-"}</span>`;
       }
