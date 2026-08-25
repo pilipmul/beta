@@ -55,7 +55,7 @@
     <header class="bg-slate-900 text-white shadow-md sticky top-0">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
         
-        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
+        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title (Judul & Sub-judul Tetap) -->
         <div class="flex items-center gap-3">
           <div class="relative inline-block" id="navDropdownWrapper">
             <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
@@ -66,12 +66,14 @@
           </div>
 
           <div>
+            <!-- Judul Utama -->
             <h1 class="text-base sm:text-lg font-bold text-white leading-tight">Dashboard Utama</h1>
+            <!-- Sub-judul -->
             <p id="header-subtitle-text" class="text-xs text-slate-400">Halo, <span id="userName" class="text-slate-200 font-semibold">User</span> • <span id="userNik" class="font-mono text-slate-400">NIK: -</span></p>
           </div>
         </div>
 
-        <!-- SISI KANAN: Search Input + Hamburger Control Modul -->
+        <!-- SISI KANAN: Kolom Pencarian (sebelum tombol 3 garis) & Hamburger Control -->
         <div class="flex items-center gap-3">
           <!-- Input Pencarian Modul -->
           <div class="relative max-w-xs w-48 sm:w-64">
@@ -294,7 +296,7 @@
   <script src="header-template.js"></script>
 
   <script>
-    // 1. INISIALISASI HEADER DENGAN TAMPILAN SESUAI PERSYARATAN
+    // 1. INISIALISASI HEADER INSTAN
     renderHeader({
         hamburgerItems: [
             {
@@ -380,7 +382,7 @@
       localStorage.setItem("user", JSON.stringify(currentUser));
       const nameStr = currentUser.nama || "User";
       
-      // Update data di UI
+      // Mengisi nama & NIK ke sub-judul header secara dinamis
       document.getElementById("userName").textContent = nameStr;
       document.getElementById("nav-header-avatar").textContent = nameStr.charAt(0).toUpperCase();
       document.getElementById("userNik").textContent = "NIK: " + (currentUser.nik || "-");
