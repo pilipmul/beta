@@ -13,6 +13,12 @@ let listNameToDelete = null;
 let sortAscending = true; // true = A-Z (Terlama -> Terbaru), false = Z-A (Terbaru -> Terlama)
 let searchQuery = "";
 
+// Inisialisasi Navigation Header Terpusat
+renderHeader({
+  subtitle: "Kelola Tugas Terintegrasi",
+  hamburgerItems: []
+});
+
 document.addEventListener("DOMContentLoaded", function() {
     fetchTasksFromSOT();
 });
@@ -362,9 +368,28 @@ function createTaskElement(t) {
     return item;
 }
 
-// FUNSI EVENT SEARCH & SORT BY DATE
+// FUNGSI PENCARIAN
 function handleSearchInput() {
-    searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+    const globalSearchInput = document.getElementById('globalSearchInput');
+    const btnClear = document.getElementById('btnClearSearch');
+
+    if (globalSearchInput) {
+        searchQuery = globalSearchInput.value.toLowerCase().trim();
+        if (searchQuery !== '') {
+            btnClear.classList.remove('hidden');
+        } else {
+            btnClear.classList.add('hidden');
+        }
+    }
+    renderTasks();
+}
+
+function clearGlobalSearch() {
+    const globalSearchInput = document.getElementById('globalSearchInput');
+    const btnClear = document.getElementById('btnClearSearch');
+    if (globalSearchInput) globalSearchInput.value = '';
+    if (btnClear) btnClear.classList.add('hidden');
+    searchQuery = '';
     renderTasks();
 }
 
@@ -400,7 +425,7 @@ function renderTasks() {
         return t.listName === currentFilter;
     });
 
-    // 2. Filter Berdasarkan Pencarian
+    // 2. Filter Berdasarkan Pencarian Global Header
     if (searchQuery) {
         filtered = filtered.filter(t => 
             (t.title && t.title.toLowerCase().includes(searchQuery)) ||
@@ -414,9 +439,9 @@ function renderTasks() {
         const dateB = b.due ? new Date(b.due).getTime() : (sortAscending ? 9999999999999 : -9999999999999);
 
         if (sortAscending) {
-            return dateA - dateB; // A-Z (Terlama -> Terbaru / Deadline terdekat di atas)
+            return dateA - dateB; // A-Z (Terlama -> Terbaru)
         } else {
-            return dateB - dateA; // Z-A (Terbaru -> Terlama / Deadline terjauh di atas)
+            return dateB - dateA; // Z-A (Terbaru -> Terlama)
         }
     });
 
