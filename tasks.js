@@ -15,7 +15,7 @@ let searchQuery = "";
 
 // Inisialisasi Navigation Header Terpusat Persis Modul Logistics
 renderHeader({
-  subtitle: "Kelola Tugas Terintegrasi",
+  subtitle: "Tasks",
   hamburgerItems: []
 });
 
