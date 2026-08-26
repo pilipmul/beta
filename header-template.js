@@ -21,10 +21,8 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
 
     if (!autoSubtitle) {
         if (path.includes("dashboard.html") || path === "/" || path.endsWith("/")) {
-            // Khusus Dashboard: Membiarkan template bawaan/profil user
             autoSubtitle = null; 
         } else {
-            // Cari modul berdasarkan keyword URL
             for (const [key, name] of Object.entries(moduleMap)) {
                 if (path.includes(key)) {
                     autoSubtitle = name;
@@ -34,10 +32,19 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
         }
     }
 
-    // Update Subtitle Modul Aktif secara instan (jika ditentukan/ditemukan)
+    // Update Subtitle Modul Aktif secara instan
     const subtitleEl = document.getElementById('header-subtitle-text');
     if (subtitleEl && autoSubtitle !== null) {
         subtitleEl.textContent = autoSubtitle;
+    }
+
+    // Update Elemen Judul Utama agar fleksibel untuk Mobile ("SOT") & Desktop
+    const titleHeaderEl = document.querySelector('#global-header h1');
+    if (titleHeaderEl) {
+        titleHeaderEl.innerHTML = `
+            <span class="hidden sm:inline">Sistem Operasional Terintegrasi</span>
+            <span class="inline sm:hidden">SOT</span>
+        `;
     }
 
     // 3. Render Isi Navigasi Utama (Hanya jika belum dirender)
@@ -85,8 +92,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
             </a>
             <div class="my-1 border-t border-slate-800"></div>
 
-            <!-- Tombol Keluar (Logout) Terperbaiki -->
-            <button type="button" onclick="handleLogout()" class="w-full px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center justify-start gap-2.5 transition text-xs no-underline text-rose-400 border-0 bg-transparent cursor-pointer m-0 rounded-none">
+            <button type="button" onclick="handleLogout()" class="w-full px-4 py-2.5 text-rose-400 hover:bg-slate-800 hover:text-rose-300 flex items-center justify-start gap-2.5 transition text-xs font-normal border-0 bg-transparent cursor-pointer text-left m-0 rounded-none">
                 <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
@@ -94,10 +100,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
             </button>`;
     }
 
-    // 4. Render isi menu hamburger kustom modul
     renderHamburgerContent(hamburgerItems);
-    
-    // 5. Jalankan pengecekan hak akses RBAC
     initNavbarAccess();
 }
 
