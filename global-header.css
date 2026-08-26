@@ -1,6 +1,3 @@
-/* ==========================================
-   1. GLOBAL HEADER BASE STYLES
-   ========================================== */
 #global-header {
   position: sticky;
   top: 0;
@@ -10,14 +7,13 @@
 
 #global-header header {
   width: 100%;
-  background-color: #0f172a; /* slate-900 */
+  background-color: #0f172a;
   color: #ffffff;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Container Utama Header */
 #global-header .header-container {
-  max-width: 80rem; /* max-w-7xl */
+  max-width: 80rem;
   margin-left: auto;
   margin-right: auto;
   padding: 0.75rem 1rem;
@@ -29,7 +25,6 @@
   box-sizing: border-box;
 }
 
-/* Typography & Titles */
 #global-header h1 {
   margin: 0;
   font-size: 1rem;
@@ -41,15 +36,14 @@
 #header-subtitle-text {
   margin: 0;
   font-size: 0.75rem;
-  color: #94a3b8; /* slate-400 */
+  color: #94a3b8;
 }
 
-/* Avatar Navigasi Top-Left */
 #navDropdownWrapper button {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 9999px;
-  background-color: #2563eb; /* blue-600 */
+  background-color: #2563eb;
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -62,21 +56,18 @@
 }
 
 #navDropdownWrapper button:hover {
-  background-color: #1d4ed8; /* blue-700 */
+  background-color: #1d4ed8;
 }
 
 #navDropdownWrapper button:active {
   transform: scale(0.95);
 }
 
-/* ==========================================
-   2. ADAPTIVE SEARCH BAR STYLES
-   ========================================== */
 .header-search-container {
   position: relative;
   display: flex;
   align-items: center;
-  width: 14rem; /* 224px (Default Desktop) */
+  width: 14rem;
   transition: all 0.2s ease-in-out;
 }
 
@@ -91,10 +82,10 @@
 
 .header-search-input {
   width: 100%;
-  height: 1.75rem; /* 28px */
-  background-color: #1e293b; /* slate-800 */
-  color: #f8fafc; /* slate-50 */
-  border: 1px solid #334155; /* slate-700 */
+  height: 1.75rem;
+  background-color: #1e293b;
+  color: #f8fafc;
+  border: 1px solid #334155;
   border-radius: 9999px;
   padding-left: 2rem;
   padding-right: 1.5rem;
@@ -108,7 +99,7 @@
 }
 
 .header-search-input:focus {
-  border-color: #3b82f6; /* blue-500 */
+  border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
@@ -130,15 +121,12 @@
   color: #ffffff;
 }
 
-/* ==========================================
-   3. HAMBURGER & DROPDOWN MENUS
-   ========================================== */
 #hamburgerBtn {
   padding: 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(16, 185, 129, 0.3);
   background-color: rgba(16, 185, 129, 0.1);
-  color: #34d399; /* emerald-400 */
+  color: #34d399;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -150,17 +138,22 @@
   background-color: rgba(16, 185, 129, 0.2);
 }
 
-/* Custom Menu Dropdown Styling */
 #navDropdownMenu,
 #connDropdown {
   z-index: 10010;
 }
 
-/* ==========================================
-   4. RESPONSIF MOBILE (Media Query < 640px)
-   ========================================== */
+#navDropdownMenu button {
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  font-weight: 500 !important;
+  line-height: normal !important;
+}
+
 @media (max-width: 639px) {
-  /* Kompakkan padding baris header */
   #global-header .header-container,
   #global-header header > div {
     padding-left: 0.5rem !important;
@@ -170,24 +163,21 @@
     gap: 0.375rem !important;
   }
 
-  /* Sembunyikan Subtitle di HP agar tidak memakan ruang */
   #header-subtitle-text {
     display: none !important;
   }
 
-  /* Pengaturan Judul di Mobile */
   #global-header h1 {
-    font-size: 0.8125rem !important; /* ~13px */
+    font-size: 0.8125rem !important;
     line-height: 1.1 !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 110px; /* Batasi lebar judul agar tidak menabrak search bar */
+    max-width: 110px;
   }
 
-  /* Penyesuaian Ukuran Avatar & Hamburger Button */
   #navDropdownWrapper button {
-    width: 1.875rem !important; /* 30px */
+    width: 1.875rem !important;
     height: 1.875rem !important;
     font-size: 0.75rem !important;
   }
@@ -197,25 +187,23 @@
   }
   
   #hamburgerBtn svg {
-    width: 1.125rem !important; /* 18px */
+    width: 1.125rem !important;
     height: 1.125rem !important;
   }
 
-  /* Pencarian Ringkas & Expandable di Mobile */
   .header-search-container {
-    width: 6.5rem; /* Ukuran default yang ringkas di hp */
+    width: 6.5rem;
   }
   
-  /* Melebar otomatis saat pengguna fokus/mengetik di input pencarian */
   .header-search-container:focus-within {
     width: 9rem; 
   }
 
   .header-search-input {
-    height: 1.625rem; /* 26px */
+    height: 1.625rem;
     padding-left: 1.75rem;
     padding-right: 1.25rem;
-    font-size: 0.6875rem; /* 11px */
+    font-size: 0.6875rem;
   }
 
   .header-search-icon {
