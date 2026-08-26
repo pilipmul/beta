@@ -1,5 +1,5 @@
 /* ==========================================
-   1. GLOBAL HEADER BASE STYLES
+   1. GLOBAL HEADER BASE STYLES (DESKTOP DEFAULT)
    ========================================== */
 #global-header {
   position: sticky;
@@ -28,6 +28,7 @@
   box-sizing: border-box;
 }
 
+/* Judul Utama di Desktop tetap utuh */
 #global-header h1 {
   margin: 0;
   font-size: 1rem;
@@ -42,6 +43,7 @@
   color: #94a3b8; /* slate-400 */
 }
 
+/* Avatar Navigasi Top-Left */
 #navDropdownWrapper button {
   width: 2.25rem;
   height: 2.25rem;
@@ -73,7 +75,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: 14rem; /* 224px (Default Desktop) */
+  width: 14rem; /* 224px (Desktop Default) */
   transition: all 0.2s ease-in-out;
 }
 
@@ -152,7 +154,7 @@
   z-index: 10010;
 }
 
-/* Override Tombol Keluar agar sama persis dengan style item menu Access Control */
+/* Override Tombol Keluar di Dropdown agar serupa dengan item Access Control */
 #navDropdownMenu button {
   width: 100% !important;
   height: auto !important;
@@ -174,9 +176,10 @@
 }
 
 /* ==========================================
-   4. RESPONSIF MOBILE (Media Query < 640px)
+   4. RESPONSIF MOBILE KHUSUS (< 640px)
    ========================================== */
 @media (max-width: 639px) {
+  /* Kompakkan padding baris header di HP */
   #global-header .header-container,
   #global-header header > div {
     padding-left: 0.5rem !important;
@@ -186,21 +189,23 @@
     gap: 0.375rem !important;
   }
 
+  /* Sembunyikan Subtitle di HP agar tidak makan tempat */
   #header-subtitle-text {
     display: none !important;
   }
 
+  /* Ukuran Judul "SOT" di HP */
   #global-header h1 {
-    font-size: 0.8125rem !important;
-    line-height: 1.1 !important;
+    font-size: 0.9375rem !important; /* ~15px */
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 110px;
+    max-width: none !important;
   }
 
+  /* Penyesuaian Ukuran Avatar & Hamburger Button */
   #navDropdownWrapper button {
-    width: 1.875rem !important;
+    width: 1.875rem !important; /* 30px */
     height: 1.875rem !important;
     font-size: 0.75rem !important;
   }
@@ -210,10 +215,11 @@
   }
   
   #hamburgerBtn svg {
-    width: 1.125rem !important;
+    width: 1.125rem !important; /* 18px */
     height: 1.125rem !important;
   }
 
+  /* Search bar ringkas dan otomatis melebar saat di-fokus */
   .header-search-container {
     width: 6.5rem;
   }
