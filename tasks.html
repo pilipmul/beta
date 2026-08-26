@@ -689,17 +689,17 @@
           </div>
 
           <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-3">
             
-            <!-- INPUT PENCARIAN SERUPA LOGISTICS -->
-            <div class="header-search-container">
-              <svg class="header-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- INPUT PENCARIAN TERPERBAIKI -->
+            <div class="relative flex items-center w-44 sm:w-56">
+              <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
               <input type="text" id="globalSearchInput" oninput="handleSearchInput()" 
                      placeholder="Cari tugas..." 
-                     class="header-search-input" />
-              <button id="btnClearSearch" onclick="clearGlobalSearch()" class="header-search-clear hidden">✕</button>
+                     class="w-full h-7 bg-slate-800 text-slate-100 border border-slate-700 rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
+              <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-white text-xs hidden">✕</button>
             </div>
 
             <div class="relative inline-block">
