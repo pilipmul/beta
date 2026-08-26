@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>SyncFlow - SOT</title> 
+    <title>PBC SyncFlow</title> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/main/Logo%201.png">
     
@@ -237,7 +237,7 @@
                 <div class="flex items-center gap-2">
                     <div>
                         <h1>Sistem Operasional Terintegrasi</h1>
-                        <p id="header-subtitle-text">Syncflow</p>
+                        <p id="header-subtitle-text">Syncflow Modul</p>
                     </div>
                     <span id="gaIndicator">GA Mode</span>
                 </div>
@@ -338,27 +338,40 @@
 
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
 
-    // Inisialisasi Header dengan Opsi Dropdown GA Mode & Trx History
-    renderHeader({
-        subtitle: "Syncflow",
-        hamburgerItems: [
+    // Fungsi Pembantu Re-render Hamburger Menu secara Dinamis
+    function buildHamburgerItems() {
+        const items = [
             {
                 label: "Toggle GA Mode",
                 icon: `<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`,
                 onClick: "toggleGAMode()"
-            },
-            {
+            }
+        ];
+
+        // Tampilkan Opsi Riwayat 50 Trx HANYA saat GA Mode Aktif
+        if (gaMode) {
+            items.push({
                 label: "Riwayat ~50 Trx",
                 icon: `<svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
                 onClick: "toggleHistoryPopup(event)"
-            },
-            {
-                label: "Refresh Data",
-                icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`,
-                onClick: "fetchDataAndUpdateUI()"
-            }
-        ]
+            });
+        }
+
+        items.push({
+            label: "Refresh Data",
+            icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`,
+            onClick: "fetchDataAndUpdateUI()"
+        });
+
+        renderHamburgerContent(items);
+    }
+
+    // Initial Header Render
+    renderHeader({
+        subtitle: "Syncflow",
+        hamburgerItems: []
     });
+    buildHamburgerItems();
 
     function preventNonNumeric(e) {
         if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
@@ -401,9 +414,12 @@
         } else { 
             btnIn.style.opacity = "0.25"; 
             btnIn.style.pointerEvents = "none"; 
+            document.getElementById("historyPopup").style.display = "none";
             showToast("🔒 GA Mode Nonaktif");
         } 
         
+        // Perbarui menu dropdown sesuai status GA mode terbaru
+        buildHamburgerItems();
         initAutocomplete();
         refreshAllStockOverlays();
     }
