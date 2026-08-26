@@ -154,7 +154,7 @@
   z-index: 10010;
 }
 
-/* Override Tombol Keluar di Dropdown agar serupa dengan item Access Control */
+/* Override Tombol Keluar di Dropdown */
 #navDropdownMenu button {
   width: 100% !important;
   height: auto !important;
@@ -179,6 +179,23 @@
    4. RESPONSIF MOBILE KHUSUS (< 640px)
    ========================================== */
 @media (max-width: 639px) {
+  /* Sembunyikan Teks Asli <h1> di Mobile */
+  #global-header h1 {
+    font-size: 0 !important; /* Menyembunyikan teks HTML bawaan "Sistem Operasional Terintegrasi" */
+    margin: 0 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Gantikan Teks <h1> menjadi "SOT" secara CSS Murni */
+  #global-header h1::after {
+    content: "SOT";
+    font-size: 0.9375rem !important; /* ~15px */
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    display: inline-block;
+  }
+
   /* Kompakkan padding baris header di HP */
   #global-header .header-container,
   #global-header header > div {
@@ -189,18 +206,9 @@
     gap: 0.375rem !important;
   }
 
-  /* Sembunyikan Subtitle di HP agar tidak makan tempat */
+  /* Sembunyikan Subtitle di HP */
   #header-subtitle-text {
     display: none !important;
-  }
-
-  /* Ukuran Judul "SOT" di HP */
-  #global-header h1 {
-    font-size: 0.9375rem !important; /* ~15px */
-    font-weight: 700 !important;
-    line-height: 1.2 !important;
-    white-space: nowrap;
-    max-width: none !important;
   }
 
   /* Penyesuaian Ukuran Avatar & Hamburger Button */
@@ -215,11 +223,11 @@
   }
   
   #hamburgerBtn svg {
-    width: 1.125rem !important; /* 18px */
+    width: 1.125rem !important;
     height: 1.125rem !important;
   }
 
-  /* Search bar ringkas dan otomatis melebar saat di-fokus */
+  /* Search bar ringkas */
   .header-search-container {
     width: 6.5rem;
   }
