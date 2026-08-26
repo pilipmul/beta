@@ -92,7 +92,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
             <input type="text" id="globalSearchInput" oninput="triggerGlobalSearch()" 
-                   placeholder="Cari Nama atau NIK..." 
+                   placeholder="Cari Nama Pengguna..." 
                    class="w-full h-7 bg-slate-800 text-slate-100 border border-slate-700 rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
             <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-white text-xs hidden">✕</button>
           </div>
@@ -129,15 +129,15 @@
         <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed]">
           <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
             <tr>
-              <th scope="col" class="p-2.5 relative">
-                <div class="flex items-center justify-between gap-0.5">
+              <th scope="col" class="p-2.5 relative w-12 text-center">
+                <div class="flex items-center justify-center gap-0.5">
                   <span class="truncate">No</span>
                   <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
                 </div>
               </th>
               <th scope="col" class="p-2.5 relative">
                 <div class="flex items-center justify-between gap-0.5">
-                  <span class="truncate">Nama / NIK</span>
+                  <span class="truncate">Nama Pengguna</span>
                   <button onclick="toggleFilterMenu('nama', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
                 </div>
               </th>
@@ -341,12 +341,11 @@
     function processAndRenderUsers() {
       let filtered = [...allUsers];
 
-      // Filter global search input
+      // Filter global search input (hanya berdasarkan nama)
       if (globalSearchQuery) {
         const q = globalSearchQuery.toLowerCase();
         filtered = filtered.filter(u => 
-          (u.nama && u.nama.toLowerCase().includes(q)) || 
-          (u.nik && u.nik.toLowerCase().includes(q))
+          (u.nama && u.nama.toLowerCase().includes(q))
         );
       }
 
@@ -414,34 +413,33 @@
         const userNama = (u.nama || "").trim();
 
         tr.innerHTML = `
-          <td class="px-4 py-3 text-[#5f6368] dark:text-[#bdc1c6] font-mono">${idx + 1}</td>
-          <td class="px-4 py-3">
-            <div class="font-bold text-[#202124] dark:text-[#e8eaed]">${userNama || '-'}</div>
-            <div class="text-[10px] font-mono text-[#5f6368] dark:text-[#9aa0a6]">NIK: ${userNik || '-'}</div>
+          <td class="px-2 py-2.5 text-center text-[#5f6368] dark:text-[#bdc1c6] font-mono text-xs">${idx + 1}</td>
+          <td class="px-3 py-2.5">
+            <div class="font-medium text-[#202124] dark:text-[#e8eaed] text-xs">${userNama || '-'}</div>
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'eskalasi', this.checked)" ${eskalasiChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'eskalasi', this.checked)" ${eskalasiChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'rkm', this.checked)" ${rkmChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'rkm', this.checked)" ${rkmChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'perbaikan', this.checked)" ${perbaikanChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'perbaikan', this.checked)" ${perbaikanChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'task', this.checked)" ${taskChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'task', this.checked)" ${taskChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'sync', this.checked)" ${syncChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'sync', this.checked)" ${syncChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'item', this.checked)" ${itemChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'item', this.checked)" ${itemChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'log', this.checked)" ${inventoryChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'log', this.checked)" ${inventoryChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
-          <td class="px-3 py-3 text-center">
-            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'acces', this.checked)" ${accesChecked} class="w-4 h-4 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'acces', this.checked)" ${accesChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
         `;
         tbody.appendChild(tr);
