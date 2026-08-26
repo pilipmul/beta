@@ -1,3 +1,6 @@
+/* ==========================================
+   1. GLOBAL HEADER BASE STYLES
+   ========================================== */
 #global-header {
   position: sticky;
   top: 0;
@@ -7,13 +10,13 @@
 
 #global-header header {
   width: 100%;
-  background-color: #0f172a;
+  background-color: #0f172a; /* slate-900 */
   color: #ffffff;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 #global-header .header-container {
-  max-width: 80rem;
+  max-width: 80rem; /* max-w-7xl */
   margin-left: auto;
   margin-right: auto;
   padding: 0.75rem 1rem;
@@ -36,14 +39,14 @@
 #header-subtitle-text {
   margin: 0;
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: #94a3b8; /* slate-400 */
 }
 
 #navDropdownWrapper button {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 9999px;
-  background-color: #2563eb;
+  background-color: #2563eb; /* blue-600 */
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -56,18 +59,21 @@
 }
 
 #navDropdownWrapper button:hover {
-  background-color: #1d4ed8;
+  background-color: #1d4ed8; /* blue-700 */
 }
 
 #navDropdownWrapper button:active {
   transform: scale(0.95);
 }
 
+/* ==========================================
+   2. ADAPTIVE SEARCH BAR STYLES
+   ========================================== */
 .header-search-container {
   position: relative;
   display: flex;
   align-items: center;
-  width: 14rem;
+  width: 14rem; /* 224px (Default Desktop) */
   transition: all 0.2s ease-in-out;
 }
 
@@ -82,10 +88,10 @@
 
 .header-search-input {
   width: 100%;
-  height: 1.75rem;
-  background-color: #1e293b;
-  color: #f8fafc;
-  border: 1px solid #334155;
+  height: 1.75rem; /* 28px */
+  background-color: #1e293b; /* slate-800 */
+  color: #f8fafc; /* slate-50 */
+  border: 1px solid #334155; /* slate-700 */
   border-radius: 9999px;
   padding-left: 2rem;
   padding-right: 1.5rem;
@@ -99,7 +105,7 @@
 }
 
 .header-search-input:focus {
-  border-color: #3b82f6;
+  border-color: #3b82f6; /* blue-500 */
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
@@ -121,12 +127,15 @@
   color: #ffffff;
 }
 
+/* ==========================================
+   3. HAMBURGER & DROPDOWN MENUS STYLES
+   ========================================== */
 #hamburgerBtn {
   padding: 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid rgba(16, 185, 129, 0.3);
   background-color: rgba(16, 185, 129, 0.1);
-  color: #34d399;
+  color: #34d399; /* emerald-400 */
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -143,16 +152,30 @@
   z-index: 10010;
 }
 
+/* Override Tombol Keluar agar sama persis dengan style item menu Access Control */
 #navDropdownMenu button {
   width: 100% !important;
   height: auto !important;
+  background-color: transparent !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   transform: none !important;
-  font-weight: 500 !important;
-  line-height: normal !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 0.5rem 1rem !important;
+  font-weight: 400 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
 }
 
+#navDropdownMenu button:hover {
+  background-color: #1e293b !important; /* slate-800 */
+}
+
+/* ==========================================
+   4. RESPONSIF MOBILE (Media Query < 640px)
+   ========================================== */
 @media (max-width: 639px) {
   #global-header .header-container,
   #global-header header > div {
