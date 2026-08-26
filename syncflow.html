@@ -196,7 +196,8 @@
         #successMode { background: #FBBC04; font-weight: 700; padding: 4px 16px; border-radius: 20px; margin-bottom: 15px; display: inline-block; color: #202124; }
         .popup-toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #202124; border: 1px solid #5F6368; color: #fff; padding: 12px 24px; border-radius: 24px; display: none; z-index: 7000; width: fit-content; max-width: 85%; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none; font-weight: 600; }
         
-        #gaIndicator { display: none; font-weight: 800; font-size: 12px; color: #3b82f6; background-color: rgba(59, 130, 246, 0.15); padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(59, 130, 246, 0.3); }
+        /* Indikator GA Mode Kembali Posisi Atas Kiri Dalam Container */
+        #gaIndicator { position: absolute; top: 15px; left: 18px; color: #1A73E8; font-weight: 800; font-size: 14px; display: none; pointer-events: none; }
         
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
@@ -234,12 +235,9 @@
                     <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <div>
-                        <h1>Sistem Operasional Terintegrasi</h1>
-                        <p id="header-subtitle-text">Syncflow Modul</p>
-                    </div>
-                    <span id="gaIndicator">GA Mode</span>
+                <div>
+                    <h1>Sistem Operasional Terintegrasi</h1>
+                    <p id="header-subtitle-text">Syncflow Modul</p>
                 </div>
             </div>
 
@@ -263,6 +261,9 @@
 
 <div class="syncflow-wrapper">
     <div class="container">
+        <!-- GA Indicator Posisi Kiri Atas Dalam Container (Sejajar Atas Gambar Logo) -->
+        <div id="gaIndicator">GA</div>
+        
         <div id="popupToast" class="popup-toast"></div>
 
         <div style="display: flex; justify-content: center; align-items: center; margin: 12px 0 16px 0; width: 100%;">
@@ -338,7 +339,6 @@
 
     let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
 
-    // Fungsi Pembantu Re-render Hamburger Menu secara Dinamis
     function buildHamburgerItems() {
         const items = [
             {
@@ -348,7 +348,6 @@
             }
         ];
 
-        // Tampilkan Opsi Riwayat 50 Trx HANYA saat GA Mode Aktif
         if (gaMode) {
             items.push({
                 label: "Riwayat ~50 Trx",
@@ -366,7 +365,6 @@
         renderHamburgerContent(items);
     }
 
-    // Initial Header Render
     renderHeader({
         subtitle: "Syncflow",
         hamburgerItems: []
@@ -404,7 +402,7 @@
     function updateGAUI(status) { 
         gaMode = status; 
         const gaInd = document.getElementById("gaIndicator");
-        if (gaInd) gaInd.style.display = gaMode ? "inline-block" : "none"; 
+        if (gaInd) gaInd.style.display = gaMode ? "block" : "none"; 
         
         const btnIn = document.getElementById("btnIn"); 
         if (gaMode) { 
@@ -418,7 +416,6 @@
             showToast("🔒 GA Mode Nonaktif");
         } 
         
-        // Perbarui menu dropdown sesuai status GA mode terbaru
         buildHamburgerItems();
         initAutocomplete();
         refreshAllStockOverlays();
