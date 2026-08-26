@@ -1,219 +1,226 @@
-/* =========================================================
-   GLOBAL HEADER BASE STYLES
-   ========================================================= */
+/* ==========================================
+   1. GLOBAL HEADER BASE STYLES
+   ========================================== */
 #global-header {
-    width: 100% !important;
-    min-height: auto !important;
-    height: auto !important;
-    position: relative !important;
-    z-index: 50 !important;
-    overflow: visible !important;
+  position: sticky;
+  top: 0;
+  z-index: 9999;
+  width: 100%;
 }
 
 #global-header header {
-    width: 100% !important;
-    min-height: auto !important;
-    padding: 0px 16px !important;
-    font-size: 10px !important;
-    line-height: 1.1 !important;
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    box-sizing: border-box !important;
-    background-color: #0f172a !important; /* slate-900 */
-    overflow: visible !important;
+  width: 100%;
+  background-color: #0f172a; /* slate-900 */
+  color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-/* Penetralisir Flex Container */
-#global-header .flex {
-    display: flex !important;
-}
-#global-header .items-center {
-    align-items: center !important;
-}
-
-/* =========================================================
-   NAVIGASI AVATAR (KIRI)
-   ========================================================= */
-#global-header #navDropdownWrapper > button {
-    width: 26px !important;
-    height: 26px !important;
-    min-width: 26px !important;
-    min-height: 26px !important;
-    max-width: 26px !important;
-    max-height: 26px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: 0 !important;
-    line-height: 1 !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 9999px !important;
-    background-color: #2563eb !important; /* blue-600 */
+/* Container Utama Header */
+#global-header .header-container {
+  max-width: 80rem; /* max-w-7xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-#global-header #nav-header-avatar {
-    font-size: 0.65rem !important;
-    line-height: 1 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    display: block !important;
-    color: #ffffff !important;
-    font-weight: 700 !important;
-}
-
-/* =========================================================
-   JUDUL & SUBTITLES
-   ========================================================= */
+/* Typography & Titles */
 #global-header h1 {
-    font-size: 1.125rem !important;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+#header-subtitle-text {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8; /* slate-400 */
+}
+
+/* Avatar Navigasi Top-Left */
+#navDropdownWrapper button {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 9999px;
+  background-color: #2563eb; /* blue-600 */
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+#navDropdownWrapper button:hover {
+  background-color: #1d4ed8; /* blue-700 */
+}
+
+#navDropdownWrapper button:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================
+   2. ADAPTIVE SEARCH BAR STYLES
+   ========================================== */
+.header-search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 14rem; /* 224px (Default Desktop) */
+  transition: all 0.2s ease-in-out;
+}
+
+.header-search-icon {
+  position: absolute;
+  left: 0.625rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.header-search-input {
+  width: 100%;
+  height: 1.75rem; /* 28px */
+  background-color: #1e293b; /* slate-800 */
+  color: #f8fafc; /* slate-50 */
+  border: 1px solid #334155; /* slate-700 */
+  border-radius: 9999px;
+  padding-left: 2rem;
+  padding-right: 1.5rem;
+  font-size: 0.75rem;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.header-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.header-search-input:focus {
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.header-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-search-clear:hover {
+  color: #ffffff;
+}
+
+/* ==========================================
+   3. HAMBURGER & DROPDOWN MENUS
+   ========================================== */
+#hamburgerBtn {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #34d399; /* emerald-400 */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+#hamburgerBtn:hover {
+  background-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Custom Menu Dropdown Styling */
+#navDropdownMenu,
+#connDropdown {
+  z-index: 10010;
+}
+
+/* ==========================================
+   4. RESPONSIF MOBILE (Media Query < 640px)
+   ========================================== */
+@media (max-width: 639px) {
+  /* Kompakkan padding baris header */
+  #global-header .header-container,
+  #global-header header > div {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    gap: 0.375rem !important;
+  }
+
+  /* Sembunyikan Subtitle di HP agar tidak memakan ruang */
+  #header-subtitle-text {
+    display: none !important;
+  }
+
+  /* Pengaturan Judul di Mobile */
+  #global-header h1 {
+    font-size: 0.8125rem !important; /* ~13px */
     line-height: 1.1 !important;
-    font-weight: 700 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    color: #ffffff !important;
-}
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 110px; /* Batasi lebar judul agar tidak menabrak search bar */
+  }
 
-#global-header p#header-subtitle-text,
-#global-header p#header-subtitle {
-    font-size: 0.8125rem !important;
-    line-height: 1.1 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    color: #94a3b8 !important; /* slate-400 */
-}
+  /* Penyesuaian Ukuran Avatar & Hamburger Button */
+  #navDropdownWrapper button {
+    width: 1.875rem !important; /* 30px */
+    height: 1.875rem !important;
+    font-size: 0.75rem !important;
+  }
 
-/* =========================================================
-   HAMBURGER BUTTON (KANAN)
-   ========================================================= */
-#global-header #hamburgerBtn {
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 0.375rem !important;
-}
+  #hamburgerBtn {
+    padding: 0.35rem !important;
+  }
+  
+  #hamburgerBtn svg {
+    width: 1.125rem !important; /* 18px */
+    height: 1.125rem !important;
+  }
 
-#global-header #hamburgerBtn svg {
-    width: 20px !important;
-    height: 20px !important;
-    display: block !important;
-}
+  /* Pencarian Ringkas & Expandable di Mobile */
+  .header-search-container {
+    width: 6.5rem; /* Ukuran default yang ringkas di hp */
+  }
+  
+  /* Melebar otomatis saat pengguna fokus/mengetik di input pencarian */
+  .header-search-container:focus-within {
+    width: 9rem; 
+  }
 
-/* =========================================================
-   DROPDOWN MENU LAYERING
-   ========================================================= */
-#global-header #navDropdownMenu,
-#global-header #connDropdown {
-    z-index: 10000 !important;
-    position: absolute !important;
-}
+  .header-search-input {
+    height: 1.625rem; /* 26px */
+    padding-left: 1.75rem;
+    padding-right: 1.25rem;
+    font-size: 0.6875rem; /* 11px */
+  }
 
-#global-header #navDropdownMenu a {
-    text-decoration: none !important;
-    box-sizing: border-box !important;
-    font-size: 0.6875rem !important;
-}
-
-/* Button Logout Dropdown */
-#global-header #navDropdownMenu button[onclick="handleLogout()"] {
-    width: 100% !important;
-    height: auto !important;
-    background-color: transparent !important;
-    border-radius: 0 !important;
-    padding: 6px 12px !important;
-    margin: 0 !important;
-    border: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 8px !important;
-    color: #f87171 !important;
-    font-size: 0.6875rem !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    box-sizing: border-box !important;
-}
-
-#global-header #navDropdownMenu button[onclick="handleLogout()"]:hover {
-    background-color: rgba(239, 68, 68, 0.15) !important;
-    color: #fca5a5 !important;
-}
-
-#global-header #navDropdownMenu button[onclick="handleLogout()"] svg {
-    width: 12px !important;
-    height: 12px !important;
-    min-width: 12px !important;
-    min-height: 12px !important;
-    color: #f87171 !important;
-    display: block !important;
-    flex-shrink: 0 !important;
-}
-
-/* =========================================================
-   DESKTOP ONLY LAYOUT (min-width: 769px)
-   ========================================================= */
-@media (min-width: 769px) {
-    #global-header .justify-between {
-        justify-content: space-between !important;
-    }
-}
-
-/* =========================================================
-   MOBILE RESPONSIVE (max-width: 768px) - CENTER TITLE PRECISE
-   ========================================================= */
-@media (max-width: 768px) {
-    /* Menjadikan kontainer utama header relatif agar teks bisa di-center presisi */
-    #global-header header > div {
-        position: relative !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-height: 48px !important;
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
-    }
-
-    /* Kunci Avatar Kiri (Absolute) */
-    #global-header #navDropdownWrapper {
-        position: absolute !important;
-        left: 0 !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        z-index: 10 !important;
-    }
-
-    /* Kunci Tombol Hamburger Kanan (Absolute) */
-    #global-header header > div > div.relative.inline-block:last-child {
-        position: absolute !important;
-        right: 0 !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        z-index: 10 !important;
-    }
-
-    /* Paksa Judul & Subjudul Tengah Sempurna Tanpa Terpengaruh Icon Samping */
-    #global-header header h1, 
-    #global-header header p#header-subtitle-text,
-    #global-header header p#header-subtitle {
-        text-align: center !important;
-        margin: 0 auto !important;
-    }
-
-    #global-header header > div > div:nth-child(2) {
-        width: 100% !important;
-        text-align: center !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 0 42px !important; /* Memberikan batas aman dari avatar & hamburger */
-        box-sizing: border-box !important;
-    }
+  .header-search-icon {
+    left: 0.5rem;
+    width: 0.75rem;
+    height: 0.75rem;
+  }
 }
