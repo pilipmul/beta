@@ -85,9 +85,9 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
             </a>
             <div class="my-1 border-t border-slate-800"></div>
 
-            <!-- Tombol Keluar (Logout) -->
-            <button type="button" onclick="handleLogout()">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Tombol Keluar (Logout) Terperbaiki -->
+            <button type="button" onclick="handleLogout()" class="w-full px-4 py-2.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 flex items-center gap-2.5 transition text-xs font-medium border-0 bg-transparent cursor-pointer text-left m-0 rounded-none">
+                <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 <span>Keluar</span>
@@ -121,6 +121,7 @@ function renderHamburgerContent(items) {
 function handleLogout() {
     if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
         localStorage.removeItem("user");
+        sessionStorage.clear();
         window.location.replace("login.html");
     }
 }
