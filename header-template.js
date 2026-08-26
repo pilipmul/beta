@@ -86,7 +86,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
             <div class="my-1 border-t border-slate-800"></div>
 
             <!-- Tombol Keluar (Logout) Terperbaiki -->
-            <button type="button" onclick="handleLogout()" class="w-full px-4 py-2.5 text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 flex items-center gap-2.5 transition text-xs font-medium border-0 bg-transparent cursor-pointer text-left m-0 rounded-none">
+            <button type="button" onclick="handleLogout()" class="w-full px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center justify-start gap-2.5 transition text-xs no-underline text-rose-400 border-0 bg-transparent cursor-pointer m-0 rounded-none">
                 <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
