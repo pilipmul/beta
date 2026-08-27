@@ -658,6 +658,21 @@ function closeModal() {
   document.getElementById('modal').classList.add('hidden');
 }
 
+async function getNextAssetNo() {
+  const { data, error } = await _supabase
+    .from('assets')
+    .select('no')
+    .order('no', { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+  
+  if (data && data.length > 0 && data[0].no) {
+    return Number(data[0].no) + 1;
+  }
+  return 1;
+}
+
 async function saveData(e) {
   e.preventDefault();
 
@@ -701,6 +716,10 @@ async function saveData(e) {
         .eq('no', no);
       if (error) throw error;
     } else {
+      // Auto-generate ID 'no' terbesar + 1 jika melakukan insert baru
+      const newNo = await getNextAssetNo();
+      payload.no = newNo;
+
       const { error } = await _supabase
         .from('assets')
         .insert([payload]);
