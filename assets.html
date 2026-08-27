@@ -243,6 +243,7 @@
       
       <form id="assetsForm" onsubmit="saveData(event)" class="space-y-3.5 text-xs" autocomplete="off">
         <input type="hidden" id="editNo" />
+        <input type="hidden" id="inputLink" />
         
         <div>
           <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Aset</label>
@@ -278,20 +279,20 @@
 
         <div>
           <div class="flex justify-between items-center mb-1">
-            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6]">Link Foto / Unggah Foto</label>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6]">Foto Asset</label>
             <span id="uploadStatusText" class="text-[11px] text-[#1a73e8] dark:text-[#8ab4f8] font-medium"></span>
           </div>
-          <div id="dropArea" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-3 text-center transition-colors">
-            <div class="flex flex-col items-center justify-center gap-1 mb-2 text-[#5f6368] dark:text-[#9aa0a6]">
-              <span class="text-xl">📁</span>
-              <span class="text-[11px]">Tarik & Lepas foto ke sini, atau klik tombol di bawah</span>
+          
+          <!-- Dropzone persis sesuai SR HTML -->
+          <div id="dropzonePhoto" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-2xl p-4 text-center transition relative">
+            <div id="previewContainerPhoto" class="hidden flex items-center justify-between bg-[#f1f3f4] dark:bg-[#2d2d2d] p-2 rounded-xl">
+              <img id="imgPreviewPhoto" class="h-12 w-12 object-cover rounded-lg" src="" alt="Photo Preview">
+              <span id="fileNamePhoto" class="text-xs text-[#5f6368] dark:text-[#bdc1c6] truncate max-w-[180px]"></span>
+              <button type="button" onclick="removeSelectedFile()" class="text-red-500 font-bold text-sm px-2 cursor-pointer">&times;</button>
             </div>
-            <div class="flex gap-2">
-              <input type="url" id="inputLink" placeholder="https://..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
-              <label class="px-3 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium flex items-center justify-center cursor-pointer transition shrink-0" title="Pilih File Foto">
-                📁
-                <input type="file" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden" />
-              </label>
+            <div id="placeholderPhoto">
+              <svg class="w-6 h-6 mx-auto text-[#5f6368] dark:text-[#bdc1c6] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Seret foto ke sini (Drag & Drop)</p>
             </div>
           </div>
         </div>
@@ -312,7 +313,7 @@
             <button type="button" onclick="closeModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
               Batal
             </button>
-            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
+            <button type="submit" id="btnSaveSubmit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
               Simpan
             </button>
           </div>
