@@ -69,6 +69,8 @@
 
         <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
         <div class="flex items-center gap-3">
+          
+          <!-- INPUT PENCARIAN TERPERBAIKI -->
           <div class="relative flex items-center w-44 sm:w-56">
             <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -89,6 +91,7 @@
               <div id="custom-hamburger-content"></div>
             </div>
           </div>
+
         </div>
 
       </div>
@@ -341,6 +344,16 @@
            Unduh CSV
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL PRATINJAU FOTO -->
+  <div id="photoModal" class="fixed inset-0 bg-black/70 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10006]" onclick="closePhotoModal()">
+    <div class="relative max-w-3xl w-full max-h-[90vh] flex flex-col justify-center items-center" onclick="event.stopPropagation()">
+      <button type="button" onclick="closePhotoModal()" class="absolute -top-10 right-0 text-white hover:text-slate-300 text-2xl font-bold cursor-pointer transition">
+        &times;
+      </button>
+      <img id="photoModalImg" src="" alt="Pratinjau Foto" class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-700 bg-black/20" />
     </div>
   </div>
 
