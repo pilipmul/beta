@@ -22,6 +22,9 @@ let sortConfig = { column: null, direction: null };
 
 let globalSearchQuery = '';
 
+// Variabel penampung file foto sementara (sesuai logika SR HTML)
+let selectedPhotoFile = null;
+
 function isSuperAdmin() {
   try {
     const session = localStorage.getItem("user");
@@ -56,7 +59,7 @@ renderHeader({
 document.addEventListener('DOMContentLoaded', () => {
   fetchTableData();
   preloadSuggestions();
-  initDragAndDrop();
+  setupDropzone();
 
   _supabase
     .channel('public:assets')
@@ -72,37 +75,63 @@ document.addEventListener('DOMContentLoaded', () => {
     .subscribe();
 });
 
-function initDragAndDrop() {
-  const dropArea = document.getElementById('dropArea');
-  if (!dropArea) return;
+// Setup Drag & Drop Zone persis seperti SR HTML
+function setupDropzone() {
+  const zone = document.getElementById('dropzonePhoto');
+  if (!zone) return;
 
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropArea.addEventListener(eventName, preventDefaults, false);
-    document.body.addEventListener(eventName, preventDefaults, false);
+    zone.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
   });
 
   ['dragenter', 'dragover'].forEach(eventName => {
-    dropArea.addEventListener(eventName, () => dropArea.classList.add('border-[#1a73e8]', 'bg-[#e8f0fe]', 'dark:bg-[#2c384e]'), false);
+    zone.addEventListener(eventName, () => zone.classList.add('border-[#1a73e8]', 'bg-[#e8f0fe]', 'dark:bg-[#2c384e]'), false);
   });
 
   ['dragleave', 'drop'].forEach(eventName => {
-    dropArea.addEventListener(eventName, () => dropArea.classList.remove('border-[#1a73e8]', 'bg-[#e8f0fe]', 'dark:bg-[#2c384e]'), false);
+    zone.addEventListener(eventName, () => zone.classList.remove('border-[#1a73e8]', 'bg-[#e8f0fe]', 'dark:bg-[#2c384e]'), false);
   });
 
-  dropArea.addEventListener('drop', handleDrop, false);
+  zone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files.length > 0 && files[0].type.startsWith('image/')) {
+      processFile(files[0]);
+    }
+  });
 }
 
-function preventDefaults(e) {
-  e.preventDefault();
-  e.stopPropagation();
+function processFile(file) {
+  selectedPhotoFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    showImagePreview(e.target.result, file.name);
+  };
+  reader.readAsDataURL(file);
 }
 
-function handleDrop(e) {
-  const dt = e.dataTransfer;
-  const files = dt.files;
-  if (files && files.length > 0) {
-    processFileAndUpload(files[0]);
-  }
+function showImagePreview(url, nameText = 'Foto Terpilih') {
+  const previewImg = document.getElementById('imgPreviewPhoto');
+  const fileName = document.getElementById('fileNamePhoto');
+  const container = document.getElementById('previewContainerPhoto');
+  const placeholder = document.getElementById('placeholderPhoto');
+
+  if (previewImg) previewImg.src = url;
+  if (fileName) fileName.innerText = nameText;
+  if (container) container.classList.remove('hidden');
+  if (placeholder) placeholder.classList.add('hidden');
+}
+
+function removeSelectedFile() {
+  selectedPhotoFile = null;
+  document.getElementById('inputLink').value = '';
+  const container = document.getElementById('previewContainerPhoto');
+  const placeholder = document.getElementById('placeholderPhoto');
+  if (container) container.classList.add('hidden');
+  if (placeholder) placeholder.classList.remove('hidden');
 }
 
 function handleRealtimeUpdate(newRow) {
@@ -202,7 +231,7 @@ function handlePicSuggest() {
   listEl.classList.remove('hidden');
 }
 
-// Fungsi Upload Foto ke Google Drive (meniru pola SR HTML)
+// Fungsi Upload Foto ke Google Drive (pola SR HTML)
 async function uploadPhotoFile(file) {
   if (!file) return null;
   
@@ -213,7 +242,7 @@ async function uploadPhotoFile(file) {
       try {
         const base64Data = reader.result.split(',')[1];
         const payload = {
-          filename: file.name,
+          filename: `asset_${Date.now()}_${file.name}`,
           mimeType: file.type,
           fileData: base64Data
         };
@@ -235,33 +264,6 @@ async function uploadPhotoFile(file) {
     };
     reader.onerror = (error) => reject(error);
   });
-}
-
-async function processFileAndUpload(file) {
-  if (!file || !file.type.startsWith('image/')) {
-    alert('Harap unggah file gambar yang valid.');
-    return;
-  }
-
-  const statusEl = document.getElementById('uploadStatusText');
-  if (statusEl) statusEl.innerText = 'Mengunggah ke GDrive...';
-
-  try {
-    const publicUrl = await uploadPhotoFile(file);
-    document.getElementById('inputLink').value = publicUrl;
-    if (statusEl) statusEl.innerText = 'Foto berhasil diunggah!';
-    setTimeout(() => { if (statusEl) statusEl.innerText = ''; }, 3000);
-  } catch (err) {
-    alert('Gagal mengunggah foto: ' + err.message);
-    if (statusEl) statusEl.innerText = 'Gagal mengunggah.';
-  }
-}
-
-async function handlePhotoUpload(event) {
-  const file = event.target.files[0];
-  if (file) {
-    processFileAndUpload(file);
-  }
 }
 
 function triggerGlobalSearch() {
@@ -620,6 +622,7 @@ function openModal(mode, data = null) {
   const btnDelete = document.getElementById('btnDeleteInModal');
 
   form.reset();
+  removeSelectedFile();
   document.getElementById('editNo').value = '';
   const uploadStatus = document.getElementById('uploadStatusText');
   if (uploadStatus) uploadStatus.innerText = '';
@@ -639,6 +642,8 @@ function openModal(mode, data = null) {
     document.getElementById('inputKondisi').value = data.kondisi || '';
     document.getElementById('inputLink').value = data.link || '';
     document.getElementById('inputNote').value = data.note || '';
+
+    if (data.link) showImagePreview(data.link, 'Foto Tersimpan');
   }
 
   modal.classList.remove('hidden');
@@ -656,26 +661,39 @@ function closeModal() {
 async function saveData(e) {
   e.preventDefault();
 
+  const submitBtn = document.getElementById('btnSaveSubmit');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const statusEl = document.getElementById('uploadStatusText');
+
   const no = document.getElementById('editNo').value;
   const aset = document.getElementById('inputAset').value.trim();
   const site = document.getElementById('inputSite').value.trim() || null;
   const lokasi = document.getElementById('inputLokasi').value.trim() || null;
   const pic = document.getElementById('inputPic').value.trim() || null;
   const kondisi = document.getElementById('inputKondisi').value.trim() || null;
-  const link = document.getElementById('inputLink').value.trim() || null;
+  let link = document.getElementById('inputLink').value.trim() || null;
   const note = document.getElementById('inputNote').value.trim() || null;
 
-  const payload = {
-    aset,
-    site,
-    lokasi,
-    pic,
-    kondisi,
-    link,
-    note
-  };
-
   try {
+    // Apabila terdapat file foto baru dari drag & drop, upload ke GDrive saat submit
+    if (selectedPhotoFile) {
+      if (statusEl) statusEl.innerText = 'Mengunggah ke GDrive...';
+      link = await uploadPhotoFile(selectedPhotoFile);
+    }
+
+    if (statusEl) statusEl.innerText = 'Menyimpan data...';
+
+    const payload = {
+      aset,
+      site,
+      lokasi,
+      pic,
+      kondisi,
+      link,
+      note
+    };
+
     if (no) {
       const { error } = await _supabase
         .from('assets')
@@ -694,6 +712,9 @@ async function saveData(e) {
 
   } catch (err) {
     alert('Gagal menyimpan data: ' + err.message);
+    if (statusEl) statusEl.innerText = 'Gagal menyimpan.';
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
   }
 }
 
