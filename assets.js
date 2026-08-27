@@ -56,6 +56,7 @@ renderHeader({
 document.addEventListener('DOMContentLoaded', () => {
   fetchTableData();
   preloadSuggestions();
+  initDragAndDrop();
 
   _supabase
     .channel('public:assets')
@@ -70,6 +71,39 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .subscribe();
 });
+
+function initDragAndDrop() {
+  const dropArea = document.getElementById('dropArea');
+  if (!dropArea) return;
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.addEventListener(eventName, () => dropArea.classList.add('border-[#1a73e8]', 'bg-[#e8f0fe]', 'dark:bg-[#2c384e]'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, () => dropArea.classList.remove('border-[#1a73e8]', 'bg-[#e8f0fe]', 'dark:bg-[#2c384e]'), false);
+  });
+
+  dropArea.addEventListener('drop', handleDrop, false);
+}
+
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function handleDrop(e) {
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  if (files && files.length > 0) {
+    processFileAndUpload(files[0]);
+  }
+}
 
 function handleRealtimeUpdate(newRow) {
   if (!newRow || !newRow.no) return;
@@ -203,9 +237,11 @@ async function uploadPhotoFile(file) {
   });
 }
 
-async function handlePhotoUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+async function processFileAndUpload(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    alert('Harap unggah file gambar yang valid.');
+    return;
+  }
 
   const statusEl = document.getElementById('uploadStatusText');
   if (statusEl) statusEl.innerText = 'Mengunggah ke GDrive...';
@@ -218,6 +254,13 @@ async function handlePhotoUpload(event) {
   } catch (err) {
     alert('Gagal mengunggah foto: ' + err.message);
     if (statusEl) statusEl.innerText = 'Gagal mengunggah.';
+  }
+}
+
+async function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    processFileAndUpload(file);
   }
 }
 
