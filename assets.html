@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) {
+          window.location.replace("https://sotpbc.vercel.app/login.html");
+          return;
+        }
+
+        const userData = JSON.parse(session);
+        if (!userData) {
+          window.location.replace("https://sotpbc.vercel.app/login.html");
+          return;
+        }
+
+        if (userData.akses) {
+          const aks = userData.akses;
+          const punyaAkses = (aks.inventory === "Y" || aks.log === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
+          
+          if (!punyaAkses) {
+            alert("Anda tidak memiliki hak akses ke modul Assets.");
+            window.location.replace("https://sotpbc.vercel.app/login.html");
+          }
+        }
+      } catch (err) {
+        console.error("Autentikasi gagal:", err);
+        window.location.replace("https://sotpbc.vercel.app/login.html");
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assets - SOT</title>
+  
+  <link rel="stylesheet" href="global-header.css">
+
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] min-h-screen font-['Roboto',sans-serif] overflow-x-hidden transition-colors duration-200">
+
+  <!-- GLOBAL NAVIGATION SHELL -->
+  <div id="global-header">
+    <header class="bg-slate-900 text-white shadow-md sticky top-0">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
+          
+        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
+        <div class="flex items-center gap-3">
+          <div class="relative inline-block" id="navDropdownWrapper">
+            <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
+              <span id="nav-header-avatar">U</span>
+            </button>
+            <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
+          </div>
+
+          <div>
+            <h1>Sistem Operasional Terintegrasi</h1>
+            <p id="header-subtitle-text">Assets</p>
+          </div>
+        </div>
+
+        <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
+        <div class="flex items-center gap-3">
+          
+          <!-- INPUT PENCARIAN TERPERBAIKI -->
+          <div class="relative flex items-center w-44 sm:w-56">
+            <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
+                   placeholder="Cari aset..." 
+                   class="w-full h-7 bg-slate-800 text-slate-100 border border-slate-700 rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
+            <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-white text-xs hidden">✕</button>
+          </div>
+
+          <div class="relative inline-block">
+            <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </button>
+            <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+              <div id="custom-hamburger-content"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </header>
+  </div>
+
+  <main class="w-full max-w-7xl mx-auto p-2 sm:p-4 space-y-4">
+
+    <!-- TABEL ASSETS -->
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl border border-[#dadce0] dark:border-[#3c4043] shadow-sm overflow-hidden w-full">
+      <table class="w-full text-left border-collapse text-xs table-fixed">
+        <thead>
+          <tr class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+            <th class="p-2.5 w-[5%] relative text-center">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">No</span>
+                <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2.5 w-[20%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Aset</span>
+                <button onclick="toggleFilterMenu('aset', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2.5 w-[8%] relative text-center">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Site</span>
+                <button onclick="toggleFilterMenu('site', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2.5 w-[16%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Lokasi</span>
+                <button onclick="toggleFilterMenu('lokasi', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2.5 w-[13%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">PIC</span>
+                <button onclick="toggleFilterMenu('pic', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2.5 w-[12%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Kondisi</span>
+                <button onclick="toggleFilterMenu('kondisi', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+
+            <th class="p-2.5 w-[8%] text-center relative">
+              <div class="flex items-center justify-center gap-0.5">
+                <span class="truncate">Foto</span>
+              </div>
+            </th>
+
+            <th class="p-2.5 w-[18%] relative">
+              <div class="flex items-center justify-between gap-0.5">
+                <span class="truncate">Note</span>
+                <button onclick="toggleFilterMenu('note', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white" title="Filter & Sort">▼</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d]">
+          <tr>
+            <td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Filter Popover -->
+      <div id="filterPopover" class="fixed hidden z-[10005] w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+        <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+            <span>↑</span>
+            <span>A-Z</span>
+          </button>
+          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+            <span>↓</span>
+            <span>Z-A</span>
+          </button>
+        </div>
+
+        <div class="space-y-2 normal-case">
+          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+          
+          <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0 bg-transparent" />
+              Pilih Semua
+            </label>
+            <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
+          </div>
+
+          <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full">
+          </div>
+
+          <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGINATION BAR -->
+      <div class="flex flex-col sm:flex-row justify-between items-center p-3 bg-[#f8f9fa] dark:bg-[#252525] border-t border-[#dadce0] dark:border-[#3c4043] text-xs gap-3">
+        <span id="pageInfo" class="text-[#5f6368] dark:text-[#9aa0a6]">Menampilkan 0 data</span>
+        
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-1.5 text-[#5f6368] dark:text-[#9aa0a6]">
+            <span>Hal:</span>
+            <input type="number" id="jumpPageInput" min="1" 
+                   onkeydown="if(event.key==='Enter') jumpToPage()"
+                   class="w-12 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-1.5 py-1 text-center text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8]" />
+            <span id="totalPagesText">/ 1</span>
+            <button onclick="jumpToPage()" 
+                    class="px-2.5 py-1 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-lg font-medium transition cursor-pointer">
+              Go
+            </button>
+          </div>
+
+          <div class="inline-flex gap-1.5">
+            <button id="btnPrev" onclick="changePage(-1)" 
+                    class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm cursor-pointer">
+              Prev
+            </button>
+            <button id="btnNext" onclick="changePage(1)" 
+                    class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm cursor-pointer">
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL FORM ASSETS -->
+  <div id="modal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
+    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <h3 id="modalTitle" class="text-lg font-bold text-[#202124] dark:text-[#f1f3f4]">Form Asset</h3>
+      
+      <form id="assetsForm" onsubmit="saveData(event)" class="space-y-3.5 text-xs" autocomplete="off">
+        <input type="hidden" id="editNo" />
+        
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Aset</label>
+          <input type="text" id="inputAset" required
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" 
+                 placeholder="Nama aset..." />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Site</label>
+            <input type="text" id="inputSite" placeholder="PBM / PBC..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Lokasi</label>
+            <input type="text" id="inputLokasi" placeholder="Lokasi aset..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="relative">
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">PIC</label>
+            <input type="text" id="inputPic" oninput="handlePicSuggest()"
+                   class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" 
+                   placeholder="Nama PIC..." />
+            <div id="picSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl max-h-36 overflow-y-auto z-50 divide-y divide-[#f1f3f4] dark:divide-[#3c4043] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full"></div>
+          </div>
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Kondisi</label>
+            <input type="text" id="inputKondisi" placeholder="Layak pakai..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Link Foto</label>
+          <input type="url" id="inputLink" placeholder="https://..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Note</label>
+          <textarea id="inputNote" rows="2" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+          <div>
+            <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" 
+                    class="px-3.5 py-2 bg-[#fce8e6] dark:bg-[#481c1d] hover:bg-[#fad2cf] dark:hover:bg-[#5c2426] text-[#d93025] dark:text-[#f28b82] rounded-xl font-medium hidden transition cursor-pointer">
+              🗑️ Hapus
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
+              Batal
+            </button>
+            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL EXPORT CSV -->
+  <div id="exportModal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
+    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-xs">
+      <div class="flex justify-between items-center border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3">
+        <h3 class="text-base font-bold text-[#202124] dark:text-[#f1f3f4] flex items-center gap-2">
+          <span>📥</span> Export CSV
+        </h3>
+        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6]">Pilih Site</label>
+            <span id="exportSiteCount" class="text-[11px] text-[#1a73e8] dark:text-[#8ab4f8] font-medium">Terpilih: 0/0</span>
+          </div>
+          
+          <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1 mb-1.5">
+            <label class="flex items-center gap-1.5 cursor-pointer hover:text-[#202124] dark:hover:text-white">
+              <input type="checkbox" id="exportSelectAllCb" onchange="toggleSelectAllExportSites(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#137333] dark:text-[#81c995] focus:ring-0 bg-transparent" />
+              Pilih Semua Site
+            </label>
+          </div>
+
+          <div id="exportSitesContainer" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-2 bg-[#f8f9fa] dark:bg-[#1e1e1e]">
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+        <button type="button" onclick="closeExportModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
+          Batal
+        </button>
+        <button type="button" onclick="processExportCSV()" class="px-4 py-2 bg-[#137333] dark:bg-[#81c995] hover:bg-[#0d652d] dark:hover:bg-[#a8dab5] text-white dark:text-[#202124] rounded-xl font-medium flex items-center gap-1.5 shadow transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+           Unduh CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT & ASSETS JS -->
+  <script src="header-template.js"></script>
+  <script src="assets.js"></script>
+</body>
+</html>
