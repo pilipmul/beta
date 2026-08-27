@@ -231,7 +231,7 @@ function handlePicSuggest() {
   listEl.classList.remove('hidden');
 }
 
-// Fungsi Upload Foto ke Google Drive (pola SR HTML)
+// Fungsi Upload Foto ke Google Drive (disamakan persis dengan SR HTML)
 async function uploadPhotoFile(file) {
   if (!file) return null;
   
@@ -242,9 +242,9 @@ async function uploadPhotoFile(file) {
       try {
         const base64Data = reader.result.split(',')[1];
         const payload = {
-          filename: `asset_${Date.now()}_${file.name}`,
+          fileName: `asset_${Date.now()}_${file.name}`,
           mimeType: file.type,
-          fileData: base64Data
+          base64Data: base64Data
         };
 
         const response = await fetch(GDRIVE_UPLOAD_URL, {
