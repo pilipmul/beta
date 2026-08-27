@@ -277,8 +277,17 @@
         </div>
 
         <div>
-          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Link Foto</label>
-          <input type="url" id="inputLink" placeholder="https://..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          <div class="flex justify-between items-center mb-1">
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6]">Link Foto / Unggah Foto</label>
+            <span id="uploadStatusText" class="text-[11px] text-[#1a73e8] dark:text-[#8ab4f8] font-medium"></span>
+          </div>
+          <div class="flex gap-2">
+            <input type="url" id="inputLink" placeholder="https://..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+            <label class="px-3 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium flex items-center justify-center cursor-pointer transition shrink-0" title="Pilih File Foto">
+              📁
+              <input type="file" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden" />
+            </label>
+          </div>
         </div>
 
         <div>
@@ -347,18 +356,8 @@
     </div>
   </div>
 
-  <!-- MODAL PRATINJAU FOTO -->
-  <div id="photoModal" class="fixed inset-0 bg-black/70 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10006]" onclick="closePhotoModal()">
-    <div class="relative max-w-3xl w-full max-h-[90vh] flex flex-col justify-center items-center" onclick="event.stopPropagation()">
-      <button type="button" onclick="closePhotoModal()" class="absolute -top-10 right-0 text-white hover:text-slate-300 text-2xl font-bold cursor-pointer transition">
-        &times;
-      </button>
-      <img id="photoModalImg" src="" alt="Pratinjau Foto" class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-700 bg-black/20" />
-    </div>
-  </div>
-
   <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT & ASSETS JS -->
-  <script src="header-template.js" defer></script>
-  <script src="assets.js" defer></script>
+  <script src="header-template.js"></script>
+  <script src="assets.js"></script>
 </body>
 </html>
