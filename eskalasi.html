@@ -36,7 +36,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
 
-        html, body {
+        /* PERBAIKAN: Hilangkan overflow-x dari html agar sticky header bekerja normal */
+        html {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        body {
             scrollbar-width: none;
             -ms-overflow-style: none;
             overflow-x: hidden;
@@ -98,8 +103,8 @@
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
     <!-- GLOBAL NAVIGATION SHELL -->
-    <div id="global-header" class="sticky top-0 z-40">
-        <header class="bg-slate-900 text-white shadow-md">
+    <div id="global-header">
+        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
                 
                 <div class="flex items-center gap-3">
@@ -107,7 +112,7 @@
                         <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
                             <span id="nav-header-avatar">U</span>
                         </button>
-                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
+                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs z-50"></div>
                     </div>
 
                     <div>
@@ -122,7 +127,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
                     </button>
-                    <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
+                    <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1 z-50">
                         <div id="custom-hamburger-content"></div>
                     </div>
                 </div>
