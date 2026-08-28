@@ -12,7 +12,8 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
         "syncflow": "Syncflow",
         "inventory": "Inventory",
         "logistics": "Logistics",
-        "access": "Access Control"
+        "access": "Access Control",
+        "assets": "Assets" // Tambahan Modul Assets
     };
 
     // 2. Deteksi otomatis lokasi URL jika subtitle tidak diisi manual
@@ -74,7 +75,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
                 <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg> Dok. Perbaikan
             </a>
             <a id="nav-tasks" href="tasks.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
-                <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Tasks
+                <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg> Tasks
             </a>
             <a id="nav-syncflow" href="syncflow.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
                 <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Syncflow
@@ -86,6 +87,9 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
             </a>
             <a id="nav-logistics" href="logistics.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
                 <svg class="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg> Logistics
+            </a>
+            <a id="nav-assets" href="assets.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
+                <svg class="w-4 h-4 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg> Assets
             </a>
             <a id="nav-access" href="access.html" class="hidden px-4 py-2 hover:bg-slate-800 hover:text-white flex items-center gap-2.5 transition text-xs no-underline text-slate-300">
                 <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg> Access Control
@@ -184,6 +188,7 @@ function initNavbarAccess() {
         { id: "nav-syncflow", key: "syncflow" },
         { id: "nav-inventory", key: "inventory" },
         { id: "nav-logistics", key: "logistics" },
+        { id: "nav-assets", key: "assets" }, // Pengecekan Akses Modul Assets
         { id: "nav-access", key: "access" }
     ];
 
@@ -194,8 +199,11 @@ function initNavbarAccess() {
         let allowed = false;
         if (isSuperAdmin) {
             allowed = true;
-        } else if (user.akses && user.akses[mod.key]) {
+        } else if (user.akses && user.akses[mod.key] !== undefined) {
             const val = String(user.akses[mod.key]).toUpperCase();
+            allowed = (val === "Y" || val === "TRUE" || val === "1");
+        } else if (user[mod.key] !== undefined) {
+            const val = String(user[mod.key]).toUpperCase();
             allowed = (val === "Y" || val === "TRUE" || val === "1");
         }
 
