@@ -218,50 +218,6 @@
         
         #adminPass, #descPopupInput { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color) !important; text-align: left; }
         #adminPass:focus, #descPopupInput:focus { border-color: #1A73E8 !important; }
-
-        /* OVERRIDE CSS KHUSUS TAMPILAN MOBILE (HP) HEADER CENTER */
-        @media (max-width: 768px) {
-            #global-header header > div {
-                position: relative !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                min-height: 48px !important;
-            }
-
-            #global-header #navDropdownWrapper {
-                position: absolute !important;
-                left: 0 !important;
-                top: 50% !important;
-                transform: translateY(-50%) !important;
-                z-index: 10 !important;
-            }
-
-            #global-header header > div > div.relative.inline-block:last-child {
-                position: absolute !important;
-                right: 0 !important;
-                top: 50% !important;
-                transform: translateY(-50%) !important;
-                z-index: 10 !important;
-            }
-
-            #global-header header h1, 
-            #global-header header p#header-subtitle-text,
-            #global-header header p#header-subtitle {
-                text-align: center !important;
-                margin: 0 auto !important;
-            }
-
-            #global-header header > div > div:nth-child(2) {
-                width: 100% !important;
-                text-align: center !important;
-                display: flex !important;
-                flex-direction: column !important;
-                align-items: center !important;
-                justify-content: center !important;
-                padding: 0 40px !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -271,16 +227,18 @@
         <header class="bg-slate-900 text-white shadow-md sticky top-0">
             <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
                 
-                <div class="relative inline-block" id="navDropdownWrapper">
-                    <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
-                        <span id="nav-header-avatar">U</span>
-                    </button>
-                    <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
-                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative inline-block" id="navDropdownWrapper">
+                        <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
+                            <span id="nav-header-avatar">U</span>
+                        </button>
+                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
+                    </div>
 
-                <div>
-                    <h1>Sistem Operasional Terintegrasi</h1>
-                    <p id="header-subtitle-text">Syncflow Modul</p>
+                    <div>
+                        <h1>Sistem Operasional Terintegrasi</h1>
+                        <p id="header-subtitle-text">Syncflow Modul</p>
+                    </div>
                 </div>
 
                 <div class="relative inline-block">
