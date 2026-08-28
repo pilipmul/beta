@@ -258,7 +258,7 @@
     </header>
 </div>
 
-<!-- Main Content Area (Bungkus Putih Ekstra Dihilangkan) -->
+<!-- Main Content Area -->
 <main class="max-w-7xl mx-auto px-4 py-8">
   <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden relative" id="tableWrapper">
     <div class="overflow-x-auto">
@@ -317,7 +317,7 @@
       </table>
     </div>
 
-    <!-- POP-UP MENU FILTER PERSIS SAMA DENGAN SR.HTML -->
+    <!-- POP-UP MENU FILTER -->
     <div id="filterMenu" class="filter-menu">
       <div class="sort-actions">
         <button class="btn-sort" onclick="execSort('asc')">↑ A-Z</button>
@@ -560,8 +560,7 @@
       item.id
     ]);
 
-    filteredData = [...fullData];
-    renderTable(filteredData);
+    reapplyFilter();
   }
 
   function renderTable(dataArray) {
@@ -611,6 +610,16 @@
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  function reapplyFilter() {
+    filteredData = fullData.filter(r => {
+        for (let colIdx in currentAppliedFilters) {
+            if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+        }
+        return true;
+    });
+    renderTable(filteredData);
   }
 
   /* SISTEM FILTER POP-UP DISESUAIKAN PERSIS DENGAN SR.HTML */
@@ -696,13 +705,7 @@
         delete currentAppliedFilters[activeColIndex];
     }
 
-    filteredData = fullData.filter(r => {
-        for (let colIdx in currentAppliedFilters) {
-            if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
-        }
-        return true;
-    });
-    renderTable(filteredData);
+    reapplyFilter();
     closeFilterMenu();
   }
 
@@ -783,27 +786,70 @@
     };
 
     if (id) {
-      const { error } = await _supabase
+      const { data, error } = await _supabase
         .from(TABLE_NAME)
         .update(payload)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
         alert("Gagal menyimpan ke Supabase: " + error.message);
       } else {
         closeModalForm();
-        fetchRKMData();
+        
+        // UPDATE LOKAL CACHE TANPA RELOAD DATA SUPABASE
+        const updatedItem = data && data[0] ? data[0] : { ...payload, id: parseInt(id) };
+        const cacheIndex = rkmDataCache.findIndex(item => String(item.id) === String(id));
+        
+        if (cacheIndex !== -1) {
+          rkmDataCache[cacheIndex] = updatedItem;
+        }
+
+        const newRowArray = [
+          updatedItem.Tanggal || updatedItem.tanggal || "-",
+          updatedItem.Sumber || updatedItem.sumber || "-",
+          updatedItem.Case || updatedItem.case || "-",
+          updatedItem.PIC || updatedItem.pic || "",
+          updatedItem.Update || updatedItem.update || "-",
+          updatedItem.Target || updatedItem.target || "-",
+          updatedItem.Status || updatedItem.status || "Open",
+          updatedItem.id
+        ];
+
+        const fullIndex = fullData.findIndex(row => String(row[7]) === String(id));
+        if (fullIndex !== -1) {
+          fullData[fullIndex] = newRowArray;
+        }
+
+        reapplyFilter();
       }
     } else {
-      const { error } = await _supabase
+      const { data, error } = await _supabase
         .from(TABLE_NAME)
-        .insert([payload]);
+        .insert([payload])
+        .select();
 
       if (error) {
         alert("Gagal menyimpan ke Supabase: " + error.message);
       } else {
         closeModalForm();
-        fetchRKMData();
+        
+        const newItem = data && data[0] ? data[0] : { ...payload, id: Date.now() };
+        rkmDataCache.unshift(newItem);
+
+        const newRowArray = [
+          newItem.Tanggal || newItem.tanggal || "-",
+          newItem.Sumber || newItem.sumber || "-",
+          newItem.Case || newItem.case || "-",
+          newItem.PIC || newItem.pic || "",
+          newItem.Update || newItem.update || "-",
+          newItem.Target || newItem.target || "-",
+          newItem.Status || newItem.status || "Open",
+          newItem.id
+        ];
+
+        fullData.unshift(newRowArray);
+        reapplyFilter();
       }
     }
   }
@@ -830,7 +876,12 @@
       alert("Gagal menghapus data: " + error.message);
     } else {
       closeModalForm();
-      fetchRKMData();
+      
+      // HAPUS DARI CACHE LOKAL TANPA RELOAD SUPABASE
+      rkmDataCache = rkmDataCache.filter(item => String(item.id) !== String(id));
+      fullData = fullData.filter(row => String(row[7]) !== String(id));
+      
+      reapplyFilter();
     }
   }
 </script>
