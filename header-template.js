@@ -13,7 +13,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
         "inventory": "Inventory",
         "logistics": "Logistics",
         "access": "Access Control",
-        "assets": "Assets" // Tambahan Modul Assets
+        "assets": "Assets"
     };
 
     // 2. Deteksi otomatis lokasi URL jika subtitle tidak diisi manual
@@ -100,7 +100,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
                 <svg class="w-4 h-4 text-rose-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                <span>Keluar</span>
+                <span class="sidebar-text">Keluar</span>
             </button>`;
     }
 
@@ -108,19 +108,24 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
     initNavbarAccess();
 }
 
+/**
+ * Render Item Tombol di Sidebar (Teks otomatis menggunakan class `sidebar-text`)
+ */
 function renderHamburgerContent(items) {
     const container = document.getElementById('custom-hamburger-content');
     if (!container) return;
 
     if (!items || items.length === 0) {
-        container.innerHTML = `<span class="block px-4 py-2 text-xs text-slate-400 italic">Tidak ada menu</span>`;
+        container.innerHTML = `<span class="block px-4 py-2 text-xs text-slate-400 italic sidebar-text">Tidak ada menu</span>`;
         return;
     }
 
     container.innerHTML = items.map(item => `
-        <button type="button" onclick="${item.onClick}; closeConnDropdown();" class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition flex items-center gap-2 cursor-pointer border-0 bg-transparent m-0">
-            ${item.icon || ''}
-            <span>${item.label}</span>
+        <button type="button" onclick="${item.onClick}; closeConnDropdown();" 
+                title="${item.label}"
+                class="w-full text-left px-3 py-2.5 text-xs font-semibold text-slate-300 hover:bg-blue-600 hover:text-white rounded-lg transition flex items-center gap-3 cursor-pointer border-0 bg-transparent m-0">
+            <span class="flex-shrink-0 flex items-center justify-center">${item.icon || ''}</span>
+            <span class="sidebar-text truncate">${item.label}</span>
         </button>
     `).join('');
 }
@@ -188,7 +193,7 @@ function initNavbarAccess() {
         { id: "nav-syncflow", key: "syncflow" },
         { id: "nav-inventory", key: "inventory" },
         { id: "nav-logistics", key: "logistics" },
-        { id: "nav-assets", key: "assets" }, // Pengecekan Akses Modul Assets
+        { id: "nav-assets", key: "assets" },
         { id: "nav-access", key: "access" }
     ];
 
