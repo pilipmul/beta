@@ -36,7 +36,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
 
-        /* PERBAIKAN: Hilangkan overflow-x dari html agar sticky header bekerja normal */
         html {
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -100,44 +99,55 @@
         .btn-action-apply:hover { background-color: #1d4ed8; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-slate-50 text-slate-800 min-h-screen has-sidebar">
 
-    <!-- GLOBAL NAVIGATION SHELL -->
+    <!-- EXPANDABLE GLOBAL NAVIGATION SIDEBAR (LEFT) -->
     <div id="global-header">
-        <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
-                
-                <div class="flex items-center gap-3">
-                    <div class="relative inline-block" id="navDropdownWrapper">
-                        <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
+        <aside id="mainSidebar">
+            <!-- Sidebar Header / Title & Toggle Button -->
+            <div class="sidebar-top-bar">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div id="navDropdownWrapper">
+                        <button type="button" onclick="toggleNavDropdown(event)" title="Menu Navigasi">
                             <span id="nav-header-avatar">U</span>
                         </button>
-                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs z-50"></div>
+                        <div id="navDropdownMenu" class="hidden"></div>
                     </div>
 
-                    <div>
-                        <h1>Sistem Operasional Terintegrasi</h1>
+                    <div class="sidebar-header-info">
+                        <h1>Sistem Operasional</h1>
                         <p id="header-subtitle-text">Database Eskalasi Budget</p>
                     </div>
                 </div>
 
-                <div class="relative inline-block">
-                    <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                    <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1 z-50">
-                        <div id="custom-hamburger-content"></div>
-                    </div>
-                </div>
-
+                <!-- Toggle Collapse/Expand Button -->
+                <button type="button" class="sidebar-toggle-btn" onclick="toggleSidebarExpand()" title="Ciutkan/Perluas Sidebar">
+                    <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
             </div>
-        </header>
+
+            <!-- Sidebar Content Menu -->
+            <div class="sidebar-content">
+                <div id="custom-hamburger-content" class="flex flex-col gap-1"></div>
+            </div>
+
+            <!-- Sidebar Footer / Connection Status Button -->
+            <div class="p-3 border-t border-slate-800 relative">
+                <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                    <span class="sidebar-text text-xs font-medium">Menu Akses &amp; Database</span>
+                </button>
+                <div id="connDropdown" class="hidden"></div>
+            </div>
+        </aside>
     </div>
 
     <!-- MAIN BODY -->
-    <main class="max-w-7xl mx-auto px-4 py-8">
+    <main class="max-w-7xl mx-auto px-6 py-8">
         <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden" id="tableWrapper" style="position: relative;">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200 text-left text-sm hidden" id="eskalasiTable">
@@ -302,7 +312,7 @@
 
     <!-- LOGIKA HAMBURGER, FILTER & DATA -->
     <script>
-        // Inisialisasi Header (Tanpa Tombol Refresh Data)
+        // Inisialisasi Header Sidebar
         renderHeader({
             subtitle: "Eskalasi Budget",
             hamburgerItems: [
@@ -313,6 +323,14 @@
                 }
             ]
         });
+
+        // Logika Toggle Expand / Collapse Sidebar
+        function toggleSidebarExpand() {
+            const sidebar = document.getElementById("mainSidebar");
+            const body = document.body;
+            sidebar.classList.toggle("collapsed");
+            body.classList.toggle("sidebar-collapsed");
+        }
 
         let fullData = []; 
         let filteredData = []; 
