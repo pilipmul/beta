@@ -36,14 +36,9 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
 
-        html {
+        html, body {
             scrollbar-width: none;
             -ms-overflow-style: none;
-        }
-        body {
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            overflow-x: hidden;
         }
         html::-webkit-scrollbar, body::-webkit-scrollbar {
             display: none;
@@ -101,17 +96,16 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen has-sidebar">
 
-    <!-- EXPANDABLE GLOBAL NAVIGATION SIDEBAR (LEFT) -->
+    <!-- SIDEBAR NAVIGASI KIRI -->
     <div id="global-header">
         <aside id="mainSidebar">
-            <!-- Sidebar Header / Title & Toggle Button -->
+            <!-- Sidebar Header -->
             <div class="sidebar-top-bar">
                 <div class="flex items-center gap-3 overflow-hidden">
                     <div id="navDropdownWrapper">
-                        <button type="button" onclick="toggleNavDropdown(event)" title="Menu Navigasi">
+                        <button type="button" onclick="toggleNavDropdown(event)" title="Menu Akses User">
                             <span id="nav-header-avatar">U</span>
                         </button>
-                        <div id="navDropdownMenu" class="hidden"></div>
                     </div>
 
                     <div class="sidebar-header-info">
@@ -120,33 +114,36 @@
                     </div>
                 </div>
 
-                <!-- Toggle Collapse/Expand Button -->
-                <button type="button" class="sidebar-toggle-btn" onclick="toggleSidebarExpand()" title="Ciutkan/Perluas Sidebar">
+                <!-- Tombol Toggle Collapse Sidebar -->
+                <button type="button" class="sidebar-toggle-btn" onclick="toggleSidebarExpand()" title="Ciutkan / Perluas Sidebar">
                     <svg class="w-4 h-4 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                 </button>
             </div>
 
-            <!-- Sidebar Content Menu -->
+            <!-- Konten Menu Utama (Eskalasi Baru dll) -->
             <div class="sidebar-content">
                 <div id="custom-hamburger-content" class="flex flex-col gap-1"></div>
             </div>
 
-            <!-- Sidebar Footer / Connection Status Button -->
+            <!-- Bottom Menu Button -->
             <div class="p-3 border-t border-slate-800 relative">
-                <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)">
+                <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" title="Menu Akses">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
-                    <span class="sidebar-text text-xs font-medium">Menu Akses &amp; Database</span>
+                    <span class="sidebar-text text-xs font-medium">Menu Akses</span>
                 </button>
-                <div id="connDropdown" class="hidden"></div>
             </div>
         </aside>
+
+        <!-- Container Menu Akses & Menu Profil User -->
+        <div id="navDropdownMenu" class="hidden"></div>
+        <div id="connDropdown" class="hidden"></div>
     </div>
 
-    <!-- MAIN BODY -->
+    <!-- MAIN BODY CONTENT AREA -->
     <main class="max-w-7xl mx-auto px-6 py-8">
         <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden" id="tableWrapper" style="position: relative;">
             <div class="overflow-x-auto">
@@ -310,7 +307,7 @@
     <!-- SCRIPT TEMPLATE HEADER TERPUSAT -->
     <script src="header-template.js"></script>
 
-    <!-- LOGIKA HAMBURGER, FILTER & DATA -->
+    <!-- LOGIKA TOGGLE SIDEBAR & FILTER DATA -->
     <script>
         // Inisialisasi Header Sidebar
         renderHeader({
@@ -318,13 +315,13 @@
             hamburgerItems: [
                 {
                     label: "Eskalasi Baru",
-                    icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+                    icon: `<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
                     onClick: "openModalEskalasi()"
                 }
             ]
         });
 
-        // Logika Toggle Expand / Collapse Sidebar
+        // Toggle Expand/Collapse Sidebar
         function toggleSidebarExpand() {
             const sidebar = document.getElementById("mainSidebar");
             const body = document.body;
