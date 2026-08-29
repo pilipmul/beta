@@ -33,13 +33,13 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
         }
     }
 
-    // Update Subtitle Modul Aktif secara instan
+    // Update Subtitle Modul Aktif
     const subtitleEl = document.getElementById('header-subtitle-text');
     if (subtitleEl && autoSubtitle !== null) {
         subtitleEl.textContent = autoSubtitle;
     }
 
-    // Update Elemen Judul Utama agar fleksibel untuk Mobile ("SOT") & Desktop
+    // Update Elemen Judul Utama
     const titleHeaderEl = document.querySelector('#global-header h1');
     if (titleHeaderEl) {
         titleHeaderEl.innerHTML = `
@@ -48,7 +48,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
         `;
     }
 
-    // 3. Render Isi Navigasi Utama (Hanya jika belum dirender)
+    // 3. Render Isi Navigasi Profil Dropdown (Hanya jika belum dirender)
     const navMenu = document.getElementById('navDropdownMenu');
     if (navMenu && !navMenu.hasChildNodes()) {
         navMenu.innerHTML = `
@@ -109,7 +109,7 @@ function renderHeader({ subtitle, hamburgerItems = [] } = {}) {
 }
 
 /**
- * Render Item Tombol di Sidebar (Teks otomatis menggunakan class `sidebar-text`)
+ * Render Item Tombol di Sidebar (Dropdown Menu Akses)
  */
 function renderHamburgerContent(items) {
     const container = document.getElementById('custom-hamburger-content');
@@ -138,13 +138,14 @@ function handleLogout() {
     }
 }
 
+// Tutup dropdown jika mengklik area luar
 document.addEventListener('click', () => {
     closeConnDropdown();
     closeNavDropdown();
 });
 
 function toggleNavDropdown(e) {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     closeConnDropdown();
     const navMenu = document.getElementById('navDropdownMenu');
     if (navMenu) navMenu.classList.toggle('hidden');
@@ -156,7 +157,7 @@ function closeNavDropdown() {
 }
 
 function toggleConnDropdown(e) {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     closeNavDropdown();
     const dropdown = document.getElementById('connDropdown');
     if (dropdown) dropdown.classList.toggle('hidden');
@@ -164,7 +165,9 @@ function toggleConnDropdown(e) {
 
 function closeConnDropdown() {
     const dropdown = document.getElementById('connDropdown');
-    if (dropdown) dropdown.classList.add('hidden');
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+        dropdown.classList.add('hidden');
+    }
 }
 
 function initNavbarAccess() {
