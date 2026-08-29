@@ -3,7 +3,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Endpoint Google Apps Script untuk Upload ke Google Drive (seperti SR HTML)
-const GDRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbz1hEe3lHhkLKX_lM0JiG1YB0_3sFsTXzjsT3-wUfwVFdHFbMUSFiOBGZ2sSAKUVBLO/exec';
+const GDRIVE_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbwN3hPHIDqB3eQEduU0-nIbbPZmfh-rN23e2ekn1GJxK-_CyY2OsdFQ_CPnImy9o0cG/exec';
 
 const PAGE_SIZE = 200;
 let currentPage = 1;
