@@ -1,46 +1,55 @@
-
+/* ==========================================
+   GLOBAL SIDEBAR & POPUP MENU STYLES
+   ========================================== */
 #global-header {
   position: relative;
   z-index: 9999;
-  height: 100vh;
 }
 
-/* Container utama Sidebar di kiri */
 #global-header aside {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  width: 256px; /* 16rem - Mode Expand Default */
+  width: 256px;
   background-color: #0f172a; /* slate-900 */
   color: #ffffff;
-  box-shadow: 4px 0 10px -1px rgba(0, 0, 0, 0.15);
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   box-sizing: border-box;
+  z-index: 10000;
 }
 
-/* Fitur Collapsed Sidebar (Saat Menciptakan Modus Ikon-saja) */
+/* Mode Collapsed (Sidebar Sempit 72px) */
 #global-header aside.collapsed {
-  width: 72px; /* Mode Mini / Collapsed */
+  width: 72px;
 }
 
-/* Kontrol penyembunyian teks saat sidebar ciut */
+/* Sembunyikan semua teks di dalam sidebar saat collapsed */
 #global-header aside.collapsed .sidebar-text,
 #global-header aside.collapsed #header-subtitle-text,
-#global-header aside.collapsed .toggle-icon-text {
+#global-header aside.collapsed .sidebar-header-info,
+#global-header aside.collapsed #custom-hamburger-content button span.sidebar-text {
   display: none !important;
 }
 
-#global-header aside.collapsed .sidebar-header-info {
-  opacity: 0;
-  width: 0;
-  pointer-events: none;
+/* Atur tombol menu custom agar rata tengah & ikon saja saat sempit */
+#global-header aside.collapsed #custom-hamburger-content button {
+  justify-content: center !important;
+  padding: 0.75rem 0 !important;
+  width: 100% !important;
 }
 
-/* Header di dalam Sidebar */
+#global-header aside.collapsed #custom-hamburger-content button svg {
+  margin: 0 !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
+
+/* Sidebar Top Bar Header */
 .sidebar-top-bar {
   padding: 1rem;
   display: flex;
@@ -53,7 +62,6 @@
 .sidebar-header-info {
   display: flex;
   flex-direction: column;
-  transition: opacity 0.2s ease, width 0.2s ease;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -62,17 +70,16 @@
   margin: 0;
   font-size: 0.875rem;
   font-weight: 700;
-  line-height: 1.25;
   color: #ffffff;
 }
 
 #header-subtitle-text {
   margin: 0;
   font-size: 0.75rem;
-  color: #94a3b8; /* slate-400 */
+  color: #94a3b8;
 }
 
-/* Avatar Navigasi Top-Left */
+/* Avatar Navigasi Top Bar */
 #navDropdownWrapper {
   position: relative;
   display: inline-block;
@@ -83,7 +90,7 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 9999px;
-  background-color: #2563eb; /* blue-600 */
+  background-color: #2563eb;
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -91,19 +98,25 @@
   font-weight: 700;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
 }
 
-#navDropdownWrapper button:hover {
-  background-color: #1d4ed8;
+/* Fix Dropdown Menu Akses / Profil User Top Bar */
+#navDropdownMenu {
+  position: fixed;
+  left: 80px;
+  top: 1rem;
+  width: 14rem;
+  background-color: #0f172a;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  padding: 0.5rem 0;
+  z-index: 10050;
 }
 
-#navDropdownWrapper button:active {
-  transform: scale(0.95);
-}
-
-/* Tombol Expand/Collapse Toggle Sidebar */
+/* Toggle Collapse Button Icon Animation */
 .sidebar-toggle-btn {
   background: transparent;
   border: 1px solid #334155;
@@ -114,59 +127,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-}
-
-.sidebar-toggle-btn:hover {
-  background-color: #1e293b;
-  color: #ffffff;
 }
 
 #global-header aside.collapsed .sidebar-toggle-btn svg {
   transform: rotate(180deg);
 }
 
-/* Menu Tengah (Content Navigasi) */
 .sidebar-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  padding: 1rem 0.5rem;
 }
 
-/* Dropdown / Menu Tambahan */
-#navDropdownMenu {
-  position: absolute;
-  left: 3rem;
-  top: 0;
-  width: 14rem;
-  background-color: #0f172a;
-  border: 1px solid #334155;
-  color: #cbd5e1;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-  padding: 0.5rem 0;
-  z-index: 10010;
-}
-
+/* Bottom Connection / Menu Akses Dropup */
 #connDropdown {
-  position: absolute;
+  position: fixed;
   bottom: 4.5rem;
-  left: 0.75rem;
+  left: 1rem;
   width: 13rem;
   background-color: #ffffff;
   border-radius: 0.5rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
   border: 1px solid #e2e8f0;
   overflow: hidden;
   padding: 0.25rem 0;
-  z-index: 10010;
+  z-index: 10050;
 }
 
-/* Button Hamburger Styling */
 #hamburgerBtn {
   width: 100%;
   padding: 0.625rem 0.75rem;
@@ -179,7 +166,6 @@
   align-items: center;
   justify-content: flex-start;
   gap: 0.75rem;
-  transition: all 0.2s ease;
 }
 
 #global-header aside.collapsed #hamburgerBtn {
@@ -187,66 +173,21 @@
   padding: 0.625rem 0;
 }
 
-#hamburgerBtn:hover {
-  background-color: rgba(16, 185, 129, 0.2);
-}
-
-/* Override Tombol Keluar di Dropdown */
-#navDropdownMenu button {
-  width: 100% !important;
-  height: auto !important;
-  background-color: transparent !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  transform: none !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  padding: 0.5rem 1rem !important;
-  font-weight: 400 !important;
-  margin: 0 !important;
-  cursor: pointer !important;
-}
-
-#navDropdownMenu button:hover {
-  background-color: #1e293b !important;
-}
-
-/* ==========================================
-   2. LAYOUT MAIN BODY INTEGRATION
-   ========================================== */
+/* Adjust Main Body Layout */
 body.has-sidebar {
   display: flex;
   min-height: 100vh;
   margin: 0;
-  padding: 0;
 }
 
 body.has-sidebar main {
   flex: 1;
-  margin-left: 256px; /* Menyesuaikan lebar sidebar default */
+  margin-left: 256px;
   transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: calc(100% - 256px);
 }
 
 body.has-sidebar.sidebar-collapsed main {
-  margin-left: 72px; /* Menyesuaikan saat sidebar ciut */
+  margin-left: 72px;
   width: calc(100% - 72px);
-}
-
-/* Responsive Mobile Breakpoint */
-@media (max-width: 768px) {
-  #global-header aside {
-    transform: translateX(-100%);
-    width: 256px !important;
-  }
-  
-  #global-header aside.mobile-open {
-    transform: translateX(0);
-  }
-
-  body.has-sidebar main {
-    margin-left: 0 !important;
-    width: 100% !important;
-  }
 }
