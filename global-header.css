@@ -1,18 +1,4 @@
-/* ==========================================
-   GLOBAL EXPANDABLE SIDEBAR STYLES
-   ========================================== */
-#global-header {
-  position: relative;
-  z-index: 50;
-}
 
-/* Base Style Sidebar */
-#sidebar {
-  background-color: #0f172a;
-  color: #ffffff;
-  box-shadow: 4px 0 6px -1px rgba(0, 0, 0, 0.1);
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
 #sidebar.sidebar-expanded {
   width: 16rem; /* 256px */
