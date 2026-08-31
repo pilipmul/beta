@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - SOT</title>
+    
+    <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+    <script>
+        (function checkAuth() {
+            try {
+                const session = localStorage.getItem("user");
+                const userData = session ? JSON.parse(session) : null;
+                if (!userData || !userData.akses || userData.akses.tasks !== "Y") {
+                    window.location.replace("login.html"); 
+                    document.documentElement.style.display = "none";
+                    throw new Error("Akses ditolak");
+                }
+            } catch(e) {
+                window.location.replace("login.html");
+            }
+        })();
+    </script>
+
+    <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+    <link rel="stylesheet" href="global-header.css">
+
+    <!-- Tailwind CSS v4 & Supabase JS Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --bg-sidebar: #f8f9fa;
+            --bg-main: #ffffff;
+            --text-color: #202124;
+            --text-muted: #5f6368;
+            --border-color: #dadce0;
+            --hover-color: #f1f3f4;
+            --active-color: #e8eaed;
+            --card-bg: #ffffff;
+            --input-bg: #f1f3f4;
+            --modal-bg: #ffffff;
+            --modal-header-bg: #f8f9fa;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary-color: #8ab4f8;
+                --bg-sidebar: #1e1e1e;
+                --bg-main: #121212;
+                --text-color: #e8eaed;
+                --text-muted: #9aa0a6;
+                --border-color: #3c4043;
+                --hover-color: #252525;
+                --active-color: #2d2d2d;
+                --card-bg: #1e1e1e;
+                --input-bg: #2d2d2d;
+                --modal-bg: #1e1e1e;
+                --modal-header-bg: #252525;
+            }
+        }
+
+        .dark {
+            --primary-color: #8ab4f8;
+            --bg-sidebar: #1e1e1e;
+            --bg-main: #121212;
+            --text-color: #e8eaed;
+            --text-muted: #9aa0a6;
+            --border-color: #3c4043;
+            --hover-color: #252525;
+            --active-color: #2d2d2d;
+            --card-bg: #1e1e1e;
+            --input-bg: #2d2d2d;
+            --modal-bg: #1e1e1e;
+            --modal-header-bg: #252525;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background-color: var(--bg-main);
+            color: var(--text-color);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.5); }
+
+        #global-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        #global-header > * { pointer-events: auto; }
+        #global-header aside, #global-header .sidebar {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .app-body {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            padding-left: 64px; 
+            box-sizing: border-box;
+        }
+
+        .module-sidebar {
+            width: 270px;
+            background-color: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 12px 0;
+            flex-shrink: 0;
+            height: 100%;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .nav-item:hover {
+            background-color: var(--hover-color);
+        }
+
+        .nav-item.active {
+            background-color: var(--active-color);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .nav-item i {
+            margin-right: 12px;
+            font-size: 14px;
+            width: 18px;
+            text-align: center;
+        }
+
+        .nav-item-list {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            cursor: pointer;
+            color: var(--text-color);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .nav-item-list:hover {
+            background-color: var(--hover-color);
+        }
+
+        .nav-item-list.active {
+            background-color: var(--active-color);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .list-action-icon {
+            display: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            margin-left: 2px;
+        }
+
+        .nav-item-list:hover .list-action-icon {
+            display: inline-block;
+        }
+
+        .list-action-icon:hover {
+            color: var(--primary-color);
+            background-color: var(--hover-color);
+        }
+        
+        .list-delete-icon:hover {
+            color: #ef4444 !important;
+            background-color: rgba(239, 68, 68, 0.1) !important;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 12px 16px;
+        }
+
+        .list-section-title {
+            padding: 0 16px 6px 16px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .create-list-btn {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .create-list-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        .create-list-btn i {
+            margin-right: 12px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            height: 100%;
+            overflow-y: auto;
+            background-color: var(--bg-main);
+            min-width: 0;
+            box-sizing: border-box;
+        }
+
+        .header-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .header-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+
+        .edit-list-title-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .edit-list-title-btn:hover {
+            color: var(--primary-color);
+            background-color: var(--hover-color);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-search-box input {
+            height: 32px;
+            padding: 4px 28px 4px 30px;
+            border-radius: 20px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+            width: 180px;
+        }
+
+        .header-search-box input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .header-search-box i.search-icon {
+            position: absolute;
+            left: 10px;
+            font-size: 12px;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .header-search-box .clear-btn {
+            position: absolute;
+            right: 8px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .sort-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 32px;
+            padding: 0 12px;
+            border-radius: 20px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .sort-btn:hover {
+            background-color: var(--hover-color);
+            color: var(--primary-color);
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            flex-shrink: 0;
+        }
+
+        .input-container i {
+            color: var(--primary-color);
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        .task-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 13px;
+            color: var(--text-color);
+        }
+
+        .add-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 13px;
+            padding: 4px 8px;
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .task-item:hover {
+            border-color: var(--primary-color);
+        }
+
+        .task-item.selected-task {
+            border-color: var(--primary-color);
+            background-color: var(--hover-color);
+        }
+
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 1px solid var(--text-muted);
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .task-item.completed .task-checkbox {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+
+        .task-item.completed .task-checkbox::after {
+            content: "\f00c";
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            color: white;
+            font-size: 9px;
+        }
+
+        .task-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .task-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+
+        .task-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+        }
+
+        .task-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .task-meta .badge-list {
+            background-color: var(--active-color);
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .task-meta .badge-completion {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .task-inline-note {
+            flex: 1;
+            margin: 0 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+
+        .star-icon {
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .star-icon.active {
+            color: #f59e0b;
+        }
+
+        .trash-icon {
+            color: var(--text-muted);
+            font-size: 14px;
+            cursor: pointer;
+            padding: 4px;
+            margin-left: 4px;
+            flex-shrink: 0;
+        }
+
+        .trash-icon:hover {
+            color: #ef4444;
+        }
+
+        .completed-toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 4px;
+            margin-top: 16px;
+            margin-bottom: 6px;
+            width: fit-content;
+        }
+
+        .completed-toggle-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .completed-toggle-btn i {
+            transition: transform 0.2s ease;
+        }
+
+        .detail-panel {
+            width: 340px;
+            background-color: var(--bg-sidebar);
+            border-left: 1px solid var(--border-color);
+            display: none;
+            flex-direction: column;
+            flex-shrink: 0;
+            height: 100%;
+            animation: slideIn 0.15s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--modal-header-bg);
+        }
+
+        .panel-header h3 {
+            font-size: 14px;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .panel-body {
+            padding: 16px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .panel-footer {
+            padding: 12px 16px;
+            background: var(--modal-header-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 20000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6);
+        }
+
+        .modal-content {
+            background-color: var(--modal-bg);
+            color: var(--text-color);
+            margin: 5% auto;
+            width: 440px;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: var(--modal-header-bg);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 15px;
+            color: var(--text-color);
+            font-weight: 700;
+        }
+
+        .close-btn {
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-body {
+            padding: 18px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 12px 18px;
+            background: var(--modal-header-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 13px;
+            outline: none;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-secondary {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--hover-color);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .method-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .method-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .method-card:hover {
+            border-color: var(--primary-color);
+            background: var(--hover-color);
+        }
+        .method-card input[type="radio"] {
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        .method-details h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+            color: var(--text-color);
+        }
+        .method-details p {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Inter',sans-serif] flex flex-col overflow-hidden transition-colors duration-200">
+
+    <div id="loading-overlay" style="display: none;">
+        <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Menyinkronkan Tasks SOT...
+    </div>
+
+    <!-- CONTAINER ELEMEN TOPBAR HOLLOW OVERLAY -->
+    <div id="global-header"></div>
+
+    <!-- APP BODY WRAPPER -->
+    <div class="app-body">
+        
+        <!-- SIDEBAR MODUL TASKS KIRI -->
+        <div class="module-sidebar custom-scroll">
+            <div class="nav-item active" id="nav-all">
+                <i class="fas fa-sun"></i> Semua Tugas
+            </div>
+            <div class="nav-item" id="nav-important">
+                <i class="far fa-star"></i> Penting
+            </div>
+            <div class="nav-item" id="nav-recurring">
+                <i class="fas fa-sync-alt"></i> Tugas Berulang Otomatis
+            </div>
+            <div class="nav-item" id="nav-completed">
+                <i class="far fa-check-circle"></i> Selesai
+            </div>
+
+            <div class="divider"></div>
+            <div class="list-section-title">Grup / List</div>
+            <div id="custom-sidebar-lists"></div>
+
+            <div class="create-list-btn" id="btnCreateNewList">
+                <i class="fas fa-plus"></i> New List
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <div class="main-content custom-scroll">
+            <div class="header-area">
+                <div class="header-title-wrapper">
+                    <div class="header-title" id="current-list-title">Semua Tugas</div>
+                </div>
+                
+                <div class="header-controls">
+                    <!-- SEARCH BOX DISAMPING TOMBOL SORT DUE -->
+                    <div class="header-search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="taskLocalSearchInput" placeholder="Cari tugas...">
+                        <button id="btnClearLocalSearch" class="clear-btn">✕</button>
+                    </div>
+
+                    <!-- TOMBOL SORT BY DUE DATE -->
+                    <button class="sort-btn" id="btnSortOrder" title="Urutkan Berdasarkan Batas Waktu">
+                        <i class="fas fa-sort-amount-down-alt" id="sort-icon"></i>
+                        <span id="sort-text">Due (A-Z)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <i class="fas fa-plus"></i>
+                <input type="text" class="task-input" id="task-input" placeholder="Tambah Tugas Baru...">
+                <button class="add-btn" id="btnAddTask">Tambah</button>
+            </div>
+
+            <div class="task-list" id="active-task-list-container"></div>
+            
+            <div id="completed-section" style="display: none;">
+                <button class="completed-toggle-btn" id="btnToggleCompleted">
+                    <i class="fas fa-chevron-right" id="completed-toggle-icon"></i>
+                    <span id="completed-toggle-text">Tampilkan tugas selesai</span>
+                </button>
+                <div class="task-list" id="completed-task-list-container" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- PANEL DETAIL & EDIT TUGAS (RIGHT SIDE) -->
+        <div id="detailPanel" class="detail-panel">
+            <div class="panel-header">
+                <h3>Detail & Edit Tugas</h3>
+                <span class="close-btn" id="btnCloseDetailPanel">&times;</span>
+            </div>
+            <div class="panel-body custom-scroll">
+                <input type="hidden" id="edit-task-id">
+                <div class="form-group">
+                    <label>Judul Tugas</label>
+                    <input type="text" id="edit-task-title" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Batas Waktu (Deadline)</label>
+                    <input type="date" id="edit-task-due" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Selesai (Completion)</label>
+                    <input type="date" id="edit-task-completion" class="form-control" readonly style="opacity: 0.7;">
+                </div>
+                <div class="form-group">
+                    <label>Pengulangan Otomatis</label>
+                    <select id="edit-task-repeat" class="form-control">
+                        <option value="none">Tidak Berulang</option>
+                        <option value="daily">Setiap Hari</option>
+                        <option value="weekly">Setiap Minggu</option>
+                        <option value="monthly">Setiap Bulan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pindahkan ke List / Grup</label>
+                    <select id="edit-task-list" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>Catatan Tambahan</label>
+                    <textarea id="edit-task-note" class="form-control" rows="8" style="resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <button class="btn btn-secondary" id="btnCancelDetailPanel">Batal</button>
+                <button class="btn btn-primary" id="btnSaveDetailPanel">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BUAT LIST / GRUP -->
+    <div id="newListModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Buat List / Grup Baru</h2>
+                <span class="close-btn" id="btnCloseNewListModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nama List / Grup Baru</label>
+                    <input type="text" id="new-list-name" class="form-control" placeholder="Contoh: Teknis Listrik, Sipil, Admin..." autocomplete="off">
+                </div>
+                
+                <div class="form-group" id="group-method-section">
+                    <label>Metode Pengisian Tugas Pertama</label>
+                    <div class="method-options">
+                        <div class="method-card" id="cardMethodMove">
+                            <input type="radio" name="list-method" id="method-move" value="1" checked>
+                            <div class="method-details">
+                                <h4>Pindahkan Tugas yang Sudah Ada</h4>
+                                <p>Memilih salah satu tugas mandiri saat ini untuk dimasukkan ke grup baru.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="method-card" id="cardMethodNew">
+                            <input type="radio" name="list-method" id="method-new" value="2">
+                            <div class="method-details">
+                                <h4>Buat Tugas Baru Langsung</h4>
+                                <p>Membuat item tugas kosong baru di dalam lingkup grup ini.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="sub-select-task-group" style="display:none;">
+                    <label>Pilih Tugas Mandiri Tersedia</label>
+                    <select id="new-list-task-select" class="form-control"></select>
+                </div>
+
+                <div class="form-group" id="sub-input-task-group" style="display:none;">
+                    <label>Judul Tugas Baru di List Ini</label>
+                    <input type="text" id="new-list-task-title" class="form-control" placeholder="Ketik nama tugas...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelNewListModal">Batal</button>
+                <button class="btn btn-primary" id="btnSubmitNewList">Proses Buat List</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT NAMA LIST -->
+    <div id="editListModal" class="modal">
+        <div class="modal-content" style="width: 400px;">
+            <div class="modal-header">
+                <h2>Edit Nama List / Grup</h2>
+                <span class="close-btn" id="btnCloseEditListModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="old-list-name">
+                <div class="form-group">
+                    <label>Nama List Baru</label>
+                    <input type="text" id="edit-list-name-input" class="form-control" placeholder="Ubah nama list..." autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelEditListModal">Batal</button>
+                <button class="btn btn-primary" id="btnSubmitRenameList">Simpan Nama</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS LIST -->
+    <div id="deleteListModal" class="modal">
+        <div class="modal-content" style="width: 440px;">
+            <div class="modal-header">
+                <h2>Hapus List / Grup</h2>
+                <span class="close-btn" id="btnCloseDeleteListModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="delete-list-message" style="font-size: 13px; margin-bottom: 14px; color: var(--text-color);"></p>
+                
+                <div class="form-group">
+                    <label>Pilih Opsi Penghapusan:</label>
+                    <div class="method-options">
+                        <div class="method-card" id="cardDelOptKeep">
+                            <input type="radio" name="delete-list-option" id="del-opt-keep" value="keep" checked>
+                            <div class="method-details">
+                                <h4>Hapus List Sahaja</h4>
+                                <p>Tugas di dalam list ini akan tetap ada (berubah menjadi tanpa grup/tugas mandiri).</p>
+                            </div>
+                        </div>
+                        
+                        <div class="method-card" id="cardDelOptAll">
+                            <input type="radio" name="delete-list-option" id="del-opt-all" value="all">
+                            <div class="method-details">
+                                <h4 style="color: #ef4444;">Hapus List Beserta Seluruh Tugasnya</h4>
+                                <p>Semua tugas yang ada di dalam list ini akan ikut dihapus secara permanen.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelDeleteListModal">Batal</button>
+                <button class="btn btn-primary" style="background-color: #ef4444;" id="btnConfirmDeleteList">Hapus List</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT & UTAMA TASKS -->
+    <script src="header-template.js"></script>
+    <script src="tasks.js"></script>
+</body>
+</html>

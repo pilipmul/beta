@@ -1,0 +1,74 @@
+/* ==========================================
+   GLOBAL EXPANDABLE SIDEBAR STYLES
+   ========================================== */
+#global-header {
+  position: relative;
+  z-index: 50;
+}
+
+/* Base Style Sidebar */
+#sidebar {
+  background-color: #0f172a;
+  color: #ffffff;
+  box-shadow: 4px 0 6px -1px rgba(0, 0, 0, 0.1);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* LEBAR SIDEBAR DI-PERKECIL */
+#sidebar.sidebar-expanded {
+  width: 14rem; /* 224px (Mekar lebih ringkas) */
+}
+
+#sidebar.sidebar-collapsed {
+  width: 4rem; /* 64px (Menyempit) */
+}
+
+/* Transisi Teks */
+.sidebar-text {
+  transition: opacity 0.2s ease, max-width 0.2s ease;
+  white-space: nowrap;
+}
+
+#sidebar.sidebar-collapsed .sidebar-text {
+  display: none !important;
+}
+
+/* Menjaga ukuran ikon agar TIDAK ikut mengecil */
+#sidebar nav svg,
+#sidebar button svg {
+  width: 1.25rem !important;  /* 20px */
+  height: 1.25rem !important; /* 20px */
+  flex-shrink: 0 !important;
+}
+
+/* Scrollbar Sidebar */
+#sidebar nav::-webkit-scrollbar {
+  width: 4px;
+}
+#sidebar nav::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+#sidebar nav::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Responsive Offset Main Content */
+.main-offset-expanded {
+  margin-left: 14rem;
+}
+.main-offset-collapsed {
+  margin-left: 4rem;
+}
+
+@media (max-width: 639px) {
+  #sidebar {
+    width: 4rem !important;
+  }
+  #sidebar .sidebar-text {
+    display: none !important;
+  }
+  #main-content {
+    margin-left: 4rem !important;
+  }
+}

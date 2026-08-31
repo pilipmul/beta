@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RKM - SOT</title>
+
+  <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+  <script>
+    (function checkAuth() {
+      const userSessionString = localStorage.getItem("user");
+      
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      try {
+        const userData = JSON.parse(userSessionString);
+        if (!userData || !userData.akses || userData.akses.RKM !== "Y") {
+          window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+        }
+      } catch (err) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+
+  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
+  <!-- Tailwind CSS v4 Browser Build -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body { 
+      font-family: 'Inter', sans-serif; 
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* TRIK FLOATING SCROLLBAR ABSOLUTE OVERLAY */
+    .floating-scroll-area {
+      position: absolute;
+      inset: 0;
+      overflow-y: scroll;
+      overflow-x: auto;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.5); }
+
+    /* SIDEBAR HOLLOW OVERLAY */
+    #global-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #global-header > * { pointer-events: auto; }
+    #global-header aside, #global-header .sidebar {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* CUSTOM TAG INPUT STYLE UNTUK PIC */
+    .pic-tag-container {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 6px;
+      background-color: #fff;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-height: 42px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .pic-tag-container:focus-within {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+    .pic-tag {
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      padding: 2px 10px;
+      border-radius: 16px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #bfdbfe;
+    }
+    .pic-tag .btn-remove {
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+      opacity: 0.7;
+    }
+    .pic-tag .btn-remove:hover {
+      opacity: 1;
+      color: #dc2626;
+    }
+    .pic-input-search {
+      border: none;
+      outline: none;
+      flex-grow: 1;
+      min-width: 120px;
+      padding: 2px 4px;
+      font-size: 0.9rem;
+    }
+
+    /* STYLING HEADER & POP-UP FILTER */
+    th { position: relative; padding-right: 30px !important; }
+    th.no-filter { padding-right: 12px !important; }
+    
+    .filter-icon-btn {
+        position: absolute;
+        right: 4px; top: 50%;
+        transform: translateY(-50%);
+        width: 20px; height: 20px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 4px; cursor: pointer;
+        transition: all 0.15s;
+        color: #94a3b8;
+    }
+    .filter-icon-btn:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #3b82f6;
+    }
+    .filter-icon {
+        width: 11px; height: 11px; fill: currentColor;
+    }
+    
+    .filter-active .filter-icon-btn { color: #facc15 !important; }
+    .filter-active .filter-icon { display: none; }
+    .filter-active .filter-icon-btn::after {
+        content: "";
+        width: 12px; height: 12px; background-color: #facc15;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+    }
+    
+    .filter-menu {
+        position: fixed;
+        z-index: 1000; display: none; width: 260px;
+        padding: 14px; border-radius: 12px;
+        text-transform: none; font-weight: normal; font-size: 13px;
+        box-sizing: border-box;
+    }
+
+    .filter-menu .sort-actions {
+        display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .filter-menu .btn-sort {
+        flex: 1; padding: 7px 10px; border-radius: 6px;
+        cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s;
+    }
+
+    .filter-menu .divider {
+        border: none; border-top-width: 1px; margin: 10px 0;
+    }
+
+    .filter-menu .search-box { margin-bottom: 10px; }
+    .filter-menu .filter-search-box {
+        width: 100%; padding: 8px 10px;
+        border-radius: 6px; box-sizing: border-box; font-size: 12px; outline: none;
+    }
+
+    .filter-menu .select-all-row {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 12px; margin-bottom: 8px; font-weight: 500;
+    }
+    .filter-menu .btn-reset {
+        background: none; border: none;
+        cursor: pointer; font-size: 12px; padding: 0; font-weight: 600;
+    }
+
+    .filter-menu .checkbox-label {
+        display: flex; align-items: center; gap: 8px;
+        cursor: pointer; font-size: 12px; user-select: none;
+    }
+
+    .filter-menu .checkbox-list {
+        max-height: 140px; overflow-y: auto; display: flex;
+        flex-direction: column; gap: 6px; padding-right: 2px;
+    }
+    .filter-menu .checkbox-item {
+        display: flex; align-items: center; gap: 8px; font-size: 12px;
+    }
+
+    .filter-menu .footer-actions {
+        display: flex; gap: 8px; margin-top: 10px;
+    }
+    .filter-menu .btn-cancel,
+    .filter-menu .btn-apply {
+        flex: 1; padding: 8px 10px; border-radius: 6px;
+        border: none; font-weight: 600; cursor: pointer; font-size: 12px;
+    }
+  </style>
+
+  <!-- SUPABASE JS SDK VIA CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Inter',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <!-- CONTAINER ELEMEN SIDEBAR OVERLAY HOLLOW -->
+  <div id="global-header"></div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div id="main-content" class="flex-1 w-full h-screen flex flex-col overflow-hidden">
+    
+    <!-- Topbar Halaman Terpadu -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-1.5 sticky top-0 z-40 flex items-center justify-between shrink-0">
+      <div>
+        <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">RKM</h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap">
+          Total Agenda: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+        <div class="relative flex items-center w-48 sm:w-64">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" onkeyup="triggerGlobalSearch()" 
+                 placeholder="Cari agenda RKM..." 
+                 class="w-full h-7 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-9 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+        </div>
+
+        <div class="relative flex items-center">
+          <button type="button" id="hamburgerBtn" onclick="toggleHamburgerMenu(event)" class="h-7 w-7 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+            <div id="custom-hamburger-content"></div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT BODY WRAPPER -->
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+          <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative" id="tableWrapper">
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs table-fixed" id="rkmTable">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th scope="col" class="p-2.5 w-[11%]">
+                      Tanggal
+                      <div class="filter-icon-btn" data-col="0" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[13%]">
+                      Sumber
+                      <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[24%]">
+                      Case
+                      <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[10%]">
+                      PIC
+                      <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[22%]">
+                      Update
+                      <div class="filter-icon-btn" data-col="4" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[10%]">
+                      Target
+                      <div class="filter-icon-btn" data-col="5" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[10%] text-center">
+                      Status
+                      <div class="filter-icon-btn" data-col="6" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="rkmTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr>
+                    <td colspan="7" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">Loading RKM data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- POP-UP MENU FILTER (MEMAKAI TONE NATIVE LIGHT/DARK MODE) -->
+            <div id="filterMenu" class="filter-menu bg-white dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] shadow-2xl">
+              <div class="sort-actions">
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('asc')">↑ A-Z</button>
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('desc')">↓ Z-A</button>
+              </div>
+              
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+              
+              <div class="search-box">
+                <input type="text" id="menuSearch" class="filter-search-box bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] focus:border-blue-500" placeholder="Filter nilai..." onkeyup="searchInMenu()">
+              </div>
+
+              <div class="select-all-row">
+                <label class="checkbox-label text-[#202124] dark:text-[#e8eaed]">
+                  <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)" class="rounded text-blue-600 focus:ring-0"> 
+                  <span>Pilih Semua</span>
+                </label>
+                <button class="btn-reset text-[#1a73e8] dark:text-[#8ab4f8]" onclick="resetCurrentFilter()">Reset</button>
+              </div>
+
+              <div class="checkbox-list" id="checkboxList"></div>
+
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+
+              <div class="footer-actions">
+                <button class="btn-cancel bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6]" onclick="closeFilterMenu()">Batal</button>
+                <button class="btn-apply bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124]" onclick="applyCheckboxFilter()">Terapkan</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+<!-- MODAL FORM EDIT / ADD -->
+<div id="rkmModal" class="fixed inset-0 bg-black/60 z-[10005] hidden flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-[#1e1e1e] max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043]">
+    <div class="bg-[#f8f9fa] dark:bg-[#252525] px-6 py-4 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center">
+      <h3 id="modalTitle" class="font-bold text-base">Add New Agenda</h3>
+      <button onclick="closeModalForm()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+    </div>
+    
+    <form id="rkmForm" class="p-6 space-y-4 text-xs">
+      <input type="hidden" id="inpId">
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tanggal</label>
+          <input type="date" id="inpTanggal" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Sumber</label>
+          <input type="text" id="inpSumber" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Case (Rencana & Kendala)</label>
+        <textarea id="inpCase" rows="3" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required></textarea>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">PIC</label>
+          <div class="pic-tag-container border-[#dadce0] dark:border-[#3c4043] bg-[#f1f3f4] dark:bg-[#2d2d2d]" id="picTagContainer" onclick="focusPicInput()">
+            <input type="text" id="inpPicSearch" class="pic-input-search bg-transparent text-[#202124] dark:text-[#e8eaed]" placeholder="Ketik PIC..." list="picDatalist" oninput="handlePicSelect(this)">
+          </div>
+          <p class="text-[10px] text-[#5f6368] dark:text-[#9aa0a6] mt-1">Ketik nama PIC untuk memilih dari daftar opsi.</p>
+
+          <datalist id="picDatalist">
+            <option value="GA"></option>
+            <option value="Head Ops."></option>
+            <option value="ME"></option>
+            <option value="TRO"></option>
+            <option value="FA"></option>
+            <option value="Head FA"></option>
+            <option value="Security"></option>
+            <option value="All"></option>
+            <option value="CS"></option>
+            <option value="Kasir"></option>
+            <option value="MKT"></option>
+          </datalist>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Target Selesai</label>
+          <input type="text" id="inpTarget" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: W3 Juli 2026">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Update Progress & Realisasi</label>
+        <textarea id="inpUpdate" rows="3" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Status Case</label>
+        <select id="inpStatus" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="Open">Open (In Progress)</option>
+          <option value="Done" class="bg-emerald-100 text-emerald-800">Done (Completed)</option>
+          <option value="Close" class="bg-blue-100 text-blue-800">Close (Closed)</option>
+        </select>
+      </div>
+
+      <div class="pt-4 flex justify-between items-center border-t border-[#f1f3f4] dark:border-[#3c4043]">
+        <button type="button" id="btnDeleteModal" class="hidden px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer" onclick="deleteFromModal()">
+          Delete Agenda
+        </button>
+        <div class="flex gap-3 ml-auto">
+          <button type="button" onclick="closeModalForm()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg text-xs font-semibold transition cursor-pointer">Batal</button>
+          <button type="button" onclick="submitForm()" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg text-xs font-semibold transition cursor-pointer">Simpan Data</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT -->
+<script src="header-template.js"></script>
+
+<script>
+  const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0";
+  const { createClient } = supabase;
+  const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const TABLE_NAME = "rkm";
+  
+  const VALID_PICS = ["GA", "Head Ops.", "ME", "TRO", "FA", "Head FA", "Security", "All", "CS", "Kasir", "MKT"];
+  let selectedPicsArray = [];
+
+  let usernameFromStorage = "Tamu";
+  try {
+    const userData = JSON.parse(localStorage.getItem("user"));
+    if (userData && userData.nama) {
+      usernameFromStorage = userData.nama;
+    }
+  } catch (err) {
+    console.error("Gagal membaca session:", err);
+  }
+
+  const CURRENT_USER = usernameFromStorage;
+  const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
+  const isEditor = ALLOWED_EDITORS.includes(CURRENT_USER);
+
+  let rkmDataCache = [];
+  let fullData = []; 
+  let filteredData = []; 
+
+  let activeColIndex = -1;
+  let currentAppliedFilters = {};
+
+  const menu = document.getElementById('filterMenu');
+  const searchBox = document.getElementById('menuSearch');
+  const masterCheckbox = document.getElementById('masterCheckbox');
+
+  function toggleHamburgerMenu(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('customDropdownMenu');
+    const container = document.getElementById('custom-hamburger-content');
+    if (!dropdown) return;
+
+    if (container && (!container.innerHTML || container.innerHTML.trim() === '')) {
+      renderHamburgerMenuContent();
+    }
+    dropdown.classList.toggle('hidden');
+  }
+
+  function toggleConnDropdown(e) {
+    toggleHamburgerMenu(e);
+  }
+
+  function renderHamburgerMenuContent() {
+    const container = document.getElementById('custom-hamburger-content');
+    if (!container) return;
+
+    const items = [];
+    if (isEditor) {
+      items.push(`
+        <button onclick="openModal(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+          <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>New Agenda</span>
+        </button>
+      `);
+    } else {
+      items.push(`
+        <div class="px-3 py-2 text-[#5f6368] dark:text-[#9aa0a6] text-center">Read Only</div>
+      `);
+    }
+
+    container.innerHTML = items.join('');
+  }
+
+  function triggerGlobalSearch() {
+    const input = document.getElementById('globalSearchInput');
+    const query = input ? input.value.trim().toLowerCase() : '';
+    const btnClear = document.getElementById('btnClearSearch');
+
+    if (query !== '') {
+      if (btnClear) btnClear.classList.remove('hidden');
+    } else {
+      if (btnClear) btnClear.classList.add('hidden');
+    }
+
+    filteredData = fullData.filter(row => {
+      const matchesSearch = query === '' || row.some(cell => String(cell).toLowerCase().includes(query));
+      let matchesFilters = true;
+      for (let colIdx in currentAppliedFilters) {
+        if (!currentAppliedFilters[colIdx].includes(String(row[colIdx]))) {
+          matchesFilters = false;
+          break;
+        }
+      }
+      return matchesSearch && matchesFilters;
+    });
+
+    renderTable(filteredData);
+  }
+
+  function clearGlobalSearch() {
+    const input = document.getElementById('globalSearchInput');
+    if (input) input.value = '';
+    triggerGlobalSearch();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const hamburgerMenuOptions = [];
+    if (isEditor) {
+      hamburgerMenuOptions.push({
+        label: "New Agenda",
+        icon: `<svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+        onClick: "openModal()"
+      });
+    }
+
+    if (typeof renderHeader === 'function') {
+      renderHeader({
+        subtitle: "Rapat Kerja Mingguan",
+        hamburgerItems: hamburgerMenuOptions
+      });
+    }
+
+    renderHamburgerMenuContent();
+    fetchRKMData();
+  });
+
+  function focusPicInput() {
+    document.getElementById("inpPicSearch").focus();
+  }
+
+  function handlePicSelect(input) {
+    const val = input.value.trim();
+    const match = VALID_PICS.find(p => p.toLowerCase() === val.toLowerCase());
+
+    if (match) {
+      if (!selectedPicsArray.includes(match)) {
+        selectedPicsArray.push(match);
+        renderPicTags();
+      }
+      input.value = "";
+    }
+  }
+
+  function removePic(picName) {
+    selectedPicsArray = selectedPicsArray.filter(p => p !== picName);
+    renderPicTags();
+  }
+
+  function renderPicTags() {
+    const container = document.getElementById("picTagContainer");
+    const inputSearch = document.getElementById("inpPicSearch");
+
+    container.querySelectorAll(".pic-tag").forEach(el => el.remove());
+
+    selectedPicsArray.forEach(pic => {
+      const tag = document.createElement("span");
+      tag.className = "pic-tag dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800";
+      tag.innerHTML = `${pic} <span class="btn-remove" onclick="removePic('${pic}')">&times;</span>`;
+      container.insertBefore(tag, inputSearch);
+    });
+  }
+
+  async function fetchRKMData() {
+    const tbody = document.getElementById("rkmTableBody");
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">Loading RKM data...</td></tr>';
+
+    const { data, error } = await _supabase
+      .from(TABLE_NAME)
+      .select('*')
+      .order('Tanggal', { ascending: false });
+
+    if (error) {
+      console.error("Detail Error:", error);
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-500 py-8">Gagal memuat data: ${error.message}</td></tr>`;
+      return;
+    }
+
+    rkmDataCache = data || [];
+    
+    fullData = rkmDataCache.map(item => [
+      item.Tanggal || item.tanggal || "-",
+      item.Sumber || item.sumber || "-",
+      item.Case || item.case || "-",
+      item.PIC || item.pic || "",
+      item.Update || item.update || "-",
+      item.Target || item.target || "-",
+      item.Status || item.status || "Open",
+      item.id
+    ]);
+
+    reapplyFilter();
+  }
+
+  function renderTable(dataArray) {
+    const tbody = document.getElementById("rkmTableBody");
+    tbody.innerHTML = "";
+
+    const counterEl = document.getElementById("totalDataCount");
+    if (counterEl) counterEl.innerText = dataArray.length;
+
+    if (dataArray.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-6">Tidak ada agenda kerja yang sesuai.</td></tr>`;
+      return;
+    }
+
+    dataArray.forEach((row) => {
+      const [tanggal, sumber, caseText, picText, updateText, targetText, status, id] = row;
+      const originalIndex = rkmDataCache.findIndex(d => d.id === id);
+      
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-id", id);
+      tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors";
+
+      const picBadges = picText 
+        ? `<div class="flex flex-col gap-1 items-start font-medium">${picText.split(",").map(p => `<span class="inline-block bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-md px-1.5 py-0.5 text-[10px] whitespace-nowrap">${p.trim()}</span>`).join("")}</div>`
+        : '-';
+
+      let statusBadgeStyle = "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700";
+      if (status === "Done") {
+        statusBadgeStyle = "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 font-bold";
+      } else if (status === "Close") {
+        statusBadgeStyle = "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 font-bold";
+      }
+
+      const clickAttr = isEditor ? `onclick="openModal(${originalIndex})"` : '';
+      const cursorClass = isEditor ? 'cursor-pointer hover:scale-105 transition' : 'cursor-default';
+      const titleAttr = isEditor ? 'Click to edit' : 'Read only';
+
+      tr.innerHTML = `
+        <td class="p-2.5 whitespace-nowrap font-medium">${tanggal}</td>
+        <td class="p-2.5">${sumber}</td>
+        <td class="p-2.5">${caseText}</td>
+        <td class="p-2.5">${picBadges}</td>
+        <td class="p-2.5">${updateText}</td>
+        <td class="p-2.5 whitespace-nowrap">${targetText}</td>
+        <td class="p-2.5 text-center whitespace-nowrap">
+          <span class="inline-block rounded-full border px-2.5 py-0.5 text-xs shadow-xs ${statusBadgeStyle} ${cursorClass}" ${clickAttr} title="${titleAttr}">
+            ${status}
+          </span>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function reapplyFilter() {
+    triggerGlobalSearch();
+  }
+
+  function toggleFilterMenu(e, element) {
+    activeColIndex = parseInt(element.getAttribute('data-col'));
+    const btnRect = element.getBoundingClientRect();
+    
+    menu.style.display = 'block';
+    menu.style.top = (btnRect.bottom + 4) + 'px';
+    menu.style.left = Math.min(btnRect.left, window.innerWidth - 270) + 'px';
+    
+    searchBox.value = '';
+    const dataFilteredByOthers = fullData.filter(r => {
+        for (let colIdx in currentAppliedFilters) {
+            if (parseInt(colIdx) === activeColIndex) continue; 
+            if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+        }
+        return true;
+    });
+
+    const availableVals = [...new Set(dataFilteredByOthers.map(r => String(r[activeColIndex])))].sort();
+    const currentlyChecked = currentAppliedFilters[activeColIndex] || availableVals;
+
+    const list = document.getElementById('checkboxList');
+    list.innerHTML = '';
+    availableVals.forEach(v => {
+        const isChecked = currentlyChecked.includes(v);
+        list.innerHTML += `<label class="checkbox-item"><input type="checkbox" ${isChecked ? 'checked' : ''} value="${v}" onclick="updateMasterCheckbox()" class="rounded text-blue-600 focus:ring-0"> <span>${v ? v : '-'}</span></label>`;
+    });
+    updateMasterCheckbox();
+    e.stopPropagation();
+  }
+
+  function searchInMenu() {
+    const filter = searchBox.value.toLowerCase();
+    document.querySelectorAll('#checkboxList .checkbox-item').forEach(item => {
+        item.style.display = item.innerText.toLowerCase().includes(filter) ? "flex" : "none";
+    });
+  }
+
+  function toggleAllCheckboxes(state) {
+    document.querySelectorAll('#checkboxList input[type="checkbox"]').forEach(cb => {
+        if (cb.parentElement.style.display !== 'none') cb.checked = state;
+    });
+  }
+
+  function updateMasterCheckbox() {
+    const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+    masterCheckbox.checked = cbs.length > 0 && cbs.every(cb => cb.checked);
+  }
+
+  function resetCurrentFilter() {
+    searchBox.value = '';
+    masterCheckbox.checked = true;
+    toggleAllCheckboxes(true);
+    searchInMenu();
+  }
+
+  function closeFilterMenu() {
+    menu.style.display = 'none';
+  }
+
+  function execSort(dir) {
+    filteredData.sort((a, b) => {
+        let valA = a[activeColIndex], valB = b[activeColIndex];
+        return dir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+    });
+    renderTable(filteredData);
+    closeFilterMenu();
+  }
+
+  function applyCheckboxFilter() {
+    const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+    const checkedVals = cbs.filter(i => i.checked).map(i => i.value);
+    const isAllChecked = cbs.every(cb => cb.checked);
+    const targetTh = document.querySelector(`.filter-icon-btn[data-col="${activeColIndex}"]`).closest('th');
+    
+    if (!isAllChecked) {
+        targetTh.classList.add('filter-active');
+        currentAppliedFilters[activeColIndex] = checkedVals;
+    } else {
+        targetTh.classList.remove('filter-active');
+        delete currentAppliedFilters[activeColIndex];
+    }
+
+    reapplyFilter();
+    closeFilterMenu();
+  }
+
+  document.addEventListener('click', (e) => {
+    if (menu && !menu.contains(e.target) && !e.target.closest('.filter-icon-btn')) {
+      closeFilterMenu();
+    }
+    const dropdown = document.getElementById('customDropdownMenu');
+    const btn = document.getElementById('hamburgerBtn');
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+      if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    }
+  });
+
+  if (menu) menu.onclick = (e) => e.stopPropagation();
+
+  function openModal(index = null) {
+    if (!isEditor) {
+      alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read-Only).");
+      return;
+    }
+
+    const form = document.getElementById("rkmForm");
+    form.reset();
+    document.getElementById("inpId").value = "";
+    document.getElementById("inpStatus").value = "Open";
+
+    selectedPicsArray = [];
+    renderPicTags();
+
+    const btnDelete = document.getElementById("btnDeleteModal");
+
+    if (index !== null) {
+      document.getElementById("modalTitle").innerText = "Edit Agenda RKM";
+      const item = rkmDataCache[index];
+      
+      document.getElementById("inpId").value = item.id;
+      document.getElementById("inpTanggal").value = item.Tanggal || item.tanggal || "";
+      document.getElementById("inpSumber").value = item.Sumber || item.sumber || "";
+      document.getElementById("inpCase").value = item.Case || item.case || "";
+      document.getElementById("inpTarget").value = item.Target || item.target || "";
+      document.getElementById("inpUpdate").value = item.Update || item.update || "";
+      document.getElementById("inpStatus").value = item.Status || item.status || "Open";
+
+      const picVal = item.PIC || item.pic;
+      if (picVal) {
+        selectedPicsArray = picVal.split(",").map(p => p.trim()).filter(p => p !== "");
+        renderPicTags();
+      }
+
+      btnDelete.classList.remove("hidden");
+    } else {
+      document.getElementById("modalTitle").innerText = "Add New Agenda";
+      btnDelete.classList.add("hidden");
+    }
+    document.getElementById("rkmModal").classList.remove("hidden");
+  }
+
+  function closeModalForm() {
+    document.getElementById("rkmModal").classList.add("hidden");
+  }
+
+  async function submitForm() {
+    if (!isEditor) {
+      alert("Akses Ditolak: Anda tidak memiliki izin untuk menyimpan data.");
+      return;
+    }
+
+    const form = document.getElementById("rkmForm");
+    if(!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    if (selectedPicsArray.length === 0) {
+      alert("Pilih minimal satu PIC.");
+      return;
+    }
+
+    const id = document.getElementById("inpId").value;
+    
+    const payload = {
+      Tanggal: document.getElementById("inpTanggal").value,
+      Sumber: document.getElementById("inpSumber").value,
+      Case: document.getElementById("inpCase").value,
+      PIC: selectedPicsArray.join(", "),
+      Target: document.getElementById("inpTarget").value,
+      Update: document.getElementById("inpUpdate").value,
+      Status: document.getElementById("inpStatus").value
+    };
+
+    if (id) {
+      const { data, error } = await _supabase
+        .from(TABLE_NAME)
+        .update(payload)
+        .eq('id', id)
+        .select();
+
+      if (error) {
+        alert("Gagal menyimpan ke Supabase: " + error.message);
+      } else {
+        closeModalForm();
+        
+        const updatedItem = data && data[0] ? data[0] : { ...payload, id: parseInt(id) };
+        const cacheIndex = rkmDataCache.findIndex(item => String(item.id) === String(id));
+        
+        if (cacheIndex !== -1) {
+          rkmDataCache[cacheIndex] = updatedItem;
+        }
+
+        const newRowArray = [
+          updatedItem.Tanggal || updatedItem.tanggal || "-",
+          updatedItem.Sumber || updatedItem.sumber || "-",
+          updatedItem.Case || updatedItem.case || "-",
+          updatedItem.PIC || updatedItem.pic || "",
+          updatedItem.Update || updatedItem.update || "-",
+          updatedItem.Target || updatedItem.target || "-",
+          updatedItem.Status || updatedItem.status || "Open",
+          updatedItem.id
+        ];
+
+        const fullIndex = fullData.findIndex(row => String(row[7]) === String(id));
+        if (fullIndex !== -1) {
+          fullData[fullIndex] = newRowArray;
+        }
+
+        reapplyFilter();
+      }
+    } else {
+      const { data, error } = await _supabase
+        .from(TABLE_NAME)
+        .insert([payload])
+        .select();
+
+      if (error) {
+        alert("Gagal menyimpan ke Supabase: " + error.message);
+      } else {
+        closeModalForm();
+        
+        const newItem = data && data[0] ? data[0] : { ...payload, id: Date.now() };
+        rkmDataCache.unshift(newItem);
+
+        const newRowArray = [
+          newItem.Tanggal || newItem.tanggal || "-",
+          newItem.Sumber || newItem.sumber || "-",
+          newItem.Case || newItem.case || "-",
+          newItem.PIC || newItem.pic || "",
+          newItem.Update || newItem.update || "-",
+          newItem.Target || newItem.target || "-",
+          newItem.Status || newItem.status || "Open",
+          newItem.id
+        ];
+
+        fullData.unshift(newRowArray);
+        reapplyFilter();
+      }
+    }
+  }
+
+  async function deleteFromModal() {
+    if (!isEditor) {
+      alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
+      return;
+    }
+
+    const id = document.getElementById("inpId").value;
+    if (!id) return;
+
+    if (!confirm("⚠️ PERINGATAN:\nApakah Anda yakin ingin menghapus agenda kerja ini secara permanen?")) {
+      return;
+    }
+
+    const { error } = await _supabase
+      .from(TABLE_NAME)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert("Gagal menghapus data: " + error.message);
+    } else {
+      closeModalForm();
+      
+      rkmDataCache = rkmDataCache.filter(item => String(item.id) !== String(id));
+      fullData = fullData.filter(row => String(row[7]) !== String(id));
+      
+      reapplyFilter();
+    }
+  }
+</script>
+</body>
+</html>
