@@ -21,9 +21,6 @@
         })();
     </script>
 
-    <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
-    <link rel="stylesheet" href="global-header.css">
-
     <!-- Fonts & Libraries -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -91,7 +88,31 @@
             position: relative; text-align: center;
         }
 
-        /* SINGLE GA BUTTON (PURE TEXT, NO BOX) IN CONTAINER HEADER RIGHT */
+        /* BACK BUTTON STYLES */
+        .back-btn-wrapper {
+            position: absolute;
+            top: 14px;
+            left: 18px;
+            z-index: 100;
+        }
+        .back-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .back-btn:hover {
+            background-color: var(--bg-hover);
+            color: #1A73E8;
+        }
+
+        /* SINGLE GA BUTTON (PURE TEXT) IN CONTAINER HEADER RIGHT */
         .ga-btn-wrapper {
             position: absolute;
             top: 14px;
@@ -111,7 +132,7 @@
             user-select: none;
         }
 
-        /* GA Mode Non-Aktif (Teks Biru Biasa) */
+        /* GA Mode Non-Aktif (Biru Biasa) */
         .ga-mode-btn.off {
             color: #1A73E8;
             text-shadow: none;
@@ -120,7 +141,7 @@
             color: #1557B0;
         }
 
-        /* GA Mode Aktif (Teks Hijau Terang Menyala) */
+        /* GA Mode Aktif (Hijau Terang Menyala) */
         .ga-mode-btn.on {
             color: #34d399;
             font-weight: 800;
@@ -163,7 +184,7 @@
             color: #1A73E8;
         }
         
-        #titleBtn { width: 100%; max-width: 280px; transition: opacity 0.2s; user-select: none; -webkit-user-drag: none; }
+        #titleBtn { width: 100%; max-width: 280px; transition: opacity 0.2s; user-select: none; -webkit-user-drag: none; margin-top: 4px; }
         #nameWrapper { position: relative; padding-top: 2px; border-top: 1px solid var(--border-light); padding-bottom: 2px; border-bottom: 1px solid var(--border-light); }
         
         input, textarea { 
@@ -208,8 +229,11 @@
             box-shadow: none !important; 
             outline: none !important;
             transition: none !important;
+            cursor: pointer;
             -webkit-tap-highlight-color: transparent !important;
         }
+
+        .add-row svg { pointer-events: none; }
         
         button.in, button.out, .modal-btn { 
             flex: 1; padding: 8px 14px; background-color: #1A73E8; color: #fff; border: none; 
@@ -246,6 +270,7 @@
             box-shadow: none !important; 
             outline: none !important;
             transition: none !important;
+            z-index: 50;
             -webkit-tap-highlight-color: transparent !important;
         }
 
@@ -259,7 +284,7 @@
             opacity: 1;
         }
 
-        #itemContainer .item-row:first-child .delete-row { display: none; }
+        #itemContainer .item-row:first-child .delete-row { display: none !important; }
         
         .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay-bg); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 6000; }
         .popup-box { background: var(--bg-card); border-radius: 24px; padding: 24px; width: 90%; max-width: 320px; text-align: center; border: 2px solid #4285F4; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
@@ -271,29 +296,14 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
         
-        /* POPUP RIWAYAT TRANSAKSI DENGAN Z-INDEX LEBIH TINGGI & FLOATING OVERLAY */
-        #historyPopup { 
-            position: fixed; 
-            top: 60px; 
-            right: 16px; 
-            background-color: var(--bg-card); 
-            border: 1px solid var(--border-color); 
-            border-radius: 16px; 
-            width: 310px; 
-            max-height: 420px; 
-            overflow-y: auto; 
-            padding: 0; 
-            display: none; 
-            text-align: left; 
-            box-shadow: 0 12px 30px rgba(0,0,0,0.35); 
-            z-index: 10005; 
-        }
+        /* Popup Riwayat Transaksi */
+        #historyPopup { position: fixed; top: 60px; right: 16px; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 310px; max-height: 420px; overflow-y: auto; padding: 0; display: none; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 9000; }
         .history-header { position: sticky; top: 0; background: var(--bg-card); padding: 10px 14px; z-index: 10; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; min-height: 45px; }
         #historySearchInput { display: none; width: 85%; height: 30px; border: 1px solid var(--border-color); border-radius: 16px; padding: 0 10px; font-size: 0.85rem; text-align: left; background: var(--bg-input-readonly); color: var(--text-primary); }
         #searchToggleBtn { cursor: pointer; display: flex; align-items: center; }
         
         #historyList { padding: 4px 12px 12px 12px; }
-        #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--loader-bg); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 99999; }
+        #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--loader-bg); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .loader { border: 6px solid var(--border-light); border-top: 6px solid #1A73E8; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; }
         
         .history-item { padding: 8px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.2s; }
@@ -306,45 +316,17 @@
 </head>
 <body>
 
-    <!-- GLOBAL NAVIGATION SHELL -->
-    <div id="global-header">
-        <header class="bg-slate-900 text-white shadow-md sticky top-0">
-            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
-                
-                <div class="flex items-center gap-3">
-                    <div class="relative inline-block" id="navDropdownWrapper">
-                        <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
-                            <span id="nav-header-avatar">U</span>
-                        </button>
-                        <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
-                    </div>
-
-                    <div>
-                        <h1>Sistem Operasional Terintegrasi</h1>
-                        <p id="header-subtitle-text">Syncflow</p>
-                    </div>
-                </div>
-
-                <div class="relative inline-block">
-                    <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                    <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
-                        <div id="custom-hamburger-content"></div>
-                    </div>
-                </div>
-
-            </div>
-        </header>
-    </div>
-
     <!-- MAIN CONTAINER CONTENT -->
     <div id="loaderOverlay"><div class="loader"></div></div>
 
     <div class="syncflow-wrapper">
         <div class="container">
+            <!-- BACK BUTTON TO dashboard.html -->
+            <div class="back-btn-wrapper">
+                <button type="button" onclick="window.location.href='dashboard.html'" class="back-btn" title="Kembali ke Dashboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="currentColor"><path d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z"/></svg>
+                </button>
+            </div>
 
             <!-- SINGLE GA BUTTON (PURE TEXT) & DROPDOWN MENU -->
             <div class="ga-btn-wrapper">
@@ -387,13 +369,13 @@
                         </div>
                         <div style="position: relative;">
                             <textarea class="desc" placeholder="Notes" onmousedown="startLongPress(event, this)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event, this)" ontouchend="cancelLongPress()"></textarea>
-                            <button type="button" class="delete-row">×</button>
+                            <button type="button" class="delete-row" onclick="removeRow(event, this)">×</button>
                         </div>
                     </div>
                 </div>
                 <div class="btn-group">
                     <button type="button" class="in" id="btnIn">IN</button>
-                    <button type="button" class="add-row" id="addRow">
+                    <button type="button" class="add-row" id="addRow" onclick="handleAddRow(event)">
                         <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#1A73E8"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
                     </button>
                     <button type="button" class="out" id="btnOut">OUT</button>
@@ -420,9 +402,6 @@
     <div id="descPopup" class="popup-overlay"><div class="popup-box"><textarea id="descPopupInput" style="width:100%; height:120px; border:1px solid var(--border-color); border-radius:12px; margin-bottom:10px; text-align: left; padding:10px;"></textarea><button class="modal-btn" onclick="saveDescPopup()">Save</button></div></div>
     <div id="passPopup" class="popup-overlay"><div class="popup-box"><input type="password" id="adminPass" placeholder="Password" style="border:1px solid var(--border-color); border-radius:12px; margin-bottom:15px; height:45px; padding: 0 10px;"><div class="btn-group"><button class="modal-btn" onclick="checkPassword()">OK</button><button class="modal-btn" onclick="closePassPopup()" style="background:#5F6368;">Batal</button></div></div></div>
 
-    <!-- HEADER TEMPLATE CONTROLLER JS -->
-    <script src="header-template.js"></script>
-
     <script>
         const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
@@ -435,24 +414,6 @@
         }
 
         let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
-
-        function buildHamburgerItems() {
-            const items = [
-                {
-                    label: "Refresh Data",
-                    icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>`,
-                    onClick: "fetchDataAndUpdateUI()"
-                }
-            ];
-
-            renderHamburgerContent(items);
-        }
-
-        renderHeader({
-            subtitle: "Syncflow Modul",
-            hamburgerItems: []
-        });
-        buildHamburgerItems();
 
         function preventNonNumeric(e) {
             if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
@@ -560,47 +521,37 @@
             document.getElementById("loaderOverlay").style.display = "flex";
 
             try { 
-                const { data: dbUsers, error: errUsers } = await supabaseClient
-                    .from('users')
-                    .select('nama');
+                const { data: dbUsers } = await supabaseClient.from('users').select('nama');
+                let userList = dbUsers ? dbUsers.map(u => u.nama).filter(Boolean) : [];
 
-                let userList = [];
-                if (!errUsers && dbUsers) {
-                    userList = dbUsers.map(u => u.nama).filter(Boolean);
-                }
-
-                const { data: dbItems, error: errItem } = await supabaseClient
-                    .from('item')
-                    .select('item, balance');
-                
-                if (errItem) throw errItem;
-
+                const { data: dbItems } = await supabaseClient.from('item').select('item, balance');
                 if (dbItems) {
                     itemData = [...new Set(dbItems.map(d => d.item).filter(Boolean))];
-                    
                     itemStock = {};
                     dbItems.forEach(d => {
-                        if (d.item) {
-                            itemStock[d.item.trim()] = (d.balance !== null && d.balance !== undefined) ? d.balance : 0;
-                        }
+                        if (d.item) itemStock[d.item.trim()] = (d.balance !== null && d.balance !== undefined) ? d.balance : 0;
                     });
                 }
 
+                // AMBIL DATA INVENTORY (DENGAN TANDA KUTIP KHUSUS PADA RESERVED KEYWORDS "in" & "out")
                 const { data: trxData, error: errTrx } = await supabaseClient
                     .from('inventory')
-                    .select('user, item, in, out, date, note')
+                    .select('user, item, "in", "out", date, note, no')
                     .order('no', { ascending: false })
                     .limit(50);
 
-                if (!errTrx && trxData) {
+                if (!errTrx && trxData && trxData.length > 0) {
                     const usersFromInv = trxData.map(t => t.user).filter(Boolean);
                     if (userData && userData.nama) usersFromInv.push(userData.nama);
-                    
                     nameData = [...new Set([...userList, ...usersFromInv])];
 
                     lastTransactions = trxData.map(t => {
-                        const mode = (t.in && t.in > 0) ? 'in' : 'out';
-                        const qty = mode === 'in' ? t.in : (t.out || 0);
+                        const valIn = parseFloat(t['in']);
+                        const valOut = parseFloat(t['out']);
+                        const isIn = !isNaN(valIn) && valIn > 0;
+                        const mode = isIn ? 'in' : 'out';
+                        const qty = isIn ? valIn : (!isNaN(valOut) ? valOut : 0);
+
                         return [
                             t.user || '-',
                             mode,
@@ -612,13 +563,12 @@
                     });
                 } else {
                     nameData = [...new Set(userList)];
+                    lastTransactions = [];
                 }
 
                 initAutocomplete(); 
                 refreshAllStockOverlays();
-                if (document.getElementById("historyPopup").style.display === "block") {
-                    renderHistory(lastTransactions);
-                }
+                renderHistory(lastTransactions);
             } catch (e) { 
                 console.error("Supabase fetch error:", e);
                 showToast("❌ Sync Error"); 
@@ -763,7 +713,7 @@
         function renderHistory(data) {
             const historyContainer = document.getElementById("historyList");
             if (!historyContainer) return;
-            
+
             if (!data || data.length === 0) {
                 historyContainer.innerHTML = `<div style="padding:15px; text-align:center; color:var(--text-secondary); font-size:0.8rem;">Belum ada riwayat transaksi.</div>`;
                 return;
@@ -786,37 +736,51 @@
             `).join('');
         }
 
-        document.getElementById("addRow").onclick = () => { 
+        function handleAddRow(e) {
+            if (e) e.stopPropagation();
             const container = document.getElementById("itemContainer"); 
             const btnAdd = document.getElementById("addRow"); 
-            if (container.children.length < 5) { 
+            if (container && container.children.length < 5) { 
                 const clone = container.children[0].cloneNode(true); 
                 clone.querySelectorAll("input, textarea").forEach(i => i.value = ""); 
                 
                 const qtyInp = clone.querySelector("input.qty");
                 if (qtyInp) qtyInp.onkeydown = preventNonNumeric;
 
-                clone.querySelector(".stock-overlay").style.display = "none"; 
-                clone.querySelector(".autocomplete-list").style.display = "none"; 
+                const overlay = clone.querySelector(".stock-overlay");
+                if (overlay) overlay.style.display = "none";
+
+                const autoList = clone.querySelector(".autocomplete-list");
+                if (autoList) autoList.style.display = "none";
+
                 const tx = clone.querySelector("textarea.desc"); 
-                tx.onmousedown = (e) => startLongPress(e, tx); 
-                tx.onmouseup = cancelLongPress; 
-                tx.onmouseleave = cancelLongPress; 
-                tx.ontouchstart = (e) => startLongPress(e, tx); 
-                tx.ontouchend = cancelLongPress; 
+                if (tx) {
+                    tx.onmousedown = (e) => startLongPress(e, tx); 
+                    tx.onmouseup = cancelLongPress; 
+                    tx.onmouseleave = cancelLongPress; 
+                    tx.ontouchstart = (e) => startLongPress(e, tx); 
+                    tx.ontouchend = cancelLongPress; 
+                }
+
                 container.appendChild(clone); 
                 initAutocomplete(); 
-                if (container.children.length === 5) btnAdd.style.visibility = "hidden"; 
+                if (container.children.length === 5 && btnAdd) btnAdd.style.visibility = "hidden"; 
             } 
-        };
+        }
+
+        function removeRow(e, btn) {
+            if (e) e.stopPropagation();
+            const container = document.getElementById("itemContainer");
+            const row = btn.closest(".item-row");
+            if (row && container.children.length > 1) {
+                row.remove();
+                if (container.children.length < 5) {
+                    document.getElementById("addRow").style.visibility = "visible";
+                }
+            }
+        }
         
         document.addEventListener("click", e => { 
-            if (e.target.classList.contains("delete-row")) { 
-                e.target.closest(".item-row").remove(); 
-                if (document.getElementById("itemContainer").children.length < 5) { 
-                    document.getElementById("addRow").style.visibility = "visible"; 
-                } 
-            } 
             if (!e.target.closest(".autocomplete-list") && !e.target.closest("input") && !e.target.closest(".clear-btn")) {
                 document.querySelectorAll(".autocomplete-list").forEach(l => l.style.display = "none"); 
             }
@@ -824,7 +788,7 @@
                 const dropdown = document.getElementById("gaDropdownMenu");
                 if (dropdown) dropdown.style.display = "none";
             }
-            if (!e.target.closest("#historyPopup") && !e.target.closest(".ga-btn-wrapper") && !e.target.closest("#hamburgerBtn")) { 
+            if (!e.target.closest("#historyPopup") && !e.target.closest(".ga-btn-wrapper") && !e.target.closest(".back-btn-wrapper")) { 
                 const historyModal = document.getElementById("historyPopup");
                 if (historyModal && historyModal.style.display === "block") {
                     historyModal.style.display = "none"; 
