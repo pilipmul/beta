@@ -1,32 +1,12 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <script>
-    // Verifikasi Sesi sebelum halaman dimuat
-    (function() {
-      try {
-        const session = localStorage.getItem("user");
-        if (!session) { 
-          window.location.replace("https://sotpbc.vercel.app/login.html"); 
-          return; 
-        }
-        const userData = JSON.parse(session);
-        if (!userData) { 
-          window.location.replace("https://sotpbc.vercel.app/login.html"); 
-          return; 
-        }
-        window.currentUser = userData.data || userData;
-      } catch (err) {
-        window.location.replace("https://sotpbc.vercel.app/login.html");
-      }
-    })();
-  </script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access Control - SOT</title>
 
-  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <!-- IMPORT GLOBAL SIDEBAR STYLES -->
   <link rel="stylesheet" href="global-header.css">
 
   <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
@@ -52,7 +32,7 @@
     }
   </style>
 </head>
-<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] min-h-screen font-['Roboto',sans-serif] overflow-x-hidden transition-colors duration-200">
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] min-h-screen font-['Roboto',sans-serif] flex overflow-x-hidden transition-colors duration-200">
 
   <!-- Notification Toast -->
   <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md">
@@ -63,189 +43,172 @@
     </div>
   </div>
 
-  <!-- GLOBAL NAVIGATION SHELL -->
-  <div id="global-header">
-    <header class="bg-slate-900 text-white shadow-md sticky top-0">
-      <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center gap-4 w-full box-border">
-          
-        <!-- SISI KIRI: Global Nav Dropdown Avatar & Title -->
-        <div class="flex items-center gap-3">
-          <div class="relative inline-block" id="navDropdownWrapper">
-            <button type="button" onclick="toggleNavDropdown(event)" class="rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 cursor-pointer shadow-md transition-all active:scale-95" title="Menu Navigasi">
-              <span id="nav-header-avatar">U</span>
-            </button>
-            <div id="navDropdownMenu" class="hidden absolute left-0 mt-2 w-56 bg-slate-900 border border-slate-700 text-slate-300 rounded-xl shadow-2xl overflow-hidden py-2 text-xs"></div>
-          </div>
+  <!-- CONTAINER ELEMEN TEMPAT SIDEBAR NAVIGASI TERPUSAT DISUNTIKKAN -->
+  <div id="global-header"></div>
 
-          <div>
-            <h1>Sistem Operasional Terintegrasi</h1>
-            <p id="header-subtitle-text">Access Control</p>
-          </div>
+  <!-- MAIN CONTENT CONTAINER -->
+  <div id="main-content" class="flex-1 transition-all duration-300 main-offset-expanded min-h-screen flex flex-col">
+    
+    <!-- Topbar Halaman -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-3 sticky top-0 z-40 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Access Control</h2>
+      </div>
+
+      <!-- Topbar Search -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex items-center w-48 sm:w-64">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" oninput="triggerGlobalSearch()" 
+                 placeholder="Cari Nama Pengguna..." 
+                 class="w-full h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-9 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
         </div>
-
-        <!-- SISI KANAN: Search Bar & Hamburger Control Modul -->
-        <div class="flex items-center gap-3">
-          
-          <!-- INPUT PENCARIAN TERPERBAIKI -->
-          <div class="relative flex items-center w-44 sm:w-56">
-            <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-            </svg>
-            <input type="text" id="globalSearchInput" oninput="triggerGlobalSearch()" 
-                   placeholder="Cari Nama Pengguna..." 
-                   class="w-full h-7 bg-slate-800 text-slate-100 border border-slate-700 rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
-            <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-white text-xs hidden">✕</button>
-          </div>
-
-          <div class="relative inline-block">
-            <button type="button" id="hamburgerBtn" onclick="toggleConnDropdown(event)" class="p-2.5 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-              </svg>
-            </button>
-            <div id="connDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden py-1">
-              <div id="custom-hamburger-content"></div>
-            </div>
-          </div>
-
-        </div>
-
       </div>
     </header>
+
+    <!-- Main Content Body -->
+    <main class="w-full max-w-7xl mx-auto p-4 space-y-4 flex-1">
+
+      <div class="flex justify-between items-center px-1">
+        <div class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-medium">
+          Total Pengguna: <span id="userCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </div>
+      </div>
+
+      <!-- TABEL ACCESS CONTROL -->
+      <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
+        <div class="overflow-x-auto custom-scroll">
+          <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed]">
+            <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
+              <tr>
+                <th scope="col" class="p-2.5 relative w-12 text-center">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">No</span>
+                    <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 relative">
+                  <div class="flex items-center justify-between gap-0.5">
+                    <span class="truncate">Nama Pengguna</span>
+                    <button onclick="toggleFilterMenu('nama', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Eskalasi</span>
+                    <button onclick="toggleFilterMenu('eskalasi', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">RKM</span>
+                    <button onclick="toggleFilterMenu('rkm', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Dok. Perbaikan</span>
+                    <button onclick="toggleFilterMenu('perbaikan', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Tasks</span>
+                    <button onclick="toggleFilterMenu('task', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Syncflow</span>
+                    <button onclick="toggleFilterMenu('sync', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Item</span>
+                    <button onclick="toggleFilterMenu('item', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Inventory</span>
+                    <button onclick="toggleFilterMenu('log', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Assets</span>
+                    <button onclick="toggleFilterMenu('assets', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+                <th scope="col" class="p-2.5 text-center relative">
+                  <div class="flex items-center justify-center gap-0.5">
+                    <span class="truncate">Access Control</span>
+                    <button onclick="toggleFilterMenu('acces', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+              <tr>
+                <td colspan="11" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Filter Popover -->
+        <div id="filterPopover" class="fixed hidden z-[10005] w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+          <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+            <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+              <span>↑</span>
+              <span>A-Z</span>
+            </button>
+            <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+              <span>↓</span>
+              <span>Z-A</span>
+            </button>
+          </div>
+
+          <div class="space-y-2 normal-case">
+            <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                   class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+            
+            <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0 bg-transparent" />
+                Pilih Semua
+              </label>
+              <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
+            </div>
+
+            <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full">
+            </div>
+
+            <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+              <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+              <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="w-full mt-auto py-4 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#9aa0a6] flex flex-col sm:flex-row justify-between items-center gap-2 px-4">
+      <span>Sistem Operasional Terintegrasi Portal - Access Control</span>
+      <span>Powered by Supabase & Tailwind CSS v4</span>
+    </footer>
+
   </div>
 
-  <!-- Main Content Container -->
-  <main class="w-full max-w-7xl mx-auto p-2 sm:p-4 space-y-4">
-
-    <div class="flex justify-between items-center px-1">
-      <div class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-medium">
-        Total Pengguna: <span id="userCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
-      </div>
-    </div>
-
-    <!-- TABEL ACCESS CONTROL -->
-    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
-      <div class="overflow-x-auto custom-scroll">
-        <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed]">
-          <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
-            <tr>
-              <th scope="col" class="p-2.5 relative w-12 text-center">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">No</span>
-                  <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 relative">
-                <div class="flex items-center justify-between gap-0.5">
-                  <span class="truncate">Nama Pengguna</span>
-                  <button onclick="toggleFilterMenu('nama', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">Eskalasi</span>
-                  <button onclick="toggleFilterMenu('eskalasi', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">RKM</span>
-                  <button onclick="toggleFilterMenu('rkm', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">Dok. Perbaikan</span>
-                  <button onclick="toggleFilterMenu('perbaikan', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">Tasks</span>
-                  <button onclick="toggleFilterMenu('task', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">Syncflow</span>
-                  <button onclick="toggleFilterMenu('sync', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">Item</span>
-                  <button onclick="toggleFilterMenu('item', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">Inventory</span>
-                  <button onclick="toggleFilterMenu('log', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-              <th scope="col" class="p-2.5 text-center relative">
-                <div class="flex items-center justify-center gap-0.5">
-                  <span class="truncate">Access Control</span>
-                  <button onclick="toggleFilterMenu('acces', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
-            <tr>
-              <td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Filter Popover -->
-      <div id="filterPopover" class="fixed hidden z-[10005] w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
-        <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
-          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
-            <span>↑</span>
-            <span>A-Z</span>
-          </button>
-          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
-            <span>↓</span>
-            <span>Z-A</span>
-          </button>
-        </div>
-
-        <div class="space-y-2 normal-case">
-          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
-                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
-          
-          <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
-            <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0 bg-transparent" />
-              Pilih Semua
-            </label>
-            <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
-          </div>
-
-          <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-[#dadce0] dark:[&::-webkit-scrollbar-thumb]:bg-[#3c4043] [&::-webkit-scrollbar-thumb]:rounded-full">
-          </div>
-
-          <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
-            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
-            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </main>
-
-  <footer class="max-w-7xl mx-auto w-full mt-8 pt-4 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#9aa0a6] flex flex-col sm:flex-row justify-between items-center gap-2 px-4">
-    <span>Sistem Operasional Terintegrasi Portal - Access Control</span>
-    <span>Powered by Supabase & Tailwind CSS v4</span>
-  </footer>
-
-  <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT -->
+  <!-- IMPORT SCRIPT NAVIGATION SIDEBAR TERPUSAT -->
   <script src="header-template.js"></script>
 
-  <!-- SCRIPT UTAMA HALAMAN ACCESS CONTROL -->
+  <!-- SCRIPT UTAMA ACCESS CONTROL HALAMAN -->
   <script>
     const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
@@ -265,11 +228,8 @@
     let dbFilterOptions = {};
     let sortConfig = { column: null, direction: null };
 
-    // Inisialisasi Template Header Terpusat
-    renderHeader({
-      subtitle: "Access Control",
-      hamburgerItems: []
-    });
+    // Inisialisasi Sidebar Navigasi Terpusat dari header-template.js
+    renderHeader({ subtitle: "Access Control" });
 
     document.addEventListener("DOMContentLoaded", () => {
       fetchUsers();
@@ -290,7 +250,7 @@
 
     async function fetchUsers() {
       const tbody = document.getElementById("userTableBody");
-      tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data pengguna...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data pengguna...</td></tr>`;
 
       if (!supabaseClient) {
         showToast("Error", "Koneksi Supabase tidak tersedia.", "error");
@@ -312,7 +272,7 @@
         processAndRenderUsers();
       } catch (err) {
         console.error("Fetch users error:", err);
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#d93025] dark:text-[#f28b82]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-[#d93025] dark:text-[#f28b82]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
         showToast("Gagal Loading", err.message || "Gagal mengambil data dari server.", "error");
       }
     }
@@ -341,7 +301,6 @@
     function processAndRenderUsers() {
       let filtered = [...allUsers];
 
-      // Filter global search input (hanya berdasarkan nama)
       if (globalSearchQuery) {
         const q = globalSearchQuery.toLowerCase();
         filtered = filtered.filter(u => 
@@ -349,13 +308,12 @@
         );
       }
 
-      // Filter per kolom
       for (const colKey in filterSelections) {
         const selectedSet = filterSelections[colKey];
         if (selectedSet && selectedSet.size > 0) {
           filtered = filtered.filter(u => {
             let val = u[colKey];
-            if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'acces'].includes(colKey)) {
+            if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'assets', 'acces'].includes(colKey)) {
               val = isAccessTrue(val) ? 'Aktif' : 'Tidak';
             } else {
               val = (val !== null && val !== undefined && val !== '') ? String(val) : '-';
@@ -365,7 +323,6 @@
         }
       }
 
-      // Sorting
       if (sortConfig.column && sortConfig.direction) {
         const key = sortConfig.column;
         const dir = sortConfig.direction === 'asc' ? 1 : -1;
@@ -373,7 +330,7 @@
           let valA = a[key] || '';
           let valB = b[key] || '';
 
-          if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'acces'].includes(key)) {
+          if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'assets', 'acces'].includes(key)) {
             valA = isAccessTrue(valA) ? 'Aktif' : 'Tidak';
             valB = isAccessTrue(valB) ? 'Aktif' : 'Tidak';
           }
@@ -392,7 +349,7 @@
       tbody.innerHTML = "";
 
       if (usersList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data pengguna ditemukan.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data pengguna ditemukan.</td></tr>`;
         return;
       }
 
@@ -407,6 +364,7 @@
         const syncChecked = isAccessTrue(u.sync) ? "checked" : "";
         const itemChecked = isAccessTrue(u.item) ? "checked" : "";
         const inventoryChecked = isAccessTrue(u.log) ? "checked" : "";
+        const assetsChecked = isAccessTrue(u.assets) ? "checked" : "";
         const accesChecked = isAccessTrue(u.acces) ? "checked" : "";
 
         const userNik = (u.nik || "").trim();
@@ -437,6 +395,9 @@
           </td>
           <td class="px-2.5 py-2.5 text-center">
             <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'log', this.checked)" ${inventoryChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
+          </td>
+          <td class="px-2.5 py-2.5 text-center">
+            <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'assets', this.checked)" ${assetsChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
           </td>
           <td class="px-2.5 py-2.5 text-center">
             <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', 'acces', this.checked)" ${accesChecked} class="w-3.5 h-3.5 text-[#1a73e8] focus:ring-[#1a73e8] rounded cursor-pointer border-[#dadce0] dark:border-[#5f6368]">
@@ -471,7 +432,10 @@
         }
 
         dbFilterOptions = {};
-        const displayFieldName = fieldName === 'log' ? 'INVENTORY' : fieldName.toUpperCase();
+        let displayFieldName = fieldName.toUpperCase();
+        if (fieldName === 'log') displayFieldName = 'INVENTORY';
+        if (fieldName === 'assets') displayFieldName = 'ASSETS';
+
         showToast("Tersimpan", `Akses modul ${displayFieldName} untuk ${nama} berhasil diperbarui.`, "success");
       } catch (err) {
         console.error("Auto save access error:", err);
@@ -479,7 +443,6 @@
       }
     }
 
-    // FUNGSI FILTER POPOVER TABLE
     function toggleFilterMenu(columnKey, event) {
       event.stopPropagation();
       activeFilterColumn = columnKey;
@@ -498,7 +461,7 @@
       document.getElementById('filterSearchInput').value = '';
 
       if (!dbFilterOptions[columnKey]) {
-        if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'acces'].includes(columnKey)) {
+        if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'item', 'log', 'assets', 'acces'].includes(columnKey)) {
           dbFilterOptions[columnKey] = ['Aktif', 'Tidak'];
         } else if (columnKey === 'nama') {
           dbFilterOptions[columnKey] = Array.from(new Set(allUsers.map(u => u.nama || '-'))).sort();
@@ -644,7 +607,7 @@
         toastIcon.className = "p-1.5 rounded-xl bg-[#e6f4ea] dark:bg-[#137333]/30 text-[#137333] dark:text-[#81c995] shrink-0";
         toastIcon.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`;
       } else {
-        toast.className = "fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-[#fce8e6] dark:border-[#c5221f]/40 bg-white dark:bg-[#2d2e30] text-[#c5221f] dark:text-[#f28b82] opacity-100 translate-y-0";
+        toast.className = "fixed top-5 right-5 z-[100] transform transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border border-[#fce8e6] dark:border-[#c5221f]/40 bg-white dark:bg-[#2d2e30] text-[#c5221f] dark:text-[#f28b82] opacity-100 translate-y-0";
         toastIcon.className = "p-1.5 rounded-xl bg-[#fce8e6] dark:bg-[#c5221f]/30 text-[#c5221f] dark:text-[#f28b82] shrink-0";
         toastIcon.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>`;
       }
