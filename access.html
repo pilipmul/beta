@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <script>
+    // Verifikasi Sesi sebelum halaman dimuat (Wajib Ada untuk membaca hak akses RBAC)
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
+        }
+        const userData = JSON.parse(session);
+        if (!userData) { 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
+          return; 
+        }
+        window.currentUser = userData.data || userData;
+      } catch (err) {
+        window.location.replace("https://sotpbc.vercel.app/login.html");
+      }
+    })();
+  </script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -228,10 +248,11 @@
     let dbFilterOptions = {};
     let sortConfig = { column: null, direction: null };
 
-    // Inisialisasi Sidebar Navigasi Terpusat dari header-template.js
-    renderHeader({ subtitle: "Access Control" });
-
     document.addEventListener("DOMContentLoaded", () => {
+      // Panggil Inisialisasi Sidebar Navigasi setelah DOM & user session siap
+      if (typeof renderHeader === 'function') {
+        renderHeader({ subtitle: "Access Control" });
+      }
       fetchUsers();
     });
 
