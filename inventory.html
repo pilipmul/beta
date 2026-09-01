@@ -329,7 +329,7 @@
 
   </div>
 
-  <!-- MODAL FORM CRUD (TAMBAH/EDIT) ADAPTIF -->
+  <!-- MODAL FORM CRUD (OPSI A: TANPA INPUT NO) -->
   <div id="modal" class="fixed inset-0 bg-black/60 z-[10005] hidden flex items-center justify-center p-4">
     <div class="bg-white dark:bg-[#1e1e1e] max-w-md w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043]">
       <div class="bg-[#f8f9fa] dark:bg-[#252525] px-6 py-4 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center">
@@ -356,20 +356,9 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">COA (Read-only)</label>
-            <input type="text" id="inputCoa" readonly class="w-full bg-[#e8eaed] dark:bg-[#252525] opacity-75 border border-[#dadce0] dark:border-[#3c4043] text-[#5f6368] dark:text-[#9aa0a6] cursor-not-allowed rounded-lg px-3 py-2 focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Project (Read-only)</label>
-            <input type="text" id="inputProject" readonly class="w-full bg-[#e8eaed] dark:bg-[#252525] opacity-75 border border-[#dadce0] dark:border-[#3c4043] text-[#5f6368] dark:text-[#9aa0a6] cursor-not-allowed rounded-lg px-3 py-2 focus:outline-none">
-          </div>
-        </div>
-
         <div>
-          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Balance</label>
-          <input type="number" id="inputBalance" readonly min="0" placeholder="0" class="w-full bg-[#e8eaed] dark:bg-[#252525] opacity-75 border border-[#dadce0] dark:border-[#3c4043] text-[#5f6368] dark:text-[#9aa0a6] cursor-not-allowed rounded-lg px-3 py-2 focus:outline-none">
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Project</label>
+          <input type="text" id="inputProject" placeholder="Nama project..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
         </div>
 
         <div class="pt-4 flex justify-between items-center border-t border-[#f1f3f4] dark:border-[#3c4043]">
@@ -648,38 +637,18 @@
       form.reset();
       document.getElementById('editNo').value = '';
 
-      const inputCoa = document.getElementById('inputCoa');
-      const inputProject = document.getElementById('inputProject');
-      const inputBalance = document.getElementById('inputBalance');
-
       if (mode === 'add') {
         title.innerText = 'Add Item Master';
         btnDelete.classList.add('hidden');
-
-        inputCoa.readOnly = false;
-        inputProject.readOnly = false;
-        inputBalance.readOnly = false;
-        inputCoa.classList.remove('cursor-not-allowed', 'opacity-75');
-        inputProject.classList.remove('cursor-not-allowed', 'opacity-75');
-        inputBalance.classList.remove('cursor-not-allowed', 'opacity-75');
       } else if (mode === 'edit' && data) {
         title.innerText = `Edit Item #${data.no}`;
         btnDelete.classList.remove('hidden');
-
-        inputCoa.readOnly = true;
-        inputProject.readOnly = true;
-        inputBalance.readOnly = true;
-        inputCoa.classList.add('cursor-not-allowed', 'opacity-75');
-        inputProject.classList.add('cursor-not-allowed', 'opacity-75');
-        inputBalance.classList.add('cursor-not-allowed', 'opacity-75');
 
         document.getElementById('editNo').value = data.no;
         document.getElementById('inputItem').value = data.item || '';
         document.getElementById('inputCode').value = data.code || '';
         document.getElementById('inputSatuan').value = data.satuan || '';
-        document.getElementById('inputCoa').value = data.coa || '';
         document.getElementById('inputProject').value = data.project || '';
-        document.getElementById('inputBalance').value = data.balance ?? 0;
       }
 
       modal.classList.remove('hidden');
@@ -697,27 +666,37 @@
     async function saveData(e) {
       e.preventDefault();
 
-      const no = document.getElementById('editNo').value;
+      const editNo = document.getElementById('editNo').value;
       const item = document.getElementById('inputItem').value.trim();
       const code = document.getElementById('inputCode').value.trim() || null;
       const satuan = document.getElementById('inputSatuan').value.trim() || null;
+      const project = document.getElementById('inputProject').value.trim() || null;
 
       try {
-        if (no) {
-          const payloadUpdate = { item, code, satuan };
+        if (editNo) {
+          const payloadUpdate = { item, code, satuan, project };
 
           const { error } = await _supabase
             .from('item')
             .update(payloadUpdate)
-            .eq('no', no);
+            .eq('no', editNo);
 
           if (error) throw error;
         } else {
-          const coa = document.getElementById('inputCoa').value.trim() || null;
-          const project = document.getElementById('inputProject').value.trim() || null;
-          const balanceVal = document.getElementById('inputBalance').value ? parseInt(document.getElementById('inputBalance').value, 10) : 0;
+          const { data: maxNoData, error: maxNoError } = await _supabase
+            .from('item')
+            .select('no')
+            .order('no', { ascending: false })
+            .limit(1);
 
-          const payloadInsert = { item, code, satuan, coa, project, balance: balanceVal };
+          if (maxNoError) throw maxNoError;
+
+          let nextNo = 1;
+          if (maxNoData && maxNoData.length > 0 && maxNoData[0].no) {
+            nextNo = parseInt(maxNoData[0].no, 10) + 1;
+          }
+
+          const payloadInsert = { no: nextNo, item, code, satuan, project };
 
           const { error } = await _supabase
             .from('item')
@@ -789,32 +768,47 @@
       triggerGlobalSearch();
     }
 
+    // PENGOPTIMALAN UTAMA LOGIKA FILTER AGAR INSTAN TANPA LAG
     function toggleFilterMenu(e, element) {
       activeColIndex = parseInt(element.getAttribute('data-col'));
       const btnRect = element.getBoundingClientRect();
       
-      menu.style.display = 'block';
       menu.style.top = (btnRect.bottom + 4) + 'px';
       menu.style.left = Math.min(btnRect.left, window.innerWidth - 270) + 'px';
-      
+      menu.style.display = 'block'; // Tampilkan menu terlebih dahulu secara instan
+
       searchBox.value = '';
-      const dataFilteredByOthers = fullData.filter(r => {
+      const list = document.getElementById('checkboxList');
+
+      // Ambil nilai unik menggunakan Set
+      const availableValsSet = new Set();
+      for (let i = 0; i < fullData.length; i++) {
+        const r = fullData[i];
+        let matches = true;
         for (let colIdx in currentAppliedFilters) {
           if (parseInt(colIdx) === activeColIndex) continue; 
-          if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+          if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) {
+            matches = false;
+            break;
+          }
         }
-        return true;
-      });
+        if (matches) {
+          availableValsSet.add(String(r[activeColIndex]));
+        }
+      }
 
-      const availableVals = [...new Set(dataFilteredByOthers.map(r => String(r[activeColIndex])))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+      const availableVals = Array.from(availableValsSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
       const currentlyChecked = currentAppliedFilters[activeColIndex] || availableVals;
 
-      const list = document.getElementById('checkboxList');
-      list.innerHTML = '';
-      availableVals.forEach(v => {
+      // Konstruksi string HTML sekaligus dalam satu proses (fast rendering)
+      let listHtml = '';
+      for (let i = 0; i < availableVals.length; i++) {
+        const v = availableVals[i];
         const isChecked = currentlyChecked.includes(v);
-        list.innerHTML += `<label class="checkbox-item"><input type="checkbox" ${isChecked ? 'checked' : ''} value="${v}" onclick="updateMasterCheckbox()" class="rounded text-blue-600 focus:ring-0"> <span>${v ? v : '-'}</span></label>`;
-      });
+        listHtml += `<label class="checkbox-item"><input type="checkbox" ${isChecked ? 'checked' : ''} value="${escapeHtml(v)}" onclick="updateMasterCheckbox()" class="rounded text-blue-600 focus:ring-0"> <span>${v ? escapeHtml(v) : '-'}</span></label>`;
+      }
+      list.innerHTML = listHtml;
+
       updateMasterCheckbox();
       e.stopPropagation();
     }
