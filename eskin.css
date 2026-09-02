@@ -1,0 +1,35 @@
+/* Import Font Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Modal Popup Overlay (Dioptimalkan tanpa backdrop-filter agar animasi sangat lancar) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.65);
+    z-index: 9999; /* Pastikan di atas z-40 milik header */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s linear;
+    will-change: opacity;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Scrollbar styling untuk autocomplete */
+.autocomplete-list::-webkit-scrollbar {
+    width: 6px;
+}
+.autocomplete-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}

@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumentasi Perbaikan - SOT</title>
+
+  <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+  <script>
+    (function checkAuth() {
+      const userSessionString = localStorage.getItem("user");
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+      try {
+        const userData = JSON.parse(userSessionString);
+        if (!userData) {
+          window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+        }
+      } catch (err) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+
+  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
+  <!-- Tailwind CSS v4 Browser Build -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body { 
+      font-family: 'Inter', sans-serif; 
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* TRIK FLOATING SCROLLBAR ABSOLUTE OVERLAY */
+    .floating-scroll-area {
+      position: absolute;
+      inset: 0;
+      overflow-y: scroll;
+      overflow-x: auto;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.5); }
+
+    /* SIDEBAR HOLLOW OVERLAY */
+    #global-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #global-header > * { pointer-events: auto; }
+    #global-header aside, #global-header .sidebar {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* STYLING HEADER & POP-UP FILTER */
+    th { position: relative; padding-right: 30px !important; }
+    th.no-filter { padding-right: 12px !important; }
+    
+    .filter-icon-btn {
+        position: absolute;
+        right: 4px; top: 50%;
+        transform: translateY(-50%);
+        width: 20px; height: 20px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 4px; cursor: pointer;
+        transition: all 0.15s;
+        color: #94a3b8;
+    }
+    .filter-icon-btn:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #3b82f6;
+    }
+    .filter-icon {
+        width: 11px; height: 11px; fill: currentColor;
+    }
+    
+    .filter-active .filter-icon-btn { color: #facc15 !important; }
+    .filter-active .filter-icon { display: none; }
+    .filter-active .filter-icon-btn::after {
+        content: "";
+        width: 12px; height: 12px; background-color: #facc15;
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+    }
+    
+    .filter-menu {
+        position: fixed;
+        z-index: 1000; display: none; width: 260px;
+        padding: 14px; border-radius: 12px;
+        text-transform: none; font-weight: normal; font-size: 13px;
+        box-sizing: border-box;
+    }
+
+    .filter-menu .sort-actions {
+        display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .filter-menu .btn-sort {
+        flex: 1; padding: 7px 10px; border-radius: 6px;
+        cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s;
+    }
+
+    .filter-menu .divider {
+        border: none; border-top-width: 1px; margin: 10px 0;
+    }
+
+    .filter-menu .search-box { margin-bottom: 10px; }
+    .filter-menu .filter-search-box {
+        width: 100%; padding: 8px 10px;
+        border-radius: 6px; box-sizing: border-box; font-size: 12px; outline: none;
+    }
+
+    .filter-menu .select-all-row {
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 12px; margin-bottom: 8px; font-weight: 500;
+    }
+    .filter-menu .btn-reset {
+        background: none; border: none;
+        cursor: pointer; font-size: 12px; padding: 0; font-weight: 600;
+    }
+
+    .filter-menu .checkbox-label {
+        display: flex; align-items: center; gap: 8px;
+        cursor: pointer; font-size: 12px; user-select: none;
+    }
+
+    .filter-menu .checkbox-list {
+        max-height: 140px; overflow-y: auto; display: flex;
+        flex-direction: column; gap: 6px; padding-right: 2px;
+    }
+    .filter-menu .checkbox-item {
+        display: flex; align-items: center; gap: 8px; font-size: 12px;
+    }
+
+    .filter-menu .footer-actions {
+        display: flex; gap: 8px; margin-top: 10px;
+    }
+    .filter-menu .btn-cancel,
+    .filter-menu .btn-apply {
+        flex: 1; padding: 8px 10px; border-radius: 6px;
+        border: none; font-weight: 600; cursor: pointer; font-size: 12px;
+    }
+  </style>
+
+  <!-- SUPABASE JS SDK VIA CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Inter',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <!-- CONTAINER ELEMEN SIDEBAR OVERLAY HOLLOW -->
+  <div id="global-header"></div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div id="main-content" class="flex-1 w-full h-screen flex flex-col overflow-hidden">
+    
+    <!-- Topbar Halaman Terpadu -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-1.5 sticky top-0 z-40 flex items-center justify-between shrink-0">
+      <div>
+        <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Dokumentasi Perbaikan</h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap">
+          Total Laporan: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+        <div class="relative flex items-center w-48 sm:w-64">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" onkeyup="triggerGlobalSearch()" 
+                 placeholder="Cari perbaikan..." 
+                 class="w-full h-7 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-9 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+        </div>
+
+        <div class="relative flex items-center">
+          <button type="button" id="hamburgerBtn" onclick="toggleHamburgerMenu(event)" class="h-7 w-7 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+            <div id="custom-hamburger-content"></div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT BODY WRAPPER -->
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+          <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative" id="tableWrapper">
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs table-fixed" id="reportTable">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th scope="col" class="p-2.5 w-[8%] text-center no-filter">No</th>
+                    <th scope="col" class="p-2.5 w-[25%]">
+                      Objek
+                      <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[15%]">
+                      Tanggal
+                      <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[32%]">
+                      Catatan
+                      <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[12%] text-center no-filter">Dokumentasi</th>
+                    <th scope="col" class="p-2.5 w-[8%] text-center no-filter">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr id="loadingRow">
+                    <td colspan="6" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">
+                      <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-blue-600 mb-2"></div>
+                      <p>Sedang memuat data dari Supabase...</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- POP-UP MENU FILTER (NATIVE TONE MODE) -->
+            <div id="filterMenu" class="filter-menu bg-white dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] shadow-2xl">
+              <div class="sort-actions">
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('asc')">↑ A-Z</button>
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('desc')">↓ Z-A</button>
+              </div>
+              
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+              
+              <div class="search-box">
+                <input type="text" id="menuSearch" class="filter-search-box bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] focus:border-blue-500" placeholder="Filter nilai..." onkeyup="searchInMenu()">
+              </div>
+
+              <div class="select-all-row">
+                <label class="checkbox-label text-[#202124] dark:text-[#e8eaed]">
+                  <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)" class="rounded text-blue-600 focus:ring-0"> 
+                  <span>Pilih Semua</span>
+                </label>
+                <button class="btn-reset text-[#1a73e8] dark:text-[#8ab4f8]" onclick="resetCurrentFilter()">Reset</button>
+              </div>
+
+              <div class="checkbox-list" id="checkboxList"></div>
+
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+
+              <div class="footer-actions">
+                <button class="btn-cancel bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6]" onclick="closeFilterMenu()">Batal</button>
+                <button class="btn-apply bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124]" onclick="applyCheckboxFilter()">Terapkan</button>
+              </div>
+            </div>
+
+            <!-- PAGINATION BAR TERPADU -->
+            <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 py-3 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#bdc1c6] flex flex-col sm:flex-row justify-between items-center gap-3">
+              <div>
+                <span>Menampilkan <strong id="showingRecords" class="text-[#202124] dark:text-[#e8eaed]">0 - 0</strong> dari <strong id="totalRecords" class="text-[#202124] dark:text-[#e8eaed]">0</strong> baris</span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <button id="btnPrevPage" onclick="prevPage()" class="px-3 py-1 bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] transition cursor-pointer font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Sebelumnya</button>
+                <span class="font-medium">Halaman <span id="currentPageNum">1</span> / <span id="totalPageNum">1</span></span>
+                <button id="btnNextPage" onclick="nextPage()" class="px-3 py-1 bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] transition cursor-pointer font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Selanjutnya</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- MODAL FORM CRUD (Create & Edit) -->
+  <div id="crudModal" class="fixed inset-0 bg-black/60 z-[10005] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#1e1e1e] max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043]">
+      <div class="bg-[#f8f9fa] dark:bg-[#252525] px-6 py-4 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center">
+        <h3 id="formModalTitle" class="font-bold text-base">Add Report</h3>
+        <button onclick="closeFormModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+      </div>
+      <form id="logbookForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="logbookId">
+        
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Nama Objek / Deskripsi</label>
+          <input type="text" id="inputObjek" required placeholder="Contoh: AC Ruang Rapat Lt. 2" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tanggal Perbaikan</label>
+          <input type="date" id="inputTanggal" required class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Catatan / Notes</label>
+          <textarea id="inputNotes" rows="2" placeholder="Tambahkan catatan perbaikan..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- File Input Foto Before -->
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Foto Before</label>
+          <div id="dropzoneBefore" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-[#f8f9fa] dark:hover:bg-[#252525] transition relative">
+            <input type="file" id="fileBefore" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'before')">
+            <div id="previewContainerBefore" class="hidden flex items-center justify-between bg-[#f1f3f4] dark:bg-[#2d2d2d] p-2 rounded-lg">
+              <img id="imgPreviewBefore" class="h-12 w-12 object-cover rounded-md" src="" alt="Before Preview">
+              <span id="fileNameBefore" class="text-xs text-[#202124] dark:text-[#e8eaed] truncate max-w-[180px]"></span>
+              <button type="button" onclick="removeSelectedFile('before')" class="text-red-500 font-bold text-sm px-2">&times;</button>
+            </div>
+            <div id="placeholderBefore" onclick="document.getElementById('fileBefore').click()">
+              <svg class="w-6 h-6 mx-auto text-[#5f6368] dark:text-[#9aa0a6] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Klik / Seret foto ke sini</p>
+            </div>
+          </div>
+          <input type="hidden" id="inputFotoBefore">
+        </div>
+
+        <!-- File Input Foto After -->
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Foto After</label>
+          <div id="dropzoneAfter" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-[#f8f9fa] dark:hover:bg-[#252525] transition relative">
+            <input type="file" id="fileAfter" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'after')">
+            <div id="previewContainerAfter" class="hidden flex items-center justify-between bg-[#f1f3f4] dark:bg-[#2d2d2d] p-2 rounded-lg">
+              <img id="imgPreviewAfter" class="h-12 w-12 object-cover rounded-md" src="" alt="After Preview">
+              <span id="fileNameAfter" class="text-xs text-[#202124] dark:text-[#e8eaed] truncate max-w-[180px]"></span>
+              <button type="button" onclick="removeSelectedFile('after')" class="text-red-500 font-bold text-sm px-2">&times;</button>
+            </div>
+            <div id="placeholderAfter" onclick="document.getElementById('fileAfter').click()">
+              <svg class="w-6 h-6 mx-auto text-[#5f6368] dark:text-[#9aa0a6] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Klik / Seret foto ke sini</p>
+            </div>
+          </div>
+          <input type="hidden" id="inputFotoAfter">
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+          <button type="button" onclick="closeFormModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg text-xs font-semibold transition cursor-pointer">Batal</button>
+          <button type="submit" id="btnSaveSubmit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg text-xs font-semibold transition cursor-pointer">Simpan Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Preview Foto Dokumentasi -->
+  <div id="imageModal" class="fixed inset-0 bg-black/80 z-[10005] hidden flex items-center justify-center p-4">
+    <div class="relative max-w-3xl w-full bg-white dark:bg-[#1e1e1e] rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-[#dadce0] dark:border-[#3c4043]">
+      <div class="p-4 border-b border-[#dadce0] dark:border-[#3c4043] flex justify-between items-center bg-[#f8f9fa] dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed]">
+        <div>
+          <h3 id="modalTitle" class="font-bold text-sm">Preview Dokumentasi</h3>
+          <span id="modalStatusBadge" class="mt-1 inline-block bg-blue-600 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider">BEFORE</span>
+        </div>
+        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white transition cursor-pointer text-xl font-bold">&times;</button>
+      </div>
+      <div class="p-2 relative flex justify-center items-center bg-[#f1f3f4] dark:bg-[#121212] min-h-[40vh] max-h-[75vh]">
+        <button id="prevBtn" onclick="changeSlide('before')" class="absolute left-4 z-10 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed">&lt;</button>
+        <img id="modalImage" src="" alt="Dokumentasi Perbaikan" class="max-w-full max-h-[70vh] object-contain rounded-lg">
+        <button id="nextBtn" onclick="changeSlide('after')" class="absolute right-4 z-10 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed">&gt;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT -->
+  <script src="header-template.js"></script>
+
+  <!-- JavaScript Logic Modul SR -->
+  <script>
+    const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co"; 
+    const SUPABASE_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
+    const GOOGLE_DRIVE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1hEe3lHhkLKX_lM0JiG1YB0_3sFsTXzjsT3-wUfwVFdHFbMUSFiOBGZ2sSAKUVBLO/exec";
+
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // State Global
+    let rawLogbookList = []; 
+    let fullData = [];       
+    let filteredData = [];   
+    let currentPhotos = { before: "", after: "", objectName: "" };
+    let selectedFiles = { before: null, after: null };
+    
+    // Paginasi & Filter
+    let currentPage = 1;
+    const rowsPerPage = 100;
+    let activeColIndex = -1;
+    let currentAppliedFilters = {};
+
+    const menu = document.getElementById('filterMenu');
+    const searchBox = document.getElementById('menuSearch');
+    const masterCheckbox = document.getElementById('masterCheckbox');
+
+    function toggleHamburgerMenu(e) {
+      if (e) e.stopPropagation();
+      const dropdown = document.getElementById('customDropdownMenu');
+      const container = document.getElementById('custom-hamburger-content');
+      if (!dropdown) return;
+
+      if (container && (!container.innerHTML || container.innerHTML.trim() === '')) {
+        renderHamburgerMenuContent();
+      }
+      dropdown.classList.toggle('hidden');
+    }
+
+    function toggleConnDropdown(e) {
+      toggleHamburgerMenu(e);
+    }
+
+    function renderHamburgerMenuContent() {
+      const container = document.getElementById('custom-hamburger-content');
+      if (!container) return;
+
+      container.innerHTML = `
+        <button onclick="openFormModal(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+          <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>Add Report</span>
+        </button>
+      `;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function triggerGlobalSearch() {
+      const input = document.getElementById('globalSearchInput');
+      const query = input ? input.value.trim().toLowerCase() : '';
+      const btnClear = document.getElementById('btnClearSearch');
+
+      if (query !== '') {
+        if (btnClear) btnClear.classList.remove('hidden');
+      } else {
+        if (btnClear) btnClear.classList.add('hidden');
+      }
+
+      filteredData = fullData.filter(row => {
+        const matchesSearch = query === '' || row.some(cell => String(cell).toLowerCase().includes(query));
+        let matchesFilters = true;
+        for (let colIdx in currentAppliedFilters) {
+          if (!currentAppliedFilters[colIdx].includes(String(row[colIdx]))) {
+            matchesFilters = false;
+            break;
+          }
+        }
+        return matchesSearch && matchesFilters;
+      });
+
+      currentPage = 1;
+      renderTable();
+    }
+
+    function clearGlobalSearch() {
+      const input = document.getElementById('globalSearchInput');
+      if (input) input.value = '';
+      triggerGlobalSearch();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof renderHeader === 'function') {
+        renderHeader({
+          subtitle: "Dokumentasi Perbaikan",
+          hamburgerItems: [
+            {
+              label: "Add Report",
+              icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+              onClick: "openFormModal()"
+            }
+          ]
+        });
+      }
+
+      renderHamburgerMenuContent();
+      setupDropzone('dropzoneBefore', 'before');
+      setupDropzone('dropzoneAfter', 'after');
+      fetchSupabaseData();
+    });
+
+    async function fetchSupabaseData() {
+      const tableBody = document.getElementById('tableBody');
+      try {
+        const { data, error } = await db
+          .from('logbook')
+          .select('*')
+          .order('no', { ascending: false });
+
+        if (error) throw error;
+
+        rawLogbookList = data || [];
+        
+        fullData = rawLogbookList.map((item) => {
+          const recordId = item.no || item.id || '';
+          const objekNama = item.subject || item.objek || '';
+          const tanggalVal = item.date || item.tanggal || '';
+          const notesVal = item.notes || item.catatan || '';
+          const fotoBefore = item.before || item.foto_before || '';
+          const fotoAfter = item.after || item.foto_after || '';
+
+          return [
+            String(recordId),
+            objekNama,
+            tanggalVal ? formatDate(tanggalVal) : '',
+            notesVal,
+            fotoBefore,
+            fotoAfter,
+            tanggalVal
+          ];
+        });
+
+        reapplyFilter();
+
+      } catch (error) {
+        console.error("Supabase Error:", error);
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="6" class="p-8 text-center text-red-500 font-medium">
+              Gagal memuat data logbook dari Supabase.<br>
+              <span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${error.message || 'Periksa koneksi/kebijakan RLS'}</span>
+            </td>
+          </tr>`;
+      }
+    }
+
+    function renderTable() {
+      const tableBody = document.getElementById('tableBody');
+      const counterEl = document.getElementById('totalDataCount');
+      const totalRecords = document.getElementById('totalRecords');
+      const showingRecords = document.getElementById('showingRecords');
+      const currentPageNum = document.getElementById('currentPageNum');
+      const totalPageNum = document.getElementById('totalPageNum');
+      
+      tableBody.innerHTML = '';
+
+      const totalRows = filteredData.length;
+      if (counterEl) counterEl.innerText = totalRows;
+
+      const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
+      
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      const endIndex = Math.min(startIndex + rowsPerPage, totalRows);
+
+      if (totalRows === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data perbaikan tidak ditemukan.</td></tr>`;
+        totalRecords.innerText = 0;
+        showingRecords.innerText = "0 - 0";
+        currentPageNum.innerText = 1;
+        totalPageNum.innerText = 1;
+        document.getElementById('btnPrevPage').disabled = true;
+        document.getElementById('btnNextPage').disabled = true;
+        return;
+      }
+
+      const pageData = filteredData.slice(startIndex, endIndex);
+
+      pageData.forEach((row, index) => {
+        const recordId = row[0];
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors";
+        
+        tr.innerHTML = `
+          <td class="p-2.5 whitespace-nowrap text-[#5f6368] dark:text-[#9aa0a6] font-medium text-center">${startIndex + index + 1}</td>
+          <td class="p-2.5 font-semibold">${row[1] || '-'}</td>
+          <td class="p-2.5 whitespace-nowrap">${row[2] || '-'}</td>
+          <td class="p-2.5 truncate">${row[3] || '-'}</td>
+          <td class="p-2.5 text-center whitespace-nowrap">${renderDocumentationCell(row[4], row[5], row[1])}</td>
+          <td class="p-2.5 text-center whitespace-nowrap">
+            <div class="flex items-center justify-center gap-1">
+              <button onclick="editLogbook('${recordId}')" class="p-1 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded transition cursor-pointer" title="Edit Data">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              </button>
+              <button onclick="deleteLogbook('${recordId}')" class="p-1 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/40 rounded transition cursor-pointer" title="Hapus Data">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      totalRecords.innerText = totalRows;
+      showingRecords.innerText = `${startIndex + 1} - ${endIndex}`;
+      currentPageNum.innerText = currentPage;
+      totalPageNum.innerText = totalPages;
+
+      document.getElementById('btnPrevPage').disabled = (currentPage === 1);
+      document.getElementById('btnNextPage').disabled = (currentPage === totalPages);
+    }
+
+    function setupDropzone(zoneId, type) {
+      const zone = document.getElementById(zoneId);
+      if (!zone) return;
+
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, false);
+      });
+
+      ['dragenter', 'dragover'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.add('border-blue-500', 'bg-blue-50/20'), false);
+      });
+
+      ['dragleave', 'drop'].forEach(eventName => {
+        zone.addEventListener(eventName, () => zone.classList.remove('border-blue-500', 'bg-blue-50/20'), false);
+      });
+
+      zone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+          processFile(files[0], type);
+        }
+      });
+    }
+
+    function handleFileSelect(e, type) {
+      const file = e.target.files[0];
+      if (file) processFile(file, type);
+    }
+
+    function processFile(file, type) {
+      selectedFiles[type] = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        showImagePreview(type, e.target.result, file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showImagePreview(type, url, nameText = 'Foto Terpilih') {
+      const previewImg = document.getElementById(type === 'before' ? 'imgPreviewBefore' : 'imgPreviewAfter');
+      const fileName = document.getElementById(type === 'before' ? 'fileNameBefore' : 'fileNameAfter');
+      const container = document.getElementById(type === 'before' ? 'previewContainerBefore' : 'previewContainerAfter');
+      const placeholder = document.getElementById(type === 'before' ? 'placeholderBefore' : 'placeholderAfter');
+
+      previewImg.src = url;
+      fileName.innerText = nameText;
+      container.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+    }
+
+    function removeSelectedFile(type) {
+      selectedFiles[type] = null;
+      document.getElementById(type === 'before' ? 'fileBefore' : 'fileAfter').value = '';
+      document.getElementById(type === 'before' ? 'inputFotoBefore' : 'inputFotoAfter').value = '';
+      document.getElementById(type === 'before' ? 'previewContainerBefore' : 'previewContainerAfter').classList.add('hidden');
+      document.getElementById(type === 'before' ? 'placeholderBefore' : 'placeholderAfter').classList.remove('hidden');
+    }
+
+    function openFormModal(id = null) {
+      const form = document.getElementById('logbookForm');
+      form.reset();
+      removeSelectedFile('before');
+      removeSelectedFile('after');
+
+      if (id) {
+        document.getElementById('formModalTitle').innerText = "Edit Logbook";
+        const target = rawLogbookList.find(item => String(item.no || item.id) === String(id));
+        if (target) {
+          const beforeUrl = target.before || target.foto_before || '';
+          const afterUrl = target.after || target.foto_after || '';
+
+          document.getElementById('logbookId').value = target.no || target.id;
+          document.getElementById('inputObjek').value = target.subject || target.objek || '';
+          document.getElementById('inputTanggal').value = target.date || target.tanggal || '';
+          document.getElementById('inputNotes').value = target.notes || target.catatan || '';
+          document.getElementById('inputFotoBefore').value = beforeUrl;
+          document.getElementById('inputFotoAfter').value = afterUrl;
+
+          if (beforeUrl) showImagePreview('before', beforeUrl, 'Foto Tersimpan');
+          if (afterUrl) showImagePreview('after', afterUrl, 'Foto Tersimpan');
+        }
+      } else {
+        document.getElementById('formModalTitle').innerText = "Add Report";
+        document.getElementById('logbookId').value = '';
+      }
+
+      document.getElementById('crudModal').classList.remove('hidden');
+    }
+
+    function closeFormModal() {
+      document.getElementById('crudModal').classList.add('hidden');
+    }
+
+    function editLogbook(id) {
+      openFormModal(id);
+    }
+
+    async function uploadToGoogleDrive(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async () => {
+          const base64Data = reader.result.split(',')[1];
+          const payload = {
+            fileName: `logbook_${Date.now()}_${file.name}`,
+            mimeType: file.type,
+            base64Data: base64Data
+          };
+
+          try {
+            const response = await fetch(GOOGLE_DRIVE_SCRIPT_URL, {
+              method: 'POST',
+              body: JSON.stringify(payload)
+            });
+            const resData = await response.json();
+            if (resData.status === 'success') {
+              resolve(resData.url);
+            } else {
+              reject(resData.message || "Gagal mengunggah gambar ke Drive.");
+            }
+          } catch (err) {
+            reject(err);
+          }
+        };
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('btnSaveSubmit');
+      submitBtn.disabled = true;
+
+      const id = document.getElementById('logbookId').value;
+      const subject = document.getElementById('inputObjek').value;
+      const date = document.getElementById('inputTanggal').value;
+      const notes = document.getElementById('inputNotes').value;
+      let beforeUrl = document.getElementById('inputFotoBefore').value;
+      let afterUrl = document.getElementById('inputFotoAfter').value;
+
+      try {
+        if (selectedFiles.before) {
+          submitBtn.innerText = "Uploading Foto Before...";
+          beforeUrl = await uploadToGoogleDrive(selectedFiles.before);
+        }
+
+        if (selectedFiles.after) {
+          submitBtn.innerText = "Uploading Foto After...";
+          afterUrl = await uploadToGoogleDrive(selectedFiles.after);
+        }
+
+        submitBtn.innerText = "Menyimpan ke Supabase...";
+
+        const payload = { 
+          subject: subject, 
+          date: date, 
+          notes: notes,
+          before: beforeUrl, 
+          after: afterUrl 
+        };
+
+        if (id) {
+          const { error } = await db.from('logbook').update(payload).eq('no', id);
+          if (error) throw error;
+        } else {
+          const { error } = await db.from('logbook').insert([payload]);
+          if (error) throw error;
+        }
+
+        closeFormModal();
+        await fetchSupabaseData();
+
+      } catch (err) {
+        alert("Gagal memproses data: " + (err.message || err));
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = "Simpan Data";
+      }
+    }
+
+    async function deleteLogbook(id) {
+      if (!confirm("Apakah Anda yakin ingin menghapus data logbook ini secara permanen?")) return;
+
+      try {
+        const { error } = await db
+          .from('logbook')
+          .delete()
+          .eq('no', id);
+
+        if (error) throw error;
+        await fetchSupabaseData();
+      } catch (err) {
+        alert("Gagal menghapus data: " + err.message);
+      }
+    }
+
+    const renderDocumentationCell = (beforeUrl, afterUrl, objectName) => {
+      const hasBefore = beforeUrl && (beforeUrl.startsWith('http://') || beforeUrl.startsWith('https://'));
+      const hasAfter = afterUrl && (afterUrl.startsWith('http://') || afterUrl.startsWith('https://'));
+
+      if (!hasBefore && !hasAfter) {
+        return `<span class="text-[#5f6368] dark:text-[#9aa0a6] italic text-xs">Tidak ada foto</span>`;
+      }
+
+      const escapedName = objectName.replace(/'/g, "\\'");
+      const cleanBefore = hasBefore ? beforeUrl : "";
+      const cleanAfter = hasAfter ? afterUrl : "";
+      return `
+        <button onclick="openPhotoModal('${cleanBefore}', '${cleanAfter}', '${escapedName}')" class="inline-flex items-center gap-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] px-2.5 py-1 rounded-md font-medium text-xs border border-[#dadce0] dark:border-[#3c4043] transition cursor-pointer">
+          <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          Foto
+        </button>
+      `;
+    };
+
+    function openPhotoModal(beforeUrl, afterUrl, objectName) {
+      currentPhotos = { before: beforeUrl, after: afterUrl, objectName: objectName };
+      if (beforeUrl) {
+        changeSlide('before');
+      } else if (afterUrl) {
+        changeSlide('after');
+      }
+      document.getElementById('imageModal').classList.remove('hidden');
+    }
+
+    function changeSlide(type) {
+      const modalImage = document.getElementById('modalImage');
+      const modalTitle = document.getElementById('modalTitle');
+      const badge = document.getElementById('modalStatusBadge');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      
+      if (type === 'before') {
+        modalImage.src = currentPhotos.before;
+        modalTitle.innerText = `Before - ${currentPhotos.objectName}`;
+        badge.innerText = "BEFORE";
+        badge.className = "mt-1 inline-block bg-amber-600 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider";
+        prevBtn.disabled = true;
+        nextBtn.disabled = !currentPhotos.after;
+      } else if (type === 'after') {
+        modalImage.src = currentPhotos.after;
+        modalTitle.innerText = `After - ${currentPhotos.objectName}`;
+        badge.innerText = "AFTER";
+        badge.className = "mt-1 inline-block bg-emerald-600 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider";
+        prevBtn.disabled = !currentPhotos.before;
+        nextBtn.disabled = true;
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('imageModal').classList.add('hidden');
+      document.getElementById('modalImage').src = '';
+      currentPhotos = { before: "", after: "", objectName: "" };
+    }
+
+    function reapplyFilter() {
+      triggerGlobalSearch();
+    }
+
+    function toggleFilterMenu(e, element) {
+      activeColIndex = parseInt(element.getAttribute('data-col'));
+      const btnRect = element.getBoundingClientRect();
+      
+      menu.style.display = 'block';
+      menu.style.top = (btnRect.bottom + 4) + 'px';
+      menu.style.left = Math.min(btnRect.left, window.innerWidth - 270) + 'px';
+      
+      searchBox.value = '';
+      const dataFilteredByOthers = fullData.filter(r => {
+        for (let colIdx in currentAppliedFilters) {
+          if (parseInt(colIdx) === activeColIndex) continue; 
+          if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+        }
+        return true;
+      });
+
+      const availableVals = [...new Set(dataFilteredByOthers.map(r => String(r[activeColIndex])))].sort();
+      const currentlyChecked = currentAppliedFilters[activeColIndex] || availableVals;
+
+      const list = document.getElementById('checkboxList');
+      list.innerHTML = '';
+      availableVals.forEach(v => {
+        const isChecked = currentlyChecked.includes(v);
+        list.innerHTML += `<label class="checkbox-item"><input type="checkbox" ${isChecked ? 'checked' : ''} value="${v}" onclick="updateMasterCheckbox()" class="rounded text-blue-600 focus:ring-0"> <span>${v ? v : '-'}</span></label>`;
+      });
+      updateMasterCheckbox();
+      e.stopPropagation();
+    }
+
+    function searchInMenu() {
+      const filter = searchBox.value.toLowerCase();
+      document.querySelectorAll('#checkboxList .checkbox-item').forEach(item => {
+        item.style.display = item.innerText.toLowerCase().includes(filter) ? "flex" : "none";
+      });
+    }
+
+    function toggleAllCheckboxes(state) {
+      document.querySelectorAll('#checkboxList input[type="checkbox"]').forEach(cb => {
+        if (cb.parentElement.style.display !== 'none') cb.checked = state;
+      });
+    }
+
+    function updateMasterCheckbox() {
+      const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+      masterCheckbox.checked = cbs.length > 0 && cbs.every(cb => cb.checked);
+    }
+
+    function resetCurrentFilter() {
+      searchBox.value = '';
+      masterCheckbox.checked = true;
+      toggleAllCheckboxes(true);
+      searchInMenu();
+    }
+
+    function closeFilterMenu() {
+      menu.style.display = 'none';
+    }
+
+    function execSort(dir) {
+      filteredData.sort((a, b) => {
+        let valA = a[activeColIndex], valB = b[activeColIndex];
+        if(activeColIndex === 2) { 
+          valA = a[6] || ''; 
+          valB = b[6] || '';
+        }
+        return dir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+      });
+      currentPage = 1;
+      renderTable();
+      closeFilterMenu();
+    }
+
+    function applyCheckboxFilter() {
+      const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+      const checkedVals = cbs.filter(i => i.checked).map(i => i.value);
+      const isAllChecked = cbs.every(cb => cb.checked);
+      const targetTh = document.querySelector(`.filter-icon-btn[data-col="${activeColIndex}"]`).closest('th');
+      
+      if (!isAllChecked) {
+        targetTh.classList.add('filter-active');
+        currentAppliedFilters[activeColIndex] = checkedVals;
+      } else {
+        targetTh.classList.remove('filter-active');
+        delete currentAppliedFilters[activeColIndex];
+      }
+
+      reapplyFilter();
+      closeFilterMenu();
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+      }
+    }
+
+    function nextPage() {
+      const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTable();
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (menu && !menu.contains(e.target) && !e.target.closest('.filter-icon-btn')) {
+        closeFilterMenu();
+      }
+      const dropdown = document.getElementById('customDropdownMenu');
+      const btn = document.getElementById('hamburgerBtn');
+      if (dropdown && !dropdown.classList.contains('hidden')) {
+        if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
+      }
+    });
+
+    document.getElementById('imageModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    if (menu) menu.onclick = (e) => e.stopPropagation();
+  </script>
+</body>
+</html>

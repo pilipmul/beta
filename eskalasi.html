@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eskalasi Budget - SOT</title>
+    
+    <!-- Auth Guard LocalStorage -->
+    <script>
+        (function() {
+            const session = localStorage.getItem("user");
+            const userData = session ? JSON.parse(session) : null;
+            if (!userData || !userData.akses || userData.akses.eskalasi !== "Y") {
+                window.location.replace("login.html");
+                document.documentElement.style.display = "none";
+            }
+        })();
+    </script>
+
+    <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+    <link rel="stylesheet" href="global-header.css">
+    
+    <!-- Tailwind CSS v4 Browser Build -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Supabase JS Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- CDN jsPDF & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- CSS Modal Eskalasi -->
+    <link rel="stylesheet" href="eskin.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        html, body { 
+            font-family: 'Inter', sans-serif; 
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* TRIK FLOATING SCROLLBAR ABSOLUTE OVERLAY (SAMA DENGAN ASSETS & LOGISTICS) */
+        .floating-scroll-area {
+            position: absolute;
+            inset: 0;
+            overflow-y: scroll;
+            overflow-x: auto;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.5); }
+
+        /* SIDEBAR HOLLOW OVERLAY */
+        #global-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        #global-header > * { pointer-events: auto; }
+        #global-header aside, #global-header .sidebar {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        th { position: relative; padding-right: 32px !important; }
+        th.no-filter { padding-right: 24px !important; }
+        
+        .filter-icon-btn {
+            position: absolute; right: 8px; top: 50%;
+            transform: translateY(-50%);
+            width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 4px; cursor: pointer; transition: all 0.15s;
+            color: #cbd5e1;
+        }
+        .filter-icon-btn:hover { background-color: #334155; color: #60a5fa; }
+        .filter-icon { width: 12px; height: 12px; fill: currentColor; }
+        
+        .filter-active .filter-icon-btn { color: #facc15 !important; }
+        .filter-active .filter-icon { display: none; }
+        .filter-active .filter-icon-btn::after {
+            content: ""; width: 14px; height: 14px; background-color: #facc15;
+            -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+        }
+        
+        .filter-menu {
+            position: absolute; background: #ffffff; color: #0f172a;
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            z-index: 1000; display: none; width: 260px; padding: 14px; 
+            border-radius: 16px; text-transform: none; font-weight: normal; font-size: 13px;
+            box-sizing: border-box;
+        }
+        .filter-sort-group { display: flex; gap: 8px; margin-bottom: 12px; }
+        .filter-sort-btn { flex: 1; padding: 7px 10px; background-color: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s ease; text-align: center; }
+        .filter-sort-btn:hover { background-color: #e2e8f0; color: #0f172a; }
+        .filter-search-box { width: 100%; padding: 8px 12px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 12px; box-sizing: border-box; font-size: 12px; background-color: #f8fafc; color: #0f172a; outline: none; transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease; }
+        .filter-search-box::placeholder { color: #94a3b8; }
+        .filter-search-box:focus { border-color: #2563eb; background-color: #ffffff; color: #0f172a; }
+        .master-checkbox-container { display: flex; align-items: center; justify-content: space-between; font-size: 12px; padding: 2px 2px 8px 2px; font-weight: 600; color: #334155; }
+        .reset-link { color: #2563eb; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: none; }
+        .reset-link:hover { text-decoration: underline; }
+        .checkbox-list { max-height: 160px; overflow-y: auto; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 12px; background-color: #f8fafc; margin-bottom: 14px; scrollbar-width: none; -ms-overflow-style: none; }
+        .checkbox-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; color: #334155; cursor: pointer; }
+        .checkbox-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .filter-actions { display: flex; gap: 8px; }
+        .btn-action-cancel { flex: 1; padding: 8px; background-color: #f1f5f9; color: #475569; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease; }
+        .btn-action-cancel:hover { background-color: #e2e8f0; color: #0f172a; }
+        .btn-action-apply { flex: 1; padding: 8px; background-color: #2563eb; color: #ffffff; border: none; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background-color 0.15s ease; }
+        .btn-action-apply:hover { background-color: #1d4ed8; }
+    </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Inter',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+    <!-- CONTAINER ELEMEN SIDEBAR OVERLAY HOLLOW -->
+    <div id="global-header"></div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div id="main-content" class="flex-1 w-full h-screen flex flex-col overflow-hidden">
+        
+        <!-- Topbar Halaman (STRUKTUR SAMA DENGAN LOGISTICS.HTML & ASSETS.HTML) -->
+        <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-1.5 sticky top-0 z-40 flex items-center justify-between shrink-0">
+            <!-- Sisi Kiri: Judul Halaman -->
+            <div>
+                <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Eskalasi Budget</h2>
+            </div>
+
+            <!-- Sisi Kanan: Counter Total + Search Bar + Hamburger Menu -->
+            <div class="flex items-center gap-4">
+                
+                <!-- Counter Total Eskalasi -->
+                <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap">
+                    Total Eskalasi: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+                </p>
+
+                <!-- Search Bar -->
+                <div class="relative flex items-center w-48 sm:w-64">
+                    <svg class="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <input type="text" id="globalSearchInput" onkeyup="triggerGlobalSearch()" 
+                           placeholder="Cari eskalasi..." 
+                           class="w-full h-7 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-9 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+                    <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+                </div>
+
+                <!-- Tombol Hamburger & Dropdown Container -->
+                <div class="relative flex items-center">
+                    <button type="button" id="hamburgerBtn" onclick="toggleHamburgerMenu(event)" class="h-7 w-7 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+                        <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                    
+                    <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+                        <div id="custom-hamburger-content"></div>
+                    </div>
+                </div>
+
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT BODY WRAPPER -->
+        <div class="flex-1 w-full relative overflow-hidden">
+            <main class="floating-scroll-area custom-scroll p-4">
+                <div class="max-w-7xl mx-auto space-y-4">
+                    <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden" id="tableWrapper" style="position: relative;">
+                        <div class="overflow-x-auto custom-scroll">
+                            <table class="w-full text-left border-collapse text-xs table-fixed hidden" id="eskalasiTable">
+                                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                                    <tr>
+                                        <th scope="col" class="p-2.5 w-[8%] text-center no-filter">NO</th>
+                                        <th scope="col" class="p-2.5 w-[22%]">
+                                            KODE ESKALASI 
+                                            <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
+                                                <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="p-2.5 w-[40%]">
+                                            SUBJECT 
+                                            <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
+                                                <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="p-2.5 w-[15%]">
+                                            BULAN 
+                                            <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
+                                                <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                            </div>
+                                        </th>
+                                        <th scope="col" class="p-2.5 w-[15%]">
+                                            NILAI 
+                                            <div class="filter-icon-btn" data-col="4" onclick="toggleFilterMenu(event, this)">
+                                                <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium" id="tableBody"></tbody>
+                            </table>
+
+                            <div id="filterMenu" class="filter-menu">
+                                <div class="filter-sort-group">
+                                    <button class="filter-sort-btn" onclick="execSort('asc')">↑ A-Z</button>
+                                    <button class="filter-sort-btn" onclick="execSort('desc')">↓ Z-A</button>
+                                </div>
+
+                                <input type="text" id="menuSearch" class="filter-search-box" placeholder="Cari item..." onkeyup="searchInMenu()">
+
+                                <div class="master-checkbox-container">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)" class="rounded text-blue-600 focus:ring-0">
+                                        <span>Pilih Semua</span>
+                                    </label>
+                                    <span class="reset-link" onclick="resetFilterMenu()">Reset</span>
+                                </div>
+
+                                <div class="checkbox-list" id="checkboxList"></div>
+
+                                <div class="filter-actions">
+                                    <button class="btn-action-cancel" onclick="closeFilterMenu()">Batal</button>
+                                    <button class="btn-action-apply" onclick="applyCheckboxFilter()">Terapkan</button>
+                                </div>
+                            </div>
+
+                            <div id="loading" class="px-6 py-16 text-center text-[#5f6368] dark:text-[#9aa0a6]">
+                                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-slate-700 border-t-blue-500 mb-3"></div>
+                                <p class="font-medium text-xs">Menghubungkan ke Supabase Database...</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 py-2.5 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#9aa0a6] flex justify-between items-center">
+                            <span id="dbStatusIndicator">Status: Connected</span>
+                            <span>Power by: PBC Internal Dev Team</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+    </div>
+
+    <!-- POPUP MODAL FORM ESKALASI BARU -->
+    <div id="modalEskalasiBaru" class="modal-overlay">
+        <div class="bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scroll">
+            <div class="p-5 border-b border-[#f1f3f4] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#252525] flex justify-between items-center sticky top-0 z-10">
+                <div>
+                    <h3 class="text-base font-bold text-[#202124] dark:text-[#f1f3f4] tracking-tight">Formulir Pengajuan Eskalasi Budget</h3>
+                    <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Isi data anggaran dan penanggung jawab untuk mencetak dokumen PDF</p>
+                </div>
+                <button type="button" onclick="closeModalEskalasi()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white transition p-1 cursor-pointer">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <form id="formEskin" autocomplete="off" class="p-6 space-y-5 text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-1.5 text-center">Nomor Eskalasi</label>
+                        <input type="text" id="displayKode" value="Memuat..." 
+                            class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 text-[#202124] dark:text-[#e8eaed] font-mono font-semibold focus:outline-none transition text-center">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-1.5 text-center">Subject</label>
+                        <textarea id="subject" rows="1" placeholder="Judul pengajuan..." required
+                            class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition resize-none text-center"></textarea>
+                    </div>
+                </div>
+            
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-[#f1f3f4] dark:border-[#3c4043] pt-4">
+                    <div class="relative">
+                        <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-1.5 text-center">Diajukan</label>
+                        <input type="text" id="diajukan" class="user-search w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition text-center" placeholder="Cari nama..." oninput="showUserSuggestions(this)">
+                        <div class="autocomplete-list absolute left-0 right-0 mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-xl max-h-40 overflow-y-auto z-50 shadow-lg hidden divide-y divide-[#f1f3f4] dark:divide-[#3c4043]"></div>
+                    </div>
+                    <div class="relative">
+                        <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-1.5 text-center">Diketahui</label>
+                        <input type="text" id="diketahui" class="user-search w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition text-center" placeholder="Cari nama..." oninput="showUserSuggestions(this)">
+                        <div class="autocomplete-list absolute left-0 right-0 mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-xl max-h-40 overflow-y-auto z-50 shadow-lg hidden divide-y divide-[#f1f3f4] dark:divide-[#3c4043]"></div>
+                    </div>
+                    <div class="relative">
+                        <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-1.5 text-center">Disetujui</label>
+                        <input type="text" id="disetujui" class="user-search w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent focus:border-blue-500 rounded-xl px-4 py-2.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition text-center" placeholder="Cari nama..." oninput="showUserSuggestions(this)">
+                        <div class="autocomplete-list absolute left-0 right-0 mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-xl max-h-40 overflow-y-auto z-50 shadow-lg hidden divide-y divide-[#f1f3f4] dark:divide-[#3c4043]"></div>
+                    </div>
+                </div>
+            
+                <div class="border-t border-[#f1f3f4] dark:border-[#3c4043] pt-4">
+                    <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-2 text-center">Daftar Item Pengajuan (Max 10)</label>
+                    <div class="overflow-visible border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-inner bg-white dark:bg-[#1e1e1e]">
+                        <table class="min-w-full text-xs">
+                            <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider rounded-t-xl border-b border-[#dadce0] dark:border-[#3c4043]">
+                                <tr>
+                                    <th scope="col" class="px-4 py-3 font-semibold text-center w-7/12 rounded-tl-xl">Item</th>
+                                    <th scope="col" class="px-4 py-3 font-semibold text-center w-2/12">Qty</th>
+                                    <th scope="col" class="px-4 py-3 font-semibold text-center w-3/12 rounded-tr-xl">Biaya</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemRows" class="divide-y divide-[#f1f3f4] dark:divide-[#3c4043] bg-white dark:bg-[#1e1e1e]"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" id="btnAddRow" class="mt-3 inline-flex items-center gap-1.5 bg-[#e8f0fe] dark:bg-[#2c384e] text-[#1a73e8] dark:text-[#8ab4f8] font-semibold text-xs px-4 py-2 rounded-lg transition shadow-xs cursor-pointer" onclick="tambahBaris()">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Add Item
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-[#f1f3f4] dark:border-[#3c4043] pt-5 items-end">
+                    <div>
+                        <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-1.5">Total Nilai Keseluruhan</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-emerald-600 font-bold text-xs pointer-events-none">Rp</span>
+                            <input type="text" id="nilai" readonly class="w-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 font-bold rounded-xl pl-10 pr-4 py-2.5 focus:outline-none shadow-xs">
+                        </div>
+                    </div>
+                    <div class="md:col-span-2 flex gap-3">
+                        <button type="button" onclick="closeModalEskalasi()" class="w-1/3 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] font-semibold text-xs py-3 px-4 rounded-xl transition cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="submit" id="btnSubmit" disabled class="w-2/3 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] font-semibold text-xs py-3 px-4 rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                            Submit & Download PDF
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT TEMPLATE HEADER TERPUSAT -->
+    <script src="header-template.js"></script>
+
+    <!-- LOGIKA HAMBURGER, FILTER & DATA -->
+    <script>
+        let fullData = []; 
+        let filteredData = []; 
+        let activeColIndex = -1;
+        let currentAppliedFilters = {};
+
+        // HAMBURGER DROPDOWN HANDLER DENGAN AUTO-RENDER
+        function toggleHamburgerMenu(e) {
+            if (e) e.stopPropagation();
+            const dropdown = document.getElementById('customDropdownMenu');
+            const container = document.getElementById('custom-hamburger-content');
+            if (!dropdown) return;
+
+            if (container && (!container.innerHTML || container.innerHTML.trim() === '')) {
+                renderHamburgerMenuContent();
+            }
+            dropdown.classList.toggle('hidden');
+        }
+
+        function toggleConnDropdown(e) {
+            toggleHamburgerMenu(e);
+        }
+
+        function renderHamburgerMenuContent() {
+            const container = document.getElementById('custom-hamburger-content');
+            if (!container) return;
+
+            container.innerHTML = `
+                <button onclick="openModalEskalasi(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Eskalasi Baru</span>
+                </button>
+            `;
+        }
+
+        // FUNGSI SEARCH GLOBAL DENGAN UPDATE COUNTER
+        function triggerGlobalSearch() {
+            const input = document.getElementById('globalSearchInput');
+            const query = input ? input.value.trim().toLowerCase() : '';
+            const btnClear = document.getElementById('btnClearSearch');
+
+            if (query !== '') {
+                if (btnClear) btnClear.classList.remove('hidden');
+            } else {
+                if (btnClear) btnClear.classList.add('hidden');
+            }
+
+            filteredData = fullData.filter(row => {
+                const matchesSearch = query === '' || row.some(cell => String(cell).toLowerCase().includes(query));
+                let matchesFilters = true;
+                for (let colIdx in currentAppliedFilters) {
+                    if (!currentAppliedFilters[colIdx].includes(String(row[colIdx]))) {
+                        matchesFilters = false;
+                        break;
+                    }
+                }
+                return matchesSearch && matchesFilters;
+            });
+
+            renderTable(filteredData);
+        }
+
+        function clearGlobalSearch() {
+            const input = document.getElementById('globalSearchInput');
+            if (input) input.value = '';
+            triggerGlobalSearch();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderHeader === 'function') {
+                renderHeader({
+                    subtitle: "Eskalasi Budget",
+                    hamburgerItems: [
+                        {
+                            label: "Eskalasi Baru",
+                            icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+                            onClick: "openModalEskalasi()"
+                        }
+                    ]
+                });
+            }
+            renderHamburgerMenuContent();
+        });
+
+        function updateConnectionStatus(isConnected) {
+            const container = document.getElementById("dbStatusIndicator");
+            if (isConnected) {
+                container.innerText = "Status: Connected to Supabase";
+                container.className = "text-emerald-600 font-medium";
+            } else {
+                container.innerText = "Status: Disconnected";
+                container.className = "text-rose-600 font-medium";
+            }
+        }
+
+        function parseMonthYear(valStr) {
+            if (!valStr || valStr === '-') return new Date(0);
+            const parts = valStr.split('-');
+            if (parts.length !== 2) return new Date(0);
+            const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+            const monthIdx = monthNames.findIndex(m => m.toLowerCase() === parts[0].toLowerCase().substring(0, 3));
+            if (monthIdx === -1) return new Date(0);
+            let year = parseInt(parts[1], 10);
+            year = year < 100 ? 2000 + year : year;
+            return new Date(year, monthIdx, 1);
+        }
+
+        function parseCleanNumber(valX) {
+            return parseFloat(valX.replace(/[^\d.-]/g, '')) || 0;
+        }
+
+        async function loadData() {
+            try {
+                document.getElementById("loading").style.display = "block";
+                document.getElementById("eskalasiTable").classList.add("hidden");
+
+                const { data, error } = await supabaseClient
+                    .from('eskalasi')
+                    .select('no, kode, subject, bulan, nilai')
+                    .order('no', { ascending: true });
+
+                if (error) throw error;
+                updateConnectionStatus(true);
+
+                fullData = data.map(item => [
+                    String(item.no ?? ''),
+                    String(item.kode ?? ''),
+                    String(item.subject ?? ''),
+                    String(item.bulan ?? '-'),
+                    item.nilai ? 'Rp ' + Number(item.nilai).toLocaleString('id-ID') : '-'
+                ]);
+
+                filteredData = [...fullData];
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("eskalasiTable").classList.remove("hidden");
+                renderTable(filteredData);
+            } catch (e) {
+                console.error(e);
+                updateConnectionStatus(false);
+                document.getElementById("loading").innerHTML = "<p class='text-red-500 font-medium'>Gagal memproses data Supabase.</p>";
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            
+            // UPDATE NILAI TOTAL DATA COUNTER
+            const counterEl = document.getElementById("totalDataCount");
+            if (counterEl) counterEl.innerText = data.length;
+
+            data.forEach((row, index) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors">
+                        <td class="p-2.5 text-center whitespace-nowrap text-[#5f6368] dark:text-[#9aa0a6] font-medium">${index + 1}</td>
+                        <td class="p-2.5 font-semibold text-[#1a73e8] dark:text-[#8ab4f8] whitespace-nowrap">${row[1]}</td>
+                        <td class="p-2.5 text-[#202124] dark:text-[#e8eaed]">${row[2]}</td>
+                        <td class="p-2.5 text-[#5f6368] dark:text-[#bdc1c6] whitespace-nowrap">${row[3]}</td>
+                        <td class="p-2.5 text-[#202124] dark:text-[#e8eaed] font-semibold whitespace-nowrap">${row[4]}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        const menu = document.getElementById('filterMenu');
+        const searchBox = document.getElementById('menuSearch');
+        const masterCheckbox = document.getElementById('masterCheckbox');
+        const tableWrapper = document.getElementById('tableWrapper');
+
+        function toggleFilterMenu(e, element) {
+            activeColIndex = parseInt(element.getAttribute('data-col'));
+            const wrapperRect = tableWrapper.getBoundingClientRect();
+            const btnRect = element.getBoundingClientRect();
+            
+            menu.style.display = 'block';
+            menu.style.top = (btnRect.bottom - wrapperRect.top + tableWrapper.scrollTop + 6) + 'px';
+            
+            let leftPos = btnRect.left - wrapperRect.left + tableWrapper.scrollLeft - 100;
+            if (leftPos < 10) leftPos = 10;
+            const maxLeft = tableWrapper.clientWidth - 260 - 15;
+            if (leftPos > maxLeft) leftPos = maxLeft;
+            
+            menu.style.left = leftPos + 'px';
+            searchBox.value = '';
+            
+            const dataFilteredByOthers = fullData.filter(r => {
+                for (let colIdx in currentAppliedFilters) {
+                    if (parseInt(colIdx) === activeColIndex) continue; 
+                    if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+                }
+                return true;
+            });
+
+            const availableVals = [...new Set(dataFilteredByOthers.map(r => String(r[activeColIndex])))].sort();
+            const currentlyChecked = currentAppliedFilters[activeColIndex] || availableVals;
+
+            const list = document.getElementById('checkboxList');
+            list.innerHTML = '';
+            availableVals.forEach(v => {
+                const isChecked = currentlyChecked.includes(v);
+                list.innerHTML += `
+                    <label class="checkbox-item">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} value="${v}" onclick="updateMasterCheckbox()" class="rounded text-blue-600 focus:ring-0"> 
+                        <span title="${v}">${v}</span>
+                    </label>`;
+            });
+            updateMasterCheckbox();
+            e.stopPropagation();
+        }
+
+        function searchInMenu() {
+            const filter = searchBox.value.toLowerCase();
+            document.querySelectorAll('.checkbox-item').forEach(item => {
+                item.style.display = item.innerText.toLowerCase().includes(filter) ? "flex" : "none";
+            });
+        }
+
+        function toggleAllCheckboxes(state) {
+            document.querySelectorAll('#checkboxList input[type="checkbox"]').forEach(cb => {
+                if (cb.parentElement.style.display !== 'none') cb.checked = state;
+            });
+        }
+
+        function updateMasterCheckbox() {
+            const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+            masterCheckbox.checked = cbs.length > 0 && cbs.every(cb => cb.checked);
+        }
+
+        function resetFilterMenu() {
+            toggleAllCheckboxes(true);
+            masterCheckbox.checked = true;
+            searchBox.value = '';
+            searchInMenu();
+        }
+
+        function closeFilterMenu() { menu.style.display = 'none'; }
+
+        function execSort(dir) {
+            filteredData.sort((a, b) => {
+                let valA = a[activeColIndex], valB = b[activeColIndex];
+                if (activeColIndex === 0 || activeColIndex === 4) { 
+                    valA = parseCleanNumber(valA); valB = parseCleanNumber(valB); 
+                } else if (activeColIndex === 3) {
+                    valA = parseMonthYear(valA); valB = parseMonthYear(valB);
+                }
+                return dir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+            });
+            renderTable(filteredData);
+            closeFilterMenu();
+        }
+
+        function applyCheckboxFilter() {
+            const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+            const checkedVals = cbs.filter(i => i.checked).map(i => i.value);
+            const isAllChecked = cbs.every(cb => cb.checked);
+            const targetTh = document.querySelector(`.filter-icon-btn[data-col="${activeColIndex}"]`).closest('th');
+            
+            if (!isAllChecked) {
+                targetTh.classList.add('filter-active');
+                currentAppliedFilters[activeColIndex] = checkedVals;
+            } else {
+                targetTh.classList.remove('filter-active');
+                delete currentAppliedFilters[activeColIndex];
+            }
+
+            triggerGlobalSearch();
+            closeFilterMenu();
+        }
+
+        document.addEventListener('click', (e) => {
+            if (menu && !menu.contains(e.target) && !e.target.closest('.filter-icon-btn')) {
+                closeFilterMenu();
+            }
+            const dropdown = document.getElementById('customDropdownMenu');
+            const btn = document.getElementById('hamburgerBtn');
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+        });
+
+        if (menu) menu.onclick = (e) => e.stopPropagation();
+
+        window.onload = loadData;
+    </script>
+
+    <!-- MODULE ESKALASI SCRIPT -->
+    <script src="eskin.js"></script>
+</body>
+</html>
