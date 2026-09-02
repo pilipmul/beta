@@ -7,17 +7,17 @@
       try {
         const session = localStorage.getItem("user");
         if (!session) { 
-          window.location.replace("login.html"); 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
           return; 
         }
         const userData = JSON.parse(session);
         if (!userData) { 
-          window.location.replace("login.html"); 
+          window.location.replace("https://sotpbc.vercel.app/login.html"); 
           return; 
         }
         window.currentUser = userData.data || userData;
       } catch (err) {
-        window.location.replace("login.html");
+        window.location.replace("https://sotpbc.vercel.app/login.html");
       }
     })();
   </script>
@@ -362,7 +362,7 @@
     async function initDashboard() {
       const storedRaw = localStorage.getItem("user");
       if (!storedRaw) {
-        window.location.replace("login.html");
+        window.location.replace("https://sotpbc.vercel.app/login.html");
         return;
       }
 
