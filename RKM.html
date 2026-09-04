@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RKM - SOT</title>
+
+  <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+  <script>
+    (function checkAuth() {
+      const userSessionString = localStorage.getItem("user");
+      
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      try {
+        const userData = JSON.parse(userSessionString);
+        if (!userData || !userData.akses || userData.akses.RKM !== "Y") {
+          window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+        }
+      } catch (err) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+
+  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
+  <!-- Tailwind CSS v4 Browser Build -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- IMPORT CUSTOM STYLE -->
+  <link rel="stylesheet" href="RKM.css">
+
+  <!-- SUPABASE JS SDK VIA CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Inter',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <!-- CONTAINER ELEMEN SIDEBAR OVERLAY HOLLOW -->
+  <div id="global-header"></div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div id="main-content" class="flex-1 w-full h-screen flex flex-col overflow-hidden">
+    
+    <!-- Topbar Halaman Terpadu -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-1.5 sticky top-0 z-40 flex items-center justify-between shrink-0">
+      <div>
+        <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">RKM</h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap">
+          Total Agenda: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+<div class="relative flex items-center w-48 sm:w-64">
+  <div class="absolute left-2.5 top-0 bottom-0 flex items-center pointer-events-none z-10">
+    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7"/>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  </div>
+  <input type="text" id="globalSearchInput" onkeyup="triggerGlobalSearch()" 
+         placeholder="Cari agenda RKM..." 
+         class="w-full h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-8 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+  <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+</div>
+
+        <div class="relative flex items-center">
+          <button type="button" id="hamburgerBtn" onclick="toggleHamburgerMenu(event)" class="h-7 w-7 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+            <div id="custom-hamburger-content"></div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT BODY WRAPPER -->
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+          <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative" id="tableWrapper">
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs table-fixed" id="rkmTable">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th scope="col" class="p-2.5 w-[11%]">
+                      Tanggal
+                      <div class="filter-icon-btn" data-col="0" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[13%]">
+                      Sumber
+                      <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[24%]">
+                      Case
+                      <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[10%]">
+                      PIC
+                      <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[22%]">
+                      Update
+                      <div class="filter-icon-btn" data-col="4" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[10%]">
+                      Target
+                      <div class="filter-icon-btn" data-col="5" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[10%] text-center">
+                      Status
+                      <div class="filter-icon-btn" data-col="6" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="rkmTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr>
+                    <td colspan="7" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">Loading RKM data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- POP-UP MENU FILTER -->
+            <div id="filterMenu" class="filter-menu bg-white dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] shadow-2xl">
+              <div class="sort-actions">
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('asc')">↑ A-Z</button>
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('desc')">↓ Z-A</button>
+              </div>
+              
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+              
+              <div class="search-box">
+                <input type="text" id="menuSearch" class="filter-search-box bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] focus:border-blue-500" placeholder="Filter nilai..." onkeyup="searchInMenu()">
+              </div>
+
+              <div class="select-all-row">
+                <label class="checkbox-label text-[#202124] dark:text-[#e8eaed]">
+                  <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)" class="rounded text-blue-600 focus:ring-0"> 
+                  <span>Pilih Semua</span>
+                </label>
+                <button class="btn-reset text-[#1a73e8] dark:text-[#8ab4f8]" onclick="resetCurrentFilter()">Reset</button>
+              </div>
+
+              <div class="checkbox-list" id="checkboxList"></div>
+
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+
+              <div class="footer-actions">
+                <button class="btn-cancel bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6]" onclick="closeFilterMenu()">Batal</button>
+                <button class="btn-apply bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124]" onclick="applyCheckboxFilter()">Terapkan</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+<!-- MODAL FORM EDIT / ADD -->
+<div id="rkmModal" class="fixed inset-0 bg-black/60 z-[10005] hidden flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-[#1e1e1e] max-w-2xl w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043]">
+    <div class="bg-[#f8f9fa] dark:bg-[#252525] px-6 py-4 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center">
+      <h3 id="modalTitle" class="font-bold text-base">Add New Agenda</h3>
+      <button onclick="closeModalForm()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+    </div>
+    
+    <form id="rkmForm" class="p-6 space-y-4 text-xs">
+      <input type="hidden" id="inpId">
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tanggal</label>
+          <input type="date" id="inpTanggal" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Sumber</label>
+          <input type="text" id="inpSumber" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Case (Rencana & Kendala)</label>
+        <textarea id="inpCase" rows="3" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required></textarea>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">PIC</label>
+          <div class="pic-tag-container w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500" id="picTagContainer" onclick="focusPicInput()">
+            <input type="text" id="inpPicSearch" class="pic-input-search bg-transparent text-[#202124] dark:text-[#e8eaed] outline-none" placeholder="Ketik PIC..." list="picDatalist" oninput="handlePicSelect(this)">
+          </div>
+          <p class="text-[10px] text-[#5f6368] dark:text-[#9aa0a6] mt-1">Ketik nama PIC untuk memilih dari daftar opsi.</p>
+
+          <datalist id="picDatalist">
+            <option value="GA"></option>
+            <option value="Head Ops."></option>
+            <option value="ME"></option>
+            <option value="TRO"></option>
+            <option value="FA"></option>
+            <option value="Head FA"></option>
+            <option value="Security"></option>
+            <option value="All"></option>
+            <option value="CS"></option>
+            <option value="Kasir"></option>
+            <option value="MKT"></option>
+          </datalist>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Target Selesai</label>
+          <input type="text" id="inpTarget" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Contoh: W3 Juli 2026">
+        </div>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Update Progress & Realisasi</label>
+        <textarea id="inpUpdate" rows="3" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+      </div>
+
+      <div>
+        <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Status Case</label>
+        <select id="inpStatus" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="Open">Open (In Progress)</option>
+          <option value="Done" class="bg-emerald-100 text-emerald-800">Done (Completed)</option>
+          <option value="Close" class="bg-blue-100 text-blue-800">Close (Closed)</option>
+        </select>
+      </div>
+
+      <div class="pt-4 flex justify-between items-center border-t border-[#f1f3f4] dark:border-[#3c4043]">
+        <button type="button" id="btnDeleteModal" class="hidden px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold transition cursor-pointer" onclick="deleteFromModal()">
+          Delete Agenda
+        </button>
+        <div class="flex gap-3 ml-auto">
+          <button type="button" onclick="closeModalForm()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg text-xs font-semibold transition cursor-pointer">Batal</button>
+          <button type="button" onclick="submitForm()" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg text-xs font-semibold transition cursor-pointer">Simpan Data</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT & CUSTOM SCRIPT -->
+<script src="header-template.js"></script>
+<script src="RKM.js"></script>
+</body>
+</html>

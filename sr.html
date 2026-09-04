@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumentasi Perbaikan - SOT</title>
+
+  <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+  <script>
+    (function checkAuth() {
+      const userSessionString = localStorage.getItem("user");
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+      try {
+        const userData = JSON.parse(userSessionString);
+        if (!userData) {
+          window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+        }
+      } catch (err) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+
+  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
+  <!-- Tailwind CSS v4 Browser Build -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- IMPORT CUSTOM STYLE -->
+  <link rel="stylesheet" href="sr.css">
+
+  <!-- SUPABASE JS SDK VIA CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Inter',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <!-- CONTAINER ELEMEN SIDEBAR OVERLAY HOLLOW -->
+  <div id="global-header"></div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div id="main-content" class="flex-1 w-full h-screen flex flex-col overflow-hidden">
+    
+    <!-- Topbar Halaman Terpadu -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-1.5 sticky top-0 z-40 flex items-center justify-between shrink-0">
+      <div>
+        <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Dokumentasi Perbaikan</h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap">
+          Total Laporan: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+        <div class="relative flex items-center w-48 sm:w-64">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" onkeyup="triggerGlobalSearch()" 
+                 placeholder="Cari perbaikan..." 
+                 class="w-full h-7 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-9 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+        </div>
+
+        <div class="relative flex items-center">
+          <button type="button" id="hamburgerBtn" onclick="toggleHamburgerMenu(event)" class="h-7 w-7 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+            <div id="custom-hamburger-content"></div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT BODY WRAPPER -->
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+          <div class="bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative" id="tableWrapper">
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs table-fixed" id="reportTable">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th scope="col" class="p-2.5 w-[8%] text-center no-filter">No</th>
+                    <th scope="col" class="p-2.5 w-[20%]">
+                      Objek
+                      <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[15%]">
+                      Item
+                      <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[15%]">
+                      Tanggal
+                      <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[30%]">
+                      Catatan
+                      <div class="filter-icon-btn" data-col="4" onclick="toggleFilterMenu(event, this)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[12%] text-center no-filter">Dokumentasi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr id="loadingRow">
+                    <td colspan="6" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">
+                      <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-blue-600 mb-2"></div>
+                      <p>Sedang memuat data dari Supabase...</p>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- POP-UP MENU FILTER -->
+            <div id="filterMenu" class="filter-menu bg-white dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] shadow-2xl">
+              <div class="sort-actions">
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('asc')">↑ A-Z</button>
+                <button class="btn-sort bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043]" onclick="execSort('desc')">↓ Z-A</button>
+              </div>
+              
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+              
+              <div class="search-box">
+                <input type="text" id="menuSearch" class="filter-search-box bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] focus:border-blue-500" placeholder="Filter nilai..." onkeyup="searchInMenu()">
+              </div>
+
+              <div class="select-all-row">
+                <label class="checkbox-label text-[#202124] dark:text-[#e8eaed]">
+                  <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)" class="rounded text-blue-600 focus:ring-0"> 
+                  <span>Pilih Semua</span>
+                </label>
+                <button class="btn-reset text-[#1a73e8] dark:text-[#8ab4f8]" onclick="resetCurrentFilter()">Reset</button>
+              </div>
+
+              <div class="checkbox-list" id="checkboxList"></div>
+
+              <hr class="divider border-[#dadce0] dark:border-[#3c4043]" />
+
+              <div class="footer-actions">
+                <button class="btn-cancel bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6]" onclick="closeFilterMenu()">Batal</button>
+                <button class="btn-apply bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124]" onclick="applyCheckboxFilter()">Terapkan</button>
+              </div>
+            </div>
+
+            <!-- PAGINATION BAR TERPADU -->
+            <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 py-3 border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#bdc1c6] flex flex-col sm:flex-row justify-between items-center gap-3">
+              <div>
+                <span>Menampilkan <strong id="showingRecords" class="text-[#202124] dark:text-[#e8eaed]">0 - 0</strong> dari <strong id="totalRecords" class="text-[#202124] dark:text-[#e8eaed]">0</strong> baris</span>
+              </div>
+              
+              <div class="flex items-center gap-2">
+                <button id="btnPrevPage" onclick="prevPage()" class="px-3 py-1 bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] transition cursor-pointer font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Sebelumnya</button>
+                <span class="font-medium">Halaman <span id="currentPageNum">1</span> / <span id="totalPageNum">1</span></span>
+                <button id="btnNextPage" onclick="nextPage()" class="px-3 py-1 bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] transition cursor-pointer font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Selanjutnya</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- MODAL FORM CRUD (Create & Edit) -->
+  <div id="crudModal" class="fixed inset-0 bg-black/60 z-[10005] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#1e1e1e] max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043]">
+      <div class="bg-[#f8f9fa] dark:bg-[#252525] px-6 py-4 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center">
+        <h3 id="formModalTitle" class="font-bold text-base">Add Report</h3>
+        <button onclick="closeFormModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+      </div>
+      <form id="logbookForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4 text-xs">
+        <input type="hidden" id="logbookId">
+        
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Nama Objek / Deskripsi</label>
+          <input type="text" id="inputObjek" required placeholder="Contoh: AC Ruang Rapat Lt. 2" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <!-- 1 BARIS GRID: ITEM & TANGGAL -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Item / Perangkat</label>
+            <input type="text" id="inputItem" placeholder="Contoh: Lampu" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tanggal Perbaikan</label>
+            <input type="date" id="inputTanggal" required class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Catatan / Notes</label>
+          <textarea id="inputNotes" rows="2" placeholder="Tambahkan catatan perbaikan..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- File Input Foto Before -->
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Foto Before</label>
+          <div id="dropzoneBefore" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-[#f8f9fa] dark:hover:bg-[#252525] transition relative">
+            <input type="file" id="fileBefore" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'before')">
+            <div id="previewContainerBefore" class="hidden flex items-center justify-between bg-[#f1f3f4] dark:bg-[#2d2d2d] p-2 rounded-lg">
+              <img id="imgPreviewBefore" class="h-12 w-12 object-cover rounded-md" src="" alt="Before Preview">
+              <span id="fileNameBefore" class="text-xs text-[#202124] dark:text-[#e8eaed] truncate max-w-[180px]"></span>
+              <button type="button" onclick="removeSelectedFile('before')" class="text-red-500 font-bold text-sm px-2">&times;</button>
+            </div>
+            <div id="placeholderBefore" onclick="document.getElementById('fileBefore').click()">
+              <svg class="w-6 h-6 mx-auto text-[#5f6368] dark:text-[#9aa0a6] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Klik / Seret foto ke sini</p>
+            </div>
+          </div>
+          <input type="hidden" id="inputFotoBefore">
+        </div>
+
+        <!-- File Input Foto After -->
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Foto After</label>
+          <div id="dropzoneAfter" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-[#f8f9fa] dark:hover:bg-[#252525] transition relative">
+            <input type="file" id="fileAfter" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'after')">
+            <div id="previewContainerAfter" class="hidden flex items-center justify-between bg-[#f1f3f4] dark:bg-[#2d2d2d] p-2 rounded-lg">
+              <img id="imgPreviewAfter" class="h-12 w-12 object-cover rounded-md" src="" alt="After Preview">
+              <span id="fileNameAfter" class="text-xs text-[#202124] dark:text-[#e8eaed] truncate max-w-[180px]"></span>
+              <button type="button" onclick="removeSelectedFile('after')" class="text-red-500 font-bold text-sm px-2">&times;</button>
+            </div>
+            <div id="placeholderAfter" onclick="document.getElementById('fileAfter').click()">
+              <svg class="w-6 h-6 mx-auto text-[#5f6368] dark:text-[#9aa0a6] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Klik / Seret foto ke sini</p>
+            </div>
+          </div>
+          <input type="hidden" id="inputFotoAfter">
+        </div>
+
+        <!-- FOOTER: TOMBOL HAPUS (KIRI) & BATAL/SIMPAN (KANAN) -->
+        <div class="pt-4 flex justify-between items-center border-t border-[#f1f3f4] dark:border-[#3c4043]">
+          <div>
+            <button type="button" id="btnDeleteModal" onclick="handleDeleteFromModal()" class="hidden px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              <span>Hapus</span>
+            </button>
+          </div>
+          <div class="flex gap-2.5">
+            <button type="button" onclick="closeFormModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg text-xs font-semibold transition cursor-pointer">Batal</button>
+            <button type="submit" id="btnSaveSubmit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg text-xs font-semibold transition cursor-pointer">Simpan Data</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Preview Foto Dokumentasi -->
+  <div id="imageModal" class="fixed inset-0 bg-black/80 z-[10005] hidden flex items-center justify-center p-4">
+    <div class="relative max-w-3xl w-full bg-white dark:bg-[#1e1e1e] rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-[#dadce0] dark:border-[#3c4043]">
+      <div class="p-4 border-b border-[#dadce0] dark:border-[#3c4043] flex justify-between items-center bg-[#f8f9fa] dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed]">
+        <div>
+          <h3 id="modalTitle" class="font-bold text-sm">Preview Dokumentasi</h3>
+          <span id="modalStatusBadge" class="mt-1 inline-block bg-blue-600 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider">BEFORE</span>
+        </div>
+        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white transition cursor-pointer text-xl font-bold">&times;</button>
+      </div>
+      <div class="p-2 relative flex justify-center items-center bg-[#f1f3f4] dark:bg-[#121212] min-h-[40vh] max-h-[75vh]">
+        <button id="prevBtn" onclick="changeSlide('before')" class="absolute left-4 z-10 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed">&lt;</button>
+        <img id="modalImage" src="" alt="Dokumentasi Perbaikan" class="max-w-full max-h-[70vh] object-contain rounded-lg">
+        <button id="nextBtn" onclick="changeSlide('after')" class="absolute right-4 z-10 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed">&gt;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT -->
+  <script src="header-template.js"></script>
+  <!-- IMPORT JAVASCRIPT LOGIC SR -->
+  <script src="sr.js"></script>
+</body>
+</html>

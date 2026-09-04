@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) return window.location.replace("login.html"); 
+        const userData = JSON.parse(session);
+        if (!userData) return window.location.replace("login.html"); 
+        window.currentUser = userData.data || userData;
+      } catch {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Access Control - SOT</title>
+
+  <link rel="stylesheet" href="global-header.css">
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* CUSTOM CSS CHECKBOX BULAT SEMPURNA */
+    input[type="checkbox"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 0.875rem;
+      height: 0.875rem;
+      border-radius: 9999px !important;
+      border: 1px solid #dadce0;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease-in-out;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    input[type="checkbox"]:checked {
+      background-color: #1a73e8;
+      border-color: #1a73e8;
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      width: 3.5px;
+      height: 7px;
+      border: solid white;
+      border-width: 0 1.5px 1.5px 0;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      input[type="checkbox"] { border-color: #5f6368; }
+      input[type="checkbox"]:checked { background-color: #8ab4f8; border-color: #8ab4f8; }
+      input[type="checkbox"]:checked::after { border-color: #121212; }
+    }
+
+    .floating-scroll-area {
+      position: absolute;
+      inset: 0;
+      overflow-y: scroll;
+      overflow-x: auto;
+    }
+
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.5); }
+    .custom-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+    @media (prefers-color-scheme: dark) {
+      .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); }
+      .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+    }
+
+    #global-header {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #global-header > * { pointer-events: auto; }
+    #global-header aside {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Roboto',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <!-- Toast -->
+  <div id="toast" class="fixed top-5 right-5 z-[100] transform translate-y-[-20px] opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md">
+    <div id="toast-icon" class="p-1.5 rounded-xl text-white shrink-0"></div>
+    <div>
+      <p id="toast-title" class="font-bold text-xs"></p>
+      <p id="toast-msg" class="text-xs opacity-90 break-words"></p>
+    </div>
+  </div>
+
+  <div id="global-header"></div>
+
+  <div id="main-content" class="flex-1 w-full h-screen flex flex-col overflow-hidden">
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-1.5 sticky top-0 z-40 flex items-center justify-between shrink-0">
+      <div>
+        <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Access Control</h2>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap">
+          Total Pengguna: <span id="userCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+        <div class="relative flex items-center w-48 sm:w-64">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" oninput="triggerGlobalSearch()" 
+                 placeholder="Cari Nama Pengguna..." 
+                 class="w-full h-7 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-9 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+
+          <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
+            <div class="relative w-full overflow-x-auto custom-scroll">
+              <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed]">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th scope="col" class="p-2.5 relative w-12 text-center">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">No</span>
+                        <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Nama Pengguna</span>
+                        <button onclick="toggleFilterMenu('nama', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Eskalasi</span>
+                        <button onclick="toggleFilterMenu('eskalasi', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">RKM</span>
+                        <button onclick="toggleFilterMenu('rkm', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Dok. Perbaikan</span>
+                        <button onclick="toggleFilterMenu('perbaikan', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Tasks</span>
+                        <button onclick="toggleFilterMenu('task', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Syncflow</span>
+                        <button onclick="toggleFilterMenu('sync', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Logistics</span>
+                        <button onclick="toggleFilterMenu('log', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Inventory</span>
+                        <button onclick="toggleFilterMenu('item', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Assets</span>
+                        <button onclick="toggleFilterMenu('assets', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 text-center relative">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span class="truncate">Access Control</span>
+                        <button onclick="toggleFilterMenu('acces', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer">▼</button>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr>
+                    <td colspan="11" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Filter Popover -->
+            <div id="filterPopover" class="fixed hidden z-[10005] w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+              <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+                <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↑</span> A-Z
+                </button>
+                <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↓</span> Z-A
+                </button>
+              </div>
+
+              <div class="space-y-2 normal-case">
+                <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                       class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+                
+                <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" />
+                    Pilih Semua
+                  </label>
+                  <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
+                </div>
+
+                <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
+                </div>
+
+                <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+                  <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+                  <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="header-template.js"></script>
+
+  <script>
+    const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
+    
+    let supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    let allUsers = [], displayedUsers = [], globalSearchQuery = '';
+    let activeFilterColumn = null, filterSelections = {}, draftFilterSelections = new Set(), dbFilterOptions = {};
+    let sortConfig = { column: null, direction: null };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof renderHeader === 'function') renderHeader({ subtitle: "Access Control" });
+      fetchUsers();
+    });
+
+    document.addEventListener('click', (e) => {
+      const popover = document.getElementById('filterPopover');
+      if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+        closeFilterPopover();
+      }
+    });
+
+    function isAccessTrue(val) {
+      if (!val) return false;
+      const str = String(val).trim().toUpperCase();
+      return str === "Y" || str === "TRUE" || str === "1";
+    }
+
+    async function fetchUsers() {
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data pengguna...</td></tr>`;
+
+      if (!supabaseClient) return showToast("Error", "Koneksi Supabase tidak tersedia.", "error");
+
+      try {
+        const { data, error } = await supabaseClient.from('users').select('*').order('nama', { ascending: true });
+        if (error) throw error;
+
+        allUsers = (data || []).filter(u => (u.nama || "").trim().toLowerCase() !== "dede hidayat");
+        dbFilterOptions = {};
+        processAndRenderUsers();
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-[#d93025]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
+        showToast("Gagal Loading", err.message || "Gagal mengambil data.", "error");
+      }
+    }
+
+    function triggerGlobalSearch() {
+      const val = document.getElementById('globalSearchInput').value.trim();
+      globalSearchQuery = val;
+      document.getElementById('btnClearSearch').classList.toggle('hidden', val === '');
+      processAndRenderUsers();
+    }
+
+    function clearGlobalSearch() {
+      document.getElementById('globalSearchInput').value = '';
+      document.getElementById('btnClearSearch').classList.add('hidden');
+      globalSearchQuery = '';
+      processAndRenderUsers();
+    }
+
+    function processAndRenderUsers() {
+      let filtered = [...allUsers];
+
+      if (globalSearchQuery) {
+        const q = globalSearchQuery.toLowerCase();
+        filtered = filtered.filter(u => u.nama && u.nama.toLowerCase().includes(q));
+      }
+
+      for (const colKey in filterSelections) {
+        const selectedSet = filterSelections[colKey];
+        if (selectedSet?.size > 0) {
+          filtered = filtered.filter(u => {
+            let val = u[colKey];
+            val = ['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'log', 'item', 'assets', 'acces'].includes(colKey)
+              ? (isAccessTrue(val) ? 'Aktif' : 'Tidak')
+              : (val ?? '-');
+            return selectedSet.has(String(val));
+          });
+        }
+      }
+
+      if (sortConfig.column && sortConfig.direction) {
+        const key = sortConfig.column;
+        const dir = sortConfig.direction === 'asc' ? 1 : -1;
+        filtered.sort((a, b) => {
+          let valA = a[key] || '', valB = b[key] || '';
+          if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'log', 'item', 'assets', 'acces'].includes(key)) {
+            valA = isAccessTrue(valA) ? 'Aktif' : 'Tidak';
+            valB = isAccessTrue(valB) ? 'Aktif' : 'Tidak';
+          }
+          return String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' }) * dir;
+        });
+      }
+
+      displayedUsers = filtered;
+      document.getElementById("userCount").textContent = displayedUsers.length;
+      renderUsers(displayedUsers);
+    }
+
+    function renderUsers(usersList) {
+      const tbody = document.getElementById("userTableBody");
+      tbody.innerHTML = "";
+
+      if (usersList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center py-8 text-[#5f6368]">Tidak ada data pengguna ditemukan.</td></tr>`;
+        return;
+      }
+
+      const columns = ['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'log', 'item', 'assets', 'acces'];
+
+      usersList.forEach((u, idx) => {
+        const tr = document.createElement("tr");
+        tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] transition duration-150";
+
+        const userNik = (u.nik || "").trim();
+        const userNama = (u.nama || "").trim();
+
+        let rowHtml = `
+          <td class="px-2 py-2.5 text-center text-[#5f6368] dark:text-[#bdc1c6] font-mono text-xs">${idx + 1}</td>
+          <td class="px-3 py-2.5"><div class="font-medium text-[#202124] dark:text-[#e8eaed] text-xs">${userNama || '-'}</div></td>
+        `;
+
+        columns.forEach(col => {
+          const checked = isAccessTrue(u[col]) ? "checked" : "";
+          rowHtml += `
+            <td class="px-2.5 py-2.5 text-center">
+              <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', '${col}', this.checked)" ${checked}>
+            </td>
+          `;
+        });
+
+        tr.innerHTML = rowHtml;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function autoSaveAccess(encodedNik, encodedNama, fieldName, isChecked) {
+      const nik = decodeURIComponent(encodedNik).trim();
+      const nama = decodeURIComponent(encodedNama).trim();
+      const updatedValue = isChecked ? "Y" : null;
+
+      const labelMap = {
+        item: 'INVENTORY', log: 'LOGISTICS', acces: 'ACCESS CONTROL', perbaikan: 'DOK. PERBAIKAN'
+      };
+      const displayFieldName = labelMap[fieldName] || fieldName.toUpperCase();
+
+      try {
+        let query = supabaseClient.from('users').update({ [fieldName]: updatedValue });
+        query = nik ? query.ilike('nik', `%${nik}%`) : query.eq('nama', nama);
+
+        const { error } = await query;
+        if (error) throw error;
+
+        const targetUser = allUsers.find(u => (nik && u.nik?.trim() === nik) || (nama && u.nama?.trim() === nama));
+        if (targetUser) targetUser[fieldName] = updatedValue;
+
+        dbFilterOptions = {};
+        showToast("Tersimpan", `Akses modul ${displayFieldName} untuk ${nama} berhasil diperbarui.`, "success");
+      } catch (err) {
+        showToast("Gagal Update", err.message || "Gagal memperbarui ke Supabase.", "error");
+      }
+    }
+
+    function toggleFilterMenu(columnKey, event) {
+      event.stopPropagation();
+      activeFilterColumn = columnKey;
+
+      const popover = document.getElementById('filterPopover');
+      const rect = event.currentTarget.getBoundingClientRect();
+      
+      let leftPos = Math.max(8, Math.min(rect.left + window.scrollX - 100, window.innerWidth - 250));
+
+      popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+      popover.style.left = `${leftPos}px`;
+      document.getElementById('filterSearchInput').value = '';
+
+      if (!dbFilterOptions[columnKey]) {
+        if (['eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'log', 'item', 'assets', 'acces'].includes(columnKey)) {
+          dbFilterOptions[columnKey] = ['Aktif', 'Tidak'];
+        } else if (columnKey === 'nama') {
+          dbFilterOptions[columnKey] = Array.from(new Set(allUsers.map(u => u.nama || '-'))).sort();
+        } else if (columnKey === 'no') {
+          dbFilterOptions[columnKey] = Array.from(new Set(allUsers.map((_, i) => String(i + 1)))).sort((a, b) => Number(a) - Number(b));
+        }
+      }
+
+      const activeSaved = filterSelections[activeFilterColumn];
+      draftFilterSelections = activeSaved?.size > 0 ? new Set(activeSaved) : new Set(dbFilterOptions[activeFilterColumn] || []);
+
+      renderFilterCheckboxes();
+      popover.classList.remove('hidden');
+    }
+
+    function closeFilterPopover() {
+      document.getElementById('filterPopover').classList.add('hidden');
+    }
+
+    function renderFilterCheckboxes() {
+      const container = document.getElementById('filterItemsList');
+      const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
+      const uniqueValues = dbFilterOptions[activeFilterColumn] || [];
+
+      container.innerHTML = '';
+      let visibleCount = 0, visibleCheckedCount = 0;
+
+      uniqueValues.forEach(val => {
+        if (searchVal && !val.toLowerCase().includes(searchVal)) return;
+
+        visibleCount++;
+        const isChecked = draftFilterSelections.has(val);
+        if (isChecked) visibleCheckedCount++;
+
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = val;
+        checkbox.checked = isChecked;
+        checkbox.className = 'filter-cb';
+        
+        checkbox.onchange = (e) => {
+          if (e.target.checked) draftFilterSelections.add(val);
+          else draftFilterSelections.delete(val);
+          updateSelectAllState();
+        };
+
+        label.appendChild(checkbox);
+        const span = document.createElement('span');
+        span.className = 'truncate';
+        span.innerText = val;
+        label.appendChild(span);
+
+        container.appendChild(label);
+      });
+
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) selectAllCb.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
+    }
+
+    function updateSelectAllState() {
+      const cbs = document.querySelectorAll('#filterItemsList .filter-cb');
+      const allChecked = cbs.length > 0 && Array.from(cbs).every(cb => cb.checked);
+      const selectAllCb = document.getElementById('selectAllCheckbox');
+      if (selectAllCb) selectAllCb.checked = allChecked;
+    }
+
+    function toggleSelectAllFilters(checked) {
+      document.querySelectorAll('#filterItemsList .filter-cb').forEach(cb => {
+        cb.checked = checked;
+        if (checked) draftFilterSelections.add(cb.value);
+        else draftFilterSelections.delete(cb.value);
+      });
+    }
+
+    function clearFilterColumn() {
+      delete filterSelections[activeFilterColumn];
+      draftFilterSelections = new Set(dbFilterOptions[activeFilterColumn] || []);
+      document.getElementById('filterSearchInput').value = '';
+      renderFilterCheckboxes();
+      processAndRenderUsers();
+    }
+
+    function applyFilter() {
+      const allOpts = dbFilterOptions[activeFilterColumn] || [];
+      if (draftFilterSelections.size === 0 || draftFilterSelections.size === allOpts.length) {
+        delete filterSelections[activeFilterColumn];
+      } else {
+        filterSelections[activeFilterColumn] = new Set(draftFilterSelections);
+      }
+      closeFilterPopover();
+      processAndRenderUsers();
+    }
+
+    function applySort(direction) {
+      sortConfig = { column: activeFilterColumn, direction };
+      closeFilterPopover();
+      processAndRenderUsers();
+    }
+
+    function showToast(title, message, type = 'success') {
+      const toast = document.getElementById("toast");
+      const toastIcon = document.getElementById("toast-icon");
+
+      const isSuccess = type === 'success';
+      toast.className = `fixed top-5 right-5 z-[100] transform transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs max-w-md opacity-100 translate-y-0 ${
+        isSuccess 
+          ? 'border-[#e6f4ea] dark:border-[#137333]/40 bg-white dark:bg-[#2d2e30] text-[#137333] dark:text-[#81c995]' 
+          : 'border-[#fce8e6] dark:border-[#c5221f]/40 bg-white dark:bg-[#2d2e30] text-[#c5221f] dark:text-[#f28b82]'
+      }`;
+
+      toastIcon.className = `p-1.5 rounded-xl shrink-0 ${
+        isSuccess ? 'bg-[#e6f4ea] dark:bg-[#137333]/30 text-[#137333] dark:text-[#81c995]' : 'bg-[#fce8e6] dark:bg-[#c5221f]/30 text-[#c5221f] dark:text-[#f28b82]'
+      }`;
+      toastIcon.innerHTML = isSuccess
+        ? `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`
+        : `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+
+      document.getElementById("toast-title").textContent = title;
+      document.getElementById("toast-msg").textContent = message;
+
+      setTimeout(() => {
+        toast.classList.remove("opacity-100", "translate-y-0");
+        toast.classList.add("opacity-0", "translate-y-[-20px]", "pointer-events-none");
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

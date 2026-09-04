@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) {
+          window.location.replace("https://sotpbc.vercel.app/login.html");
+          return;
+        }
+
+        const userData = JSON.parse(session);
+        if (!userData) {
+          window.location.replace("https://sotpbc.vercel.app/login.html");
+          return;
+        }
+
+        if (userData.akses) {
+          const aks = userData.akses;
+          const punyaAkses = (aks.inventory === "Y" || aks.log === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
+          
+          if (!punyaAkses) {
+            alert("Anda tidak memiliki hak akses ke modul Inventory/Logistics.");
+            window.location.replace("https://sotpbc.vercel.app/login.html");
+          }
+        }
+      } catch (err) {
+        console.error("Autentikasi gagal:", err);
+        window.location.replace("https://sotpbc.vercel.app/login.html");
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logistics - SOT</title>
+  
+  <!-- IMPORT GLOBAL SIDEBAR STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    /* =========================================================
+       TRIK FLOATING SCROLLBAR ABSOLUTE OVERLAY (NO LAYOUT SHIFT)
+       ========================================================= */
+    .floating-scroll-area {
+      position: absolute;
+      inset: 0;
+      overflow-y: scroll;
+      overflow-x: auto;
+    }
+
+    /* Custom Webkit Floating Scrollbar */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent !important;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 9999px;
+    }
+
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .custom-scroll::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    /* Dark Mode Support */
+    @media (prefers-color-scheme: dark) {
+      .custom-scroll::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.5);
+      }
+    }
+
+    /* SIDEBAR HOLLOW OVERLAY */
+    #global-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #global-header > * {
+      pointer-events: auto;
+    }
+    /* Efek backdrop-blur & shadow tanpa menimpa background-color asli dari global-header.css */
+    #global-header aside, 
+    #global-header .sidebar {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Roboto',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <!-- CONTAINER ELEMEN SIDEBAR OVERLAY HOLLOW -->
+  <div id="global-header"></div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <div id="main-content" class="flex-1 w-full h-screen flex flex-col overflow-hidden">
+    
+    <!-- Topbar Halaman -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-4 py-1.5 sticky top-0 z-40 flex items-center justify-between shrink-0">
+      <!-- Sisi Kiri: Judul Halaman -->
+      <div>
+        <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Logistics</h2>
+      </div>
+
+      <!-- Sisi Kanan: Total Transaksi + Search Bar + Tombol 3 Garis -->
+      <div class="flex items-center gap-4">
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap">
+          Total Transaksi: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+        <!-- Search Bar -->
+        <div class="relative flex items-center w-48 sm:w-64">
+          <svg class="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
+                 placeholder="Cari transaksi..." 
+                 class="w-full h-7 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-9 pr-7 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+        </div>
+
+        <!-- Tombol Hamburger & Dropdown Container -->
+        <div class="relative flex items-center">
+          <button type="button" id="hamburgerBtn" class="h-7 w-7 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+            <svg class="w-3.5 h-3.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+            <div id="custom-hamburger-content"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT BODY WRAPPER (Trik Absolute Floating Overflow) -->
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+
+          <!-- TABEL LOGISTICS -->
+          <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-sm overflow-hidden transition-colors">
+            
+            <!-- Table Container dengan Scrollbar Melayang -->
+            <div class="relative w-full overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs table-fixed">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th class="p-2.5 w-[5%] relative text-center">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">No</span>
+                        <button onclick="toggleFilterMenu('no', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[11%] relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Nama</span>
+                        <button onclick="toggleFilterMenu('user', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[21%] relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Item</span>
+                        <button onclick="toggleFilterMenu('item', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[5%] text-center relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">In</span>
+                        <button onclick="toggleFilterMenu('in', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[5%] text-center relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Out</span>
+                        <button onclick="toggleFilterMenu('out', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[9%] relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Date</span>
+                        <button onclick="toggleFilterMenu('date', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[20%] relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Note's</span>
+                        <button onclick="toggleFilterMenu('note', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[10%] relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Trx Code</span>
+                        <button onclick="toggleFilterMenu('trx_code', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[6%] text-center relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Stock</span>
+                        <button onclick="toggleFilterMenu('balance', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+
+                    <th class="p-2.5 w-[8%] text-center relative">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Project</span>
+                        <button onclick="toggleFilterMenu('project', event)" class="p-0.5 hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] rounded text-[8px] leading-none text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer" title="Filter & Sort">▼</button>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr>
+                    <td colspan="10" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Filter Popover -->
+            <div id="filterPopover" class="fixed hidden z-[10005] w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+              <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+                <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↑</span>
+                  <span>A-Z</span>
+                </button>
+                <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↓</span>
+                  <span>Z-A</span>
+                </button>
+              </div>
+
+              <div class="space-y-2 normal-case">
+                <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                       class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+                
+                <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0 bg-transparent" />
+                    Pilih Semua
+                  </label>
+                  <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
+                </div>
+
+                <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
+                </div>
+
+                <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+                  <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+                  <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAGINATION BAR -->
+            <div class="flex flex-col sm:flex-row justify-between items-center p-3 bg-[#f8f9fa] dark:bg-[#252525] border-t border-[#dadce0] dark:border-[#3c4043] text-xs gap-3">
+              <span id="pageInfo" class="text-[#5f6368] dark:text-[#9aa0a6]">Menampilkan 0 data</span>
+              
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1.5 text-[#5f6368] dark:text-[#9aa0a6]">
+                  <span>Hal:</span>
+                  <input type="number" id="jumpPageInput" min="1" 
+                         onkeydown="if(event.key==='Enter') jumpToPage()"
+                         class="w-12 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-1.5 py-1 text-center text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8]" />
+                  <span id="totalPagesText">/ 1</span>
+                  <button onclick="jumpToPage()" 
+                          class="px-2.5 py-1 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-lg font-medium transition cursor-pointer">
+                    Go
+                  </button>
+                </div>
+
+                <div class="inline-flex gap-1.5">
+                  <button id="btnPrev" onclick="changePage(-1)" 
+                          class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm cursor-pointer">
+                    Prev
+                  </button>
+                  <button id="btnNext" onclick="changePage(1)" 
+                          class="px-3 py-1 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-[#202124] dark:text-[#e8eaed] font-medium shadow-sm cursor-pointer">
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- MODAL FORM TRANSAKSI -->
+  <div id="modal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
+    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scroll">
+      <h3 id="modalTitle" class="text-lg font-bold text-[#202124] dark:text-[#f1f3f4]">Form Transaksi</h3>
+      
+      <form id="inventoryForm" onsubmit="saveData(event)" class="space-y-3.5 text-xs" autocomplete="off">
+        <input type="hidden" id="editNo" />
+        
+        <div class="relative">
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Nama (User)</label>
+          <input type="text" id="inputUser" oninput="handleUserSuggest()"
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" 
+                 placeholder="Ketik untuk mencari nama..." />
+          <div id="userSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl max-h-36 overflow-y-auto z-50 divide-y divide-[#f1f3f4] dark:divide-[#3c4043] custom-scroll"></div>
+        </div>
+
+        <div class="relative">
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Item</label>
+          <input type="text" id="inputItem" required oninput="handleItemSuggest()"
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" 
+                 placeholder="Ketik untuk mencari item..." />
+          <div id="itemSuggestList" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl max-h-36 overflow-y-auto z-50 divide-y divide-[#f1f3f4] dark:divide-[#3c4043] custom-scroll"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">In</label>
+            <input type="number" id="inputIn" min="0" placeholder="0" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Out</label>
+            <input type="number" id="inputOut" min="0" placeholder="0" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Date</label>
+            <input type="date" id="inputDate" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Trx Code</label>
+            <input type="text" id="inputTrxCode" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Note's</label>
+          <textarea id="inputNote" rows="2" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+          <div>
+            <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" 
+                    class="px-3.5 py-2 bg-[#fce8e6] dark:bg-[#481c1d] hover:bg-[#fad2cf] dark:hover:bg-[#5c2426] text-[#d93025] dark:text-[#f28b82] rounded-xl font-medium hidden transition cursor-pointer">
+              🗑️ Hapus
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
+              Batal
+            </button>
+            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL EXPORT CSV -->
+  <div id="exportModal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-4 z-[10005]">
+    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-3xl p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto custom-scroll text-xs">
+      <div class="flex justify-between items-center border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3">
+        <h3 class="text-base font-bold text-[#202124] dark:text-[#f1f3f4] flex items-center gap-2">
+          <span>📥</span> Export CSV
+        </h3>
+        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6]">Pilih Item</label>
+            <span id="exportItemCount" class="text-[11px] text-[#1a73e8] dark:text-[#8ab4f8] font-medium">Terpilih: 0/0</span>
+          </div>
+          
+          <input type="text" id="exportItemSearch" oninput="renderExportItemCheckboxes()" placeholder="Cari item..." 
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none mb-2" />
+          
+          <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1 mb-1.5">
+            <label class="flex items-center gap-1.5 cursor-pointer hover:text-[#202124] dark:hover:text-white">
+              <input type="checkbox" id="exportSelectAllCb" onchange="toggleSelectAllExportItems(this.checked)" class="rounded border-[#dadce0] dark:border-[#3c4043] text-[#137333] dark:text-[#81c995] focus:ring-0 bg-transparent" />
+              Pilih Semua
+            </label>
+          </div>
+
+          <div id="exportItemsContainer" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-2 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Periode Tanggal</label>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <span class="text-[10px] text-[#5f6368] dark:text-[#9aa0a6] block mb-0.5">Tanggal Mulai:</span>
+              <input type="date" id="exportStartDate" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none" />
+            </div>
+            <div>
+              <span class="text-[10px] text-[#5f6368] dark:text-[#9aa0a6] block mb-0.5">Tanggal Selesai:</span>
+              <input type="date" id="exportEndDate" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+        <button type="button" onclick="closeExportModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
+          Batal
+        </button>
+        <button type="button" onclick="processExportCSV()" class="px-4 py-2 bg-[#137333] dark:bg-[#81c995] hover:bg-[#0d652d] dark:hover:bg-[#a8dab5] text-white dark:text-[#202124] rounded-xl font-medium flex items-center gap-1.5 shadow transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+           Unduh CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT SCRIPTS -->
+  <script src="header-template.js"></script>
+  <script src="logistics.js"></script>
+</body>
+</html>

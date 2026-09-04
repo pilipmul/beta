@@ -1,0 +1,82 @@
+/* Import Font Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Modal Popup Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.65);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s linear;
+    will-change: opacity;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Scrollbar styling untuk autocomplete */
+.autocomplete-list::-webkit-scrollbar {
+    width: 6px;
+}
+.autocomplete-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* =========================================================
+   STYLING ADAPTIF PAKSA UNTUK INPUT TABEL MODAL
+   ========================================================= */
+
+/* Mode Terang Default */
+#itemRows tr input,
+#itemRows tr td input[type="text"],
+#itemRows tr td input[type="number"] {
+    background-color: #f1f3f4 !important;
+    color: #202124 !important;
+    border: 1px solid transparent !important;
+}
+
+#itemRows tr input::placeholder {
+    color: #9aa0a6 !important;
+}
+
+/* Mode Gelap (Dark Mode) - Menggunakan :is() agar Selector Maksimal */
+:is(.dark, [data-theme="dark"], body.dark) #itemRows tr input,
+:is(.dark, [data-theme="dark"], body.dark) #itemRows tr td input[type="text"],
+:is(.dark, [data-theme="dark"], body.dark) #itemRows tr td input[type="number"] {
+    background-color: #2d2d2d !important;
+    color: #e8eaed !important;
+    border: 1px solid #3c4043 !important;
+}
+
+:is(.dark, [data-theme="dark"], body.dark) #itemRows tr input::placeholder {
+    color: #80868b !important;
+}
+
+:is(.dark, [data-theme="dark"], body.dark) #itemRows tr input:focus {
+    border-color: #8ab4f8 !important;
+    background-color: #1e1e1e !important;
+}
+
+/* Autocomplete Suggestion List di Dark Mode */
+:is(.dark, [data-theme="dark"], body.dark) .autocomplete-list {
+    background-color: #252525 !important;
+    border-color: #3c4043 !important;
+    color: #e8eaed !important;
+}
+
+:is(.dark, [data-theme="dark"], body.dark) .autocomplete-list div:hover {
+    background-color: #3c4043 !important;
+    color: #8ab4f8 !important;
+}
