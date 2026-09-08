@@ -366,7 +366,8 @@ async function fetchTableData() {
     if (sortConfig.column && sortConfig.direction) {
       dataQuery = dataQuery.order(sortConfig.column, { ascending: sortConfig.direction === 'asc' });
     } else {
-      dataQuery = dataQuery.order('no', { ascending: true });
+      // Modifikasi: Mengurutkan dari terbesar ke terkecil (Descending) agar data terbaru berada di atas/halaman pertama
+      dataQuery = dataQuery.order('no', { ascending: false });
     }
 
     dataQuery = dataQuery.range(fromIndex, toIndex);
@@ -790,7 +791,7 @@ async function processExportCSV() {
   const endDate = document.getElementById('exportEndDate').value;
 
   try {
-    let query = _supabase.from('inventory').select('*').in('item', selectedExportItems).order('no', { ascending: true });
+    let query = _supabase.from('inventory').select('*').in('item', selectedExportItems).order('no', { ascending: false });
 
     if (startDate) query = query.gte('date', startDate);
     if (endDate) query = query.lte('date', endDate);
