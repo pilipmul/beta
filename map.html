@@ -113,29 +113,34 @@
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     }
 
-#viewport {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-}
+    #viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
 
 #map-container {
   position: absolute;
   top: 0;
   left: 0;
-  transform-origin: 0 0 !important; 
+  transform-origin: 0 0 !important; /* Ubah dari center center ke 0 0 */
   will-change: transform;
   display: inline-block;
-  transition: none; 
+  transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-#viewport:active {
-  cursor: grabbing;
-}
+    /* Hilangkan transisi saat di-drag agar pergerakan kursor 1:1 tanpa delay */
+    #map-container.is-dragging {
+      transition: none !important;
+    }
+
+    #viewport:active {
+      cursor: grabbing;
+    }
 
     #denah-img {
       display: block;
@@ -317,10 +322,13 @@
           <div id="floating-detail-content"></div>
         </div>
 
-        <!-- KONTROL ZOOM -->
+        <!-- KONTROL ZOOM & ROTATE -->
         <div class="absolute bottom-5 right-5 z-30 flex flex-col bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-lg overflow-hidden">
           <button onclick="zoomIn()" title="Zoom In" class="p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white border-b border-[#dadce0] dark:border-[#3c4043] transition cursor-pointer">
             <i class="fa-solid fa-plus text-xs"></i>
+          </button>
+          <button onclick="rotateMap()" title="Putar Denah (90°)" class="p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white border-b border-[#dadce0] dark:border-[#3c4043] transition cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-xs"></i>
           </button>
           <button onclick="resetZoomToFit()" title="Reset Zoom Out Maksimal" class="px-2.5 py-2 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#1a73e8] dark:text-[#8ab4f8] border-b border-[#dadce0] dark:border-[#3c4043] text-[10px] font-bold transition cursor-pointer">
             RESET
