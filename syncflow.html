@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>SyncFlow - SOT</title> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/main/Logo%201.png">
+    
+    <!-- Auth Guard LocalStorage -->
+    <script>
+        (function() {
+            const session = localStorage.getItem("user");
+            const userData = session ? JSON.parse(session) : null;
+            if (!userData || !userData.akses || (userData.akses.syncflow !== "Y" && userData.akses.syncflow !== "TRUE" && userData.akses.syncflow !== "1")) {
+                const isSuperAdmin = userData && (userData.nama || userData.username || "").toLowerCase() === "dede hidayat";
+                if (!isSuperAdmin) {
+                    window.location.replace("login.html");
+                    document.documentElement.style.display = "none";
+                }
+            }
+        })();
+    </script>
+
+    <!-- Fonts & Libraries -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            /* Light Theme (Default) */
+            --bg-body: #F1F3F4;
+            --bg-card: #FFFFFF;
+            --bg-input-readonly: #F8F9FA;
+            --bg-hover: #F1F3F4;
+            --text-primary: #202124;
+            --text-secondary: #5F6368;
+            --text-detail: #3C4043;
+            --border-color: #DADCE0;
+            --border-light: #E8EAED;
+            --overlay-bg: rgba(32, 33, 36, 0.6);
+            --loader-bg: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark Theme */
+                --bg-body: #121212;
+                --bg-card: #1E1E1E;
+                --bg-input-readonly: #2A2A2A;
+                --bg-hover: #2C2C2C;
+                --text-primary: #E8EAED;
+                --text-secondary: #9AA0A6;
+                --text-detail: #BDC1C6;
+                --border-color: #3C4043;
+                --border-light: #2D2E30;
+                --overlay-bg: rgba(0, 0, 0, 0.75);
+                --loader-bg: rgba(18, 18, 18, 0.8);
+            }
+        }
+
+        * { box-sizing: border-box; font-family: 'Google Sans', 'Roboto', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { 
+            margin: 0; padding: 0;
+            background: var(--bg-body);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Container Layout SyncFlow */
+        .syncflow-wrapper {
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            padding-top: 24px;
+            padding-bottom: 24px;
+            width: 100%;
+        }
+        
+        .container { 
+            width: 92%; max-width: 440px; 
+            background: var(--bg-card); 
+            padding: 20px 22px 28px 22px; 
+            border-radius: 24px; 
+            border: 2px solid #4285F4; 
+            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.15), 0 2px 4px rgba(0,0,0,0.1);
+            position: relative; text-align: center;
+        }
+
+        /* BACK BUTTON STYLES */
+        .back-btn-wrapper {
+            position: absolute;
+            top: 14px;
+            left: 18px;
+            z-index: 100;
+        }
+        .back-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .back-btn:hover {
+            background-color: var(--bg-hover);
+            color: #1A73E8;
+        }
+
+        /* SINGLE GA BUTTON (PURE TEXT) IN CONTAINER HEADER RIGHT */
+        .ga-btn-wrapper {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            z-index: 100;
+        }
+
+        .ga-mode-btn {
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            padding: 4px 6px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        /* GA Mode Non-Aktif (Biru Biasa) */
+        .ga-mode-btn.off {
+            color: #1A73E8;
+            text-shadow: none;
+        }
+        .ga-mode-btn.off:hover {
+            color: #1557B0;
+        }
+
+        /* GA Mode Aktif (Hijau Terang Menyala) */
+        .ga-mode-btn.on {
+            color: #34d399;
+            font-weight: 800;
+            text-shadow: 0 0 8px rgba(52, 211, 153, 0.9), 0 0 16px rgba(52, 211, 153, 0.6);
+            animation: textPulse 1.8s infinite alternate;
+        }
+
+        @keyframes textPulse {
+            0% { text-shadow: 0 0 6px rgba(52, 211, 153, 0.7); }
+            100% { text-shadow: 0 0 14px rgba(52, 211, 153, 1), 0 0 22px rgba(52, 211, 153, 0.8); }
+        }
+
+        /* GA DROPDOWN MENU */
+        .ga-dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 28px;
+            width: 160px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 110;
+        }
+
+        .ga-dropdown-item {
+            padding: 10px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: left;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .ga-dropdown-item:hover {
+            background-color: var(--bg-hover);
+            color: #1A73E8;
+        }
+        
+        #titleBtn { width: 100%; max-width: 280px; transition: opacity 0.2s; user-select: none; -webkit-user-drag: none; margin-top: 4px; }
+        #nameWrapper { position: relative; padding-top: 2px; border-top: 1px solid var(--border-light); padding-bottom: 2px; border-bottom: 1px solid var(--border-light); }
+        
+        input, textarea { 
+            width: 100%; padding: 5px 10px; border: none; font-size: 1rem;
+            background-color: transparent; text-align: center; height: 34px; 
+            line-height: 1.2; display: block; resize: none; color: var(--text-primary);
+        }
+        input::placeholder, textarea::placeholder { color: var(--text-secondary); }
+        input:focus, textarea:focus { outline: none; }
+        input.item { overflow: hidden; text-overflow: clip; white-space: nowrap; }
+        input.item:not(:placeholder-shown):not(:focus) { animation: marquee 10s linear infinite; }
+        @keyframes marquee { 0% { text-indent: 100%; } 100% { text-indent: -100%; } }
+        
+        .clear-btn { 
+            position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+            background: var(--border-light); color: var(--text-secondary); border-radius: 50%; width: 20px; height: 20px; 
+            display: none; align-items: center; justify-content: center; font-size: 14px; cursor: pointer;
+            z-index: 10; font-weight: bold; 
+        }
+        #nameWrapper:focus-within input:not(:placeholder-shown) ~ .clear-btn, .item-row div:first-child:focus-within input:not(:placeholder-shown) ~ .clear-btn { display: flex; }
+        
+        .row-3col { display: grid; grid-template-columns: 40% 20% 40%; gap: 0; align-items: center; margin-bottom: 5px; border-bottom: 1px solid var(--border-light); padding-bottom: 5px; padding-top: 5px; position: relative; }
+        
+        .qty-wrapper { position: relative; display: grid; place-items: center; border-left: 1px solid var(--border-light); border-right: 1px solid var(--border-light); height: 34px; }
+        .stock-overlay { grid-area: 1/1; font-size: 1.1rem; font-weight: 700; color: #EA4335; pointer-events: none; display: none; z-index: 1; }
+        input.qty { grid-area: 1/1; position: relative; z-index: 2; background: transparent !important; padding: 5px 0; -moz-appearance: textfield; }
+        input.qty::-webkit-outer-spin-button, input.qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input.qty.hide-placeholder::placeholder { color: transparent; }
+        textarea.desc { overflow-y: hidden; padding-top: 6px; padding-right: 25px; }
+        
+        .btn-group { display: flex; gap: 8px; margin-top: 10px; justify-content: center; position: relative; align-items: center; }
+        
+        .add-row { 
+            background-color: transparent !important; 
+            border: none; 
+            width: auto; 
+            padding: 8px; 
+            flex: none; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            box-shadow: none !important; 
+            outline: none !important;
+            transition: none !important;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+
+        .add-row svg { pointer-events: none; }
+        
+        button.in, button.out, .modal-btn { 
+            flex: 1; padding: 8px 14px; background-color: #1A73E8; color: #fff; border: none; 
+            border-radius: 20px; font-weight: 600; font-size: 1rem; cursor: pointer; 
+            transition: all 0.2s; box-shadow: 0 2px 4px rgba(26,115,232,0.3);
+        }
+        button.in:hover:not(:disabled), button.out:hover:not(:disabled), .modal-btn:hover { background-color: #1557B0; }
+        button.in:active:not(:disabled), button.out:active:not(:disabled) { transform: scale(0.98); }
+        button:disabled { background-color: var(--border-light); color: var(--text-secondary); cursor: not-allowed; box-shadow: none; }
+        #btnIn { opacity: 0.25; pointer-events: none; background-color: #34A853; box-shadow: 0 2px 4px rgba(52,168,83,0.3); }
+        #btnOut { background-color: #EA4335; box-shadow: 0 2px 4px rgba(234,67,53,0.3); }
+        #btnOut:hover:not(:disabled) { background-color: #C5221F; }
+        
+        .autocomplete-list { 
+            position: absolute; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px;
+            z-index: 2000; max-height: 180px; overflow-y: auto; width: 100%; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); text-align: left; display: none; top: 34px; left: 0; 
+        }
+        .autocomplete-item { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border-light); color: var(--text-primary); }
+        .autocomplete-item:hover { background: var(--bg-hover); color: #1A73E8; }
+        
+        .delete-row { 
+            position: absolute; 
+            top: -10px; 
+            right: -2px; 
+            background: transparent !important; 
+            border: none; 
+            color: #EA4335; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 1.1rem; 
+            padding: 5px; 
+            opacity: 0.7; 
+            box-shadow: none !important; 
+            outline: none !important;
+            transition: none !important;
+            z-index: 50;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+
+        .add-row:hover, .add-row:focus, .add-row:active,
+        .delete-row:hover, .delete-row:focus, .delete-row:active {
+            background-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+        .delete-row:hover, .delete-row:focus, .delete-row:active {
+            opacity: 1;
+        }
+
+        #itemContainer .item-row:first-child .delete-row { display: none !important; }
+        
+        .popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--overlay-bg); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 6000; }
+        .popup-box { background: var(--bg-card); border-radius: 24px; padding: 24px; width: 90%; max-width: 320px; text-align: center; border: 2px solid #4285F4; box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+        .modal-btn { width: fit-content; min-width: 100px; margin: 0 auto; display: block; padding: 8px 20px; }
+        
+        #successMode { background: #FBBC04; font-weight: 700; padding: 4px 16px; border-radius: 20px; margin-bottom: 15px; display: inline-block; color: #202124; }
+        .popup-toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #202124; border: 1px solid #5F6368; color: #fff; padding: 12px 24px; border-radius: 24px; display: none; z-index: 7000; width: fit-content; max-width: 85%; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.3); pointer-events: none; font-weight: 600; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinning { animation: spin 1s linear infinite; }
+        
+        /* Popup Riwayat Transaksi */
+        #historyPopup { position: fixed; top: 60px; right: 16px; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 310px; max-height: 420px; overflow-y: auto; padding: 0; display: none; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 9000; }
+        .history-header { position: sticky; top: 0; background: var(--bg-card); padding: 10px 14px; z-index: 10; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; min-height: 45px; }
+        #historySearchInput { display: none; width: 85%; height: 30px; border: 1px solid var(--border-color); border-radius: 16px; padding: 0 10px; font-size: 0.85rem; text-align: left; background: var(--bg-input-readonly); color: var(--text-primary); }
+        #searchToggleBtn { cursor: pointer; display: flex; align-items: center; }
+        
+        #historyList { padding: 4px 12px 12px 12px; }
+        #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--loader-bg); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .loader { border: 6px solid var(--border-light); border-top: 6px solid #1A73E8; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; }
+        
+        .history-item { padding: 8px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.2s; }
+        .history-item:hover { background: var(--bg-hover); }
+        .history-detail { display: none; padding: 8px; background: var(--bg-input-readonly); font-size: 0.8rem; color: var(--text-detail); border-radius: 8px; margin-top: 5px; text-align: left; line-height: 1.4; border: 1px solid var(--border-light); }
+        
+        #adminPass, #descPopupInput { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color) !important; text-align: left; }
+        #adminPass:focus, #descPopupInput:focus { border-color: #1A73E8 !important; }
+    </style>
+</head>
+<body>
+
+    <!-- MAIN CONTAINER CONTENT -->
+    <div id="loaderOverlay"><div class="loader"></div></div>
+
+    <div class="syncflow-wrapper">
+        <div class="container">
+            <!-- BACK BUTTON TO dashboard.html -->
+            <div class="back-btn-wrapper">
+                <button type="button" onclick="window.location.href='dashboard.html'" class="back-btn" title="Kembali ke Dashboard">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="currentColor"><path d="M400-80 0-480l400-400 71 71-329 329 329 329-71 71Z"/></svg>
+                </button>
+            </div>
+
+            <!-- SINGLE GA BUTTON (PURE TEXT) & DROPDOWN MENU -->
+            <div class="ga-btn-wrapper">
+                <button type="button" id="btnGABase" onclick="handleGABtnClick(event)" class="ga-mode-btn off">
+                    GA
+                </button>
+                <div id="gaDropdownMenu" class="ga-dropdown-menu">
+                    <div class="ga-dropdown-item" onclick="openHistoryFromMenu(event)">
+                        📋 Riwayat ~50 Trx
+                    </div>
+                    <div class="ga-dropdown-item" style="color: #ef4444;" onclick="updateGAUI(false)">
+                        🔒 Off GA Mode
+                    </div>
+                </div>
+            </div>
+            
+            <div id="popupToast" class="popup-toast"></div>
+
+            <div style="display: flex; justify-content: center; align-items: center; margin: 12px 0 16px 0; width: 100%;">
+                <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow" style="display: block; margin: 0 auto;">
+            </div>
+            
+            <form id="myForm">
+                <div id="nameWrapper">
+                    <input type="text" id="name" placeholder="Name" autocomplete="off" required readonly 
+                           style="background-color: var(--bg-input-readonly); color: var(--text-secondary); cursor: not-allowed; border-radius: 8px;">
+                    <div class="clear-btn" style="display: none !important;" onmousedown="clearInput(event, this)">×</div>
+                    <div id="nameList" class="autocomplete-list"></div>
+                </div>
+                <div id="itemContainer">
+                    <div class="row-3col item-row">
+                        <div style="position: relative;">
+                            <input type="text" class="item" placeholder="Item" autocomplete="off" required>
+                            <div class="clear-btn" onmousedown="clearInput(event, this)">×</div>
+                            <div class="autocomplete-list"></div>
+                        </div>
+                        <div class="qty-wrapper">
+                            <span class="stock-overlay"></span>
+                            <input type="number" class="qty" min="1" placeholder="Qty" inputmode="numeric" pattern="[0-9]*" onkeydown="preventNonNumeric(event)" required>
+                        </div>
+                        <div style="position: relative;">
+                            <textarea class="desc" placeholder="Notes" onmousedown="startLongPress(event, this)" onmouseup="cancelLongPress()" onmouseleave="cancelLongPress()" ontouchstart="startLongPress(event, this)" ontouchend="cancelLongPress()"></textarea>
+                            <button type="button" class="delete-row" onclick="removeRow(event, this)">×</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="in" id="btnIn">IN</button>
+                    <button type="button" class="add-row" id="addRow" onclick="handleAddRow(event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#1A73E8"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+                    </button>
+                    <button type="button" class="out" id="btnOut">OUT</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- HISTORY POPUP MODAL -->
+    <div id="historyPopup">
+        <div class="history-header">
+            <h4 id="historyTitle" style="margin:0; color:#1A73E8; font-size:0.9rem; font-weight:700;">~50 Trx Terakhir</h4>
+            <input type="text" id="historySearchInput" placeholder="Cari transaksi..." oninput="filterHistory()">
+            <div id="searchToggleBtn" onclick="toggleHistorySearch(event)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 24 24" fill="none" stroke="#1A73E8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+        </div>
+        <div id="historyList"></div>
+    </div>
+
+    <!-- DIALOG MODALS & OVERLAYS -->
+    <div id="confirmPopup" class="popup-overlay"><div class="popup-box"><h3 id="confirmTitle" style="color:#1A73E8; font-weight:700;"></h3><div id="confirmItems" style="text-align:left; margin-bottom:25px; color:var(--text-detail);"></div><div class="btn-group"><button class="modal-btn" id="finalSubmitBtn">POST</button><button class="modal-btn" onclick="closeConfirmPopup()" style="background:#5F6368;">CANCEL</button></div></div></div>
+    <div id="successPopup" class="popup-overlay"><div class="popup-box"><div id="successMode"></div><div id="successItems" style="text-align:left; margin-bottom:20px; color:var(--text-detail);"></div><button class="modal-btn" onclick="closeSuccessPopup()">Close</button></div></div>
+    <div id="descPopup" class="popup-overlay"><div class="popup-box"><textarea id="descPopupInput" style="width:100%; height:120px; border:1px solid var(--border-color); border-radius:12px; margin-bottom:10px; text-align: left; padding:10px;"></textarea><button class="modal-btn" onclick="saveDescPopup()">Save</button></div></div>
+    <div id="passPopup" class="popup-overlay"><div class="popup-box"><input type="password" id="adminPass" placeholder="Password" style="border:1px solid var(--border-color); border-radius:12px; margin-bottom:15px; height:45px; padding: 0 10px;"><div class="btn-group"><button class="modal-btn" onclick="checkPassword()">OK</button><button class="modal-btn" onclick="closePassPopup()" style="background:#5F6368;">Batal</button></div></div></div>
+
+    <script>
+        const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
+        
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        const userData = JSON.parse(localStorage.getItem("user"));
+        if (!userData) {
+            window.location.href = "login.html";
+        }
+
+        let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
+
+        function preventNonNumeric(e) {
+            if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
+                (e.keyCode === 67 && (e.ctrlKey === true || e.metaKey === true)) ||
+                (e.keyCode === 86 && (e.ctrlKey === true || e.metaKey === true)) ||
+                (e.keyCode >= 35 && e.keyCode <= 39)) {
+                return;
+            }
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                e.preventDefault();
+            }
+        }
+
+        function clearInput(e, btn) { e.preventDefault(); const inp = btn.parentElement.querySelector('input'); inp.value = ''; const list = btn.parentElement.querySelector('.autocomplete-list'); if(list) list.style.display = 'none'; inp.focus(); refreshAllStockOverlays(); }
+        function startLongPress(e, el) { activeTextarea = el; longPressTimer = setTimeout(() => { document.getElementById("descPopupInput").value = el.value; document.getElementById("descPopup").style.display = "flex"; document.getElementById("descPopupInput").focus(); }, 600); }
+        function cancelLongPress() { clearTimeout(longPressTimer); }
+        function saveDescPopup() { if (activeTextarea) activeTextarea.value = document.getElementById("descPopupInput").value; document.getElementById("descPopup").style.display = "none"; }
+        
+        function handleGABtnClick(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById("gaDropdownMenu");
+            
+            if (!gaMode) { 
+                passAction = "ga"; 
+                document.getElementById("passPopup").style.display = "flex"; 
+                document.getElementById("adminPass").focus(); 
+            } else { 
+                if (dropdown) {
+                    dropdown.style.display = (dropdown.style.display === "flex") ? "none" : "flex";
+                }
+            }
+        }
+
+        function openHistoryFromMenu(e) {
+            if (e) e.stopPropagation();
+            const dropdown = document.getElementById("gaDropdownMenu");
+            if (dropdown) dropdown.style.display = "none";
+
+            const p = document.getElementById("historyPopup"); 
+            if (p) {
+                p.style.display = "block"; 
+                renderHistory(lastTransactions);
+            }
+        }
+
+        function updateGAUI(status) { 
+            gaMode = status; 
+            const btnGA = document.getElementById("btnGABase");
+            const dropdown = document.getElementById("gaDropdownMenu");
+
+            if (dropdown) dropdown.style.display = "none";
+
+            if (btnGA) {
+                if (gaMode) {
+                    btnGA.className = "ga-mode-btn on";
+                } else {
+                    btnGA.className = "ga-mode-btn off";
+                }
+            }
+
+            const btnIn = document.getElementById("btnIn"); 
+            if (gaMode) { 
+                btnIn.style.opacity = "1"; 
+                btnIn.style.pointerEvents = "auto"; 
+                showToast("🔓 GA Mode Aktif");
+            } else { 
+                btnIn.style.opacity = "0.25"; 
+                btnIn.style.pointerEvents = "none"; 
+                document.getElementById("historyPopup").style.display = "none";
+                showToast("🔒 GA Mode Nonaktif");
+            } 
+            
+            initAutocomplete();
+            refreshAllStockOverlays();
+        }
+        
+        function refreshAllStockOverlays() {
+            document.querySelectorAll(".item-row").forEach(row => {
+                const itemInput = row.querySelector(".item");
+                const qtyInput = row.querySelector(".qty");
+                const overlay = row.querySelector(".stock-overlay");
+                
+                if (!itemInput || !qtyInput || !overlay) return;
+
+                const val = itemInput.value.trim();
+
+                if (gaMode && val && itemStock[val] !== undefined) {
+                    overlay.textContent = itemStock[val];
+                    overlay.style.display = qtyInput.value ? "none" : "block";
+                    qtyInput.classList.add("hide-placeholder");
+                } else {
+                    overlay.style.display = "none";
+                    qtyInput.classList.remove("hide-placeholder");
+                }
+            });
+        }
+
+        async function fetchDataAndUpdateUI() { 
+            if (!supabaseClient) {
+                showToast("⚠️ Supabase Client gagal dimuat");
+                return;
+            }
+
+            document.getElementById("loaderOverlay").style.display = "flex";
+
+            try { 
+                const { data: dbUsers } = await supabaseClient.from('users').select('nama');
+                let userList = dbUsers ? dbUsers.map(u => u.nama).filter(Boolean) : [];
+
+                const { data: dbItems } = await supabaseClient.from('item').select('item, balance');
+                if (dbItems) {
+                    itemData = [...new Set(dbItems.map(d => d.item).filter(Boolean))];
+                    itemStock = {};
+                    dbItems.forEach(d => {
+                        if (d.item) itemStock[d.item.trim()] = (d.balance !== null && d.balance !== undefined) ? d.balance : 0;
+                    });
+                }
+
+                // AMBIL DATA INVENTORY (DENGAN TANDA KUTIP KHUSUS PADA RESERVED KEYWORDS "in" & "out")
+                const { data: trxData, error: errTrx } = await supabaseClient
+                    .from('inventory')
+                    .select('user, item, "in", "out", date, note, no')
+                    .order('no', { ascending: false })
+                    .limit(50);
+
+                if (!errTrx && trxData && trxData.length > 0) {
+                    const usersFromInv = trxData.map(t => t.user).filter(Boolean);
+                    if (userData && userData.nama) usersFromInv.push(userData.nama);
+                    nameData = [...new Set([...userList, ...usersFromInv])];
+
+                    lastTransactions = trxData.map(t => {
+                        const valIn = parseFloat(t['in']);
+                        const valOut = parseFloat(t['out']);
+                        const isIn = !isNaN(valIn) && valIn > 0;
+                        const mode = isIn ? 'in' : 'out';
+                        const qty = isIn ? valIn : (!isNaN(valOut) ? valOut : 0);
+
+                        return [
+                            t.user || '-',
+                            mode,
+                            t.item || '-',
+                            qty ? qty.toString() : '0',
+                            t.date || '-',
+                            t.note || '-'
+                        ];
+                    });
+                } else {
+                    nameData = [...new Set(userList)];
+                    lastTransactions = [];
+                }
+
+                initAutocomplete(); 
+                refreshAllStockOverlays();
+                renderHistory(lastTransactions);
+            } catch (e) { 
+                console.error("Supabase fetch error:", e);
+                showToast("❌ Sync Error"); 
+            } finally { 
+                document.getElementById("loaderOverlay").style.display = "none";
+            } 
+        }
+
+        function initAutocomplete() { 
+            setupAutocomplete(document.getElementById("name"), document.getElementById("nameList"), nameData); 
+            document.querySelectorAll(".item-row").forEach(row => { 
+                setupAutocomplete(row.querySelector(".item"), row.querySelector(".autocomplete-list"), itemData, true, row.querySelector(".stock-overlay"), row.querySelector(".qty")); 
+            }); 
+        }
+
+        function setupAutocomplete(input, box, data, isItem=false, overlay=null, qtyInput=null) { 
+            const updateOverlay = () => { 
+                const val = input.value.trim();
+                if (isItem && gaMode && val && itemStock[val] !== undefined) { 
+                    overlay.textContent = itemStock[val]; 
+                    overlay.style.display = qtyInput.value ? "none" : "block"; 
+                    qtyInput.classList.add("hide-placeholder"); 
+                } else if (overlay) { 
+                    overlay.style.display = "none"; 
+                    if(qtyInput) qtyInput.classList.remove("hide-placeholder"); 
+                } 
+            }; 
+            input.oninput = () => { 
+                const val = input.value.trim().toLowerCase(); 
+                updateOverlay(); 
+                if (!val) { box.style.display = "none"; return; } 
+                
+                let sourceData = data;
+                if (isItem && !gaMode) {
+                    sourceData = data.filter(d => (itemStock[d] || 0) > 0);
+                }
+
+                const match = sourceData.filter(d => d && d.toLowerCase().includes(val)).slice(0, 10); 
+                box.innerHTML = match.map(m => `<div class="autocomplete-item">${m}</div>`).join(''); 
+                box.style.display = match.length ? "block" : "none"; 
+                box.querySelectorAll(".autocomplete-item").forEach(div => { 
+                    div.onclick = () => { 
+                        input.value = div.textContent; 
+                        box.style.display = "none"; 
+                        updateOverlay(); 
+                    }; 
+                }); 
+            }; 
+            if (qtyInput) qtyInput.oninput = updateOverlay; 
+        }
+        
+        async function handleSubmit(mode) { 
+            currentName = document.getElementById("name").value.trim(); 
+            if (!currentName) return showToast("⚠️ Pilih Nama!"); 
+            
+            currentItems = [...document.querySelectorAll(".item-row")].map(row => ({ 
+                item: row.querySelector(".item").value.trim(), 
+                qty: parseInt(row.querySelector(".qty").value), 
+                desc: row.querySelector(".desc").value.trim() 
+            })).filter(it => it.item && it.qty); 
+            
+            if (!currentItems.length) return showToast("⚠️ Isi Item!"); 
+
+            const invalidItem = currentItems.find(it => !itemData.includes(it.item));
+            if (invalidItem) {
+                return showToast("⚠️ Item tidak sesuai database!");
+            }
+
+            if (mode === 'out') {
+                const overStockItem = currentItems.find(it => {
+                    const stock = itemStock[it.item] || 0;
+                    return it.qty > stock;
+                });
+                if (overStockItem) {
+                    return showToast("⚠️ Understok");
+                }
+            }
+            
+            currentMode = mode; 
+            document.getElementById("confirmTitle").innerText = mode.toUpperCase(); 
+            document.getElementById("confirmItems").innerHTML = currentItems.map(i => `- ${i.item}: <span style="color:#EA4335;">${i.qty}</span>`).join('<br>'); 
+            document.getElementById("confirmPopup").style.display = "flex"; 
+            
+            document.getElementById("finalSubmitBtn").onclick = () => { 
+                document.getElementById("confirmPopup").style.display = "none"; 
+                executeFinalSubmit(mode, currentName, currentItems); 
+            }; 
+        }
+        
+        async function executeFinalSubmit(mode, name, items) { 
+            document.getElementById("loaderOverlay").style.display = "flex";
+            
+            try { 
+                const currentDateStr = new Date().toISOString().split('T')[0]; 
+                
+                const payload = items.map(it => ({
+                    user: name,
+                    item: it.item,
+                    in: mode === 'in' ? it.qty : null,
+                    out: mode === 'out' ? it.qty : null,
+                    date: currentDateStr,
+                    note: it.desc || null
+                }));
+
+                const { data, error } = await supabaseClient
+                    .from('inventory')
+                    .insert(payload);
+
+                if (error) throw error;
+
+                showSuccessPopup(mode, items);
+                
+                const savedName = document.getElementById("name").value;
+                document.getElementById("myForm").reset(); 
+                document.getElementById("name").value = savedName;
+                
+                const container = document.getElementById("itemContainer"); 
+                while(container.children.length > 1) container.removeChild(container.lastChild); 
+                document.getElementById("addRow").style.visibility = "visible"; 
+                
+                fetchDataAndUpdateUI();
+
+            } catch (e) { 
+                console.error("Supabase Insert Error:", e);
+                showToast("❌ Insert Failed"); 
+            } finally { 
+                document.getElementById("loaderOverlay").style.display = "none"; 
+            } 
+        }
+
+        function checkPassword() { if (document.getElementById("adminPass").value === "azza") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; if (passAction === "in") executeFinalSubmit(currentMode, currentName, currentItems); else if (passAction === "ga") updateGAUI(true); } else showToast("❌ Salah!"); }
+        function showToast(m) { const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; setTimeout(() => t.style.display="none", 2500); }
+        function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item}: <span style="color:#EA4335;">${i.qty}</span>`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
+        function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
+        function closeConfirmPopup() { document.getElementById("confirmPopup").style.display = "none"; }
+        function closePassPopup() { document.getElementById("passPopup").style.display = "none"; }
+
+        function toggleHistorySearch(e) { e.stopPropagation(); const title = document.getElementById("historyTitle"); const input = document.getElementById("historySearchInput"); if (input.style.display === "block") { resetHistoryUI(); } else { title.style.display = "none"; input.style.display = "block"; input.focus(); } }
+        function resetHistoryUI() { document.getElementById("historyTitle").style.display = "block"; const input = document.getElementById("historySearchInput"); input.style.display = "none"; input.value = ""; renderHistory(lastTransactions); }
+        function filterHistory() { const val = document.getElementById("historySearchInput").value.toLowerCase(); const filtered = lastTransactions.filter(t => t[0].toLowerCase().includes(val) || t[1].toLowerCase().includes(val) || t[2].toLowerCase().includes(val) || t[3].toLowerCase().includes(val)); renderHistory(filtered); }
+
+        function renderHistory(data) {
+            const historyContainer = document.getElementById("historyList");
+            if (!historyContainer) return;
+
+            if (!data || data.length === 0) {
+                historyContainer.innerHTML = `<div style="padding:15px; text-align:center; color:var(--text-secondary); font-size:0.8rem;">Belum ada riwayat transaksi.</div>`;
+                return;
+            }
+
+            historyContainer.innerHTML = data.map((t, index) => `
+                <div class="history-item" onclick="const det = document.getElementById('det-${index}'); if(det) det.style.display = det.style.display === 'block' ? 'none' : 'block';">
+                    <div style="font-size:0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                        <span><b>${t[0]}</b> <span style="color:${t[1]==='in'?'#34A853':'#EA4335'}">${t[1].toUpperCase()}</span></span>
+                        <b>${t[2]}</b>
+                    </div>
+                    <div id="det-${index}" class="history-detail">
+                        <div style="margin-top: 1px; padding-top: 1px;">
+                            <b> Qty: ${t[3]}<br>
+                            <b> Date: ${t[4]}<br>
+                            <b> Notes: ${t[5] || '-'}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleAddRow(e) {
+            if (e) e.stopPropagation();
+            const container = document.getElementById("itemContainer"); 
+            const btnAdd = document.getElementById("addRow"); 
+            if (container && container.children.length < 5) { 
+                const clone = container.children[0].cloneNode(true); 
+                clone.querySelectorAll("input, textarea").forEach(i => i.value = ""); 
+                
+                const qtyInp = clone.querySelector("input.qty");
+                if (qtyInp) qtyInp.onkeydown = preventNonNumeric;
+
+                const overlay = clone.querySelector(".stock-overlay");
+                if (overlay) overlay.style.display = "none";
+
+                const autoList = clone.querySelector(".autocomplete-list");
+                if (autoList) autoList.style.display = "none";
+
+                const tx = clone.querySelector("textarea.desc"); 
+                if (tx) {
+                    tx.onmousedown = (e) => startLongPress(e, tx); 
+                    tx.onmouseup = cancelLongPress; 
+                    tx.onmouseleave = cancelLongPress; 
+                    tx.ontouchstart = (e) => startLongPress(e, tx); 
+                    tx.ontouchend = cancelLongPress; 
+                }
+
+                container.appendChild(clone); 
+                initAutocomplete(); 
+                if (container.children.length === 5 && btnAdd) btnAdd.style.visibility = "hidden"; 
+            } 
+        }
+
+        function removeRow(e, btn) {
+            if (e) e.stopPropagation();
+            const container = document.getElementById("itemContainer");
+            const row = btn.closest(".item-row");
+            if (row && container.children.length > 1) {
+                row.remove();
+                if (container.children.length < 5) {
+                    document.getElementById("addRow").style.visibility = "visible";
+                }
+            }
+        }
+        
+        document.addEventListener("click", e => { 
+            if (!e.target.closest(".autocomplete-list") && !e.target.closest("input") && !e.target.closest(".clear-btn")) {
+                document.querySelectorAll(".autocomplete-list").forEach(l => l.style.display = "none"); 
+            }
+            if (!e.target.closest(".ga-btn-wrapper")) {
+                const dropdown = document.getElementById("gaDropdownMenu");
+                if (dropdown) dropdown.style.display = "none";
+            }
+            if (!e.target.closest("#historyPopup") && !e.target.closest(".ga-btn-wrapper") && !e.target.closest(".back-btn-wrapper")) { 
+                const historyModal = document.getElementById("historyPopup");
+                if (historyModal && historyModal.style.display === "block") {
+                    historyModal.style.display = "none"; 
+                    resetHistoryUI(); 
+                }
+            }
+        });
+
+        document.getElementById("btnIn").onclick = () => handleSubmit("in");
+        document.getElementById("btnOut").onclick = () => handleSubmit("out");
+        
+        window.onload = function() {
+            fetchDataAndUpdateUI();
+
+            if (userData && userData.nama) {
+                try {
+                    const nameInput = document.getElementById("name");
+                    nameInput.value = userData.nama;
+                    nameInput.dispatchEvent(new Event('input'));
+                } catch (e) {
+                    console.error("Gagal membaca nama dari session user:", e);
+                }
+            }
+        };
+    </script>
+</body>
+</html>
