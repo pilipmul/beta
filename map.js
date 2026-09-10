@@ -1,15 +1,21 @@
+// ==========================================
+// CONFIG & SUPABASE CLIENT
+// ==========================================
 const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FLOOR_MAPS = {
-  basement: "https://raw.githubusercontent.com/pilipmul/beta/main/basement.jpg",
-  dasar: "https://raw.githubusercontent.com/pilipmul/beta/main/dasar.jpg",
-  satu: "https://raw.githubusercontent.com/pilipmul/beta/main/satu.jpg",
-  dua: "https://raw.githubusercontent.com/pilipmul/beta/main/dua.jpg",
-  rooftop: "https://raw.githubusercontent.com/pilipmul/beta/main/rooftop.jpg"
+  basement: "basement.jpg",
+  dasar: "dasar.jpg",
+  satu: "satu.jpg",
+  dua: "dua.jpg",
+  rooftop: "rooftop.jpg"
 };
 
+// ==========================================
+// STATE GLOBAL APP & MAP
+// ==========================================
 let tenantsData = [];
 let currentFloor = 'basement';
 let activeFilter = 'all';
@@ -17,10 +23,11 @@ let selectedTenantNo = null;
 let isPlacingMode = false;
 let appMode = 'view';
 
-// MAP STATE & TRANSFORMATIONS
+// Map Transformations State
 let scale = 1;
 let panX = 0;
 let panY = 0;
+let rotation = 0; // 0, 90, 180, 270
 let isDraggingMap = false;
 let startMouseX = 0;
 let startMouseY = 0;
@@ -28,6 +35,9 @@ let animFrameReq = null;
 let initialPinchDistance = null;
 let initialScale = 1;
 
+// ==========================================
+// HELPER PERMISSION & HAMBURGER
+// ==========================================
 function isSuperAdmin() {
   try {
     const session = localStorage.getItem("user");
@@ -86,6 +96,9 @@ function renderHamburgerMenuContent() {
   container.innerHTML = html;
 }
 
+// ==========================================
+// INIT & EVENT LISTENERS
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof renderHeader === 'function') {
     renderHeader({
@@ -100,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const img = document.getElementById('denah-img');
   if (img) {
-    if (img.complete) {
+    if (img.complete && img.naturalWidth > 0) {
       onImageLoaded();
     } else {
       img.addEventListener('load', onImageLoaded);
@@ -135,6 +148,13 @@ document.addEventListener('click', (e) => {
   }
 });
 
+window.addEventListener('resize', () => {
+  resetZoomToFit();
+});
+
+// ==========================================
+// DATA FETCHING & SUPABASE SYNC
+// ==========================================
 async function fetchDataFromSupabase() {
   try {
     const { data, error } = await supabaseClient
@@ -206,6 +226,9 @@ async function saveCoordinateToSupabase(noTenant, xPercent, yPercent) {
   }
 }
 
+// ==========================================
+// LANTAI & APP MODE
+// ==========================================
 function switchFloor(floorKey) {
   currentFloor = floorKey;
   selectedTenantNo = null;
@@ -236,11 +259,13 @@ function setAppMode(mode) {
   appMode = mode;
   const sidebarEdit = document.getElementById('sidebar-edit-container');
 
-  if (mode === 'edit') {
-    sidebarEdit.classList.remove('hidden');
-  } else {
-    cancelPlacement();
-    sidebarEdit.classList.add('hidden');
+  if (sidebarEdit) {
+    if (mode === 'edit') {
+      sidebarEdit.classList.remove('hidden');
+    } else {
+      cancelPlacement();
+      sidebarEdit.classList.add('hidden');
+    }
   }
 
   renderHamburgerMenuContent();
@@ -248,6 +273,9 @@ function setAppMode(mode) {
   renderMarkersOnMap();
 }
 
+// ==========================================
+// RENDER COMPONENT & MARKERS
+// ==========================================
 function renderTenantList() {
   const container = document.getElementById('tenant-list-container');
   if (!container) return;
@@ -264,8 +292,10 @@ function renderTenantList() {
     return matchSearch;
   });
 
-  document.getElementById('floor-count').innerText = floorTenants.length;
-  document.getElementById('plotted-count').innerText = floorTenants.filter(t => t.koordinat !== null).length;
+  const countEl = document.getElementById('floor-count');
+  const plottedEl = document.getElementById('plotted-count');
+  if (countEl) countEl.innerText = floorTenants.length;
+  if (plottedEl) plottedEl.innerText = floorTenants.filter(t => t.koordinat !== null).length;
 
   if (filtered.length === 0) {
     container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">Tidak ada data tenant.</div>`;
@@ -386,10 +416,9 @@ function closeFloatingCard() {
   }
 }
 
-/* ==========================================================================
-   INTERACTIVE MAP ENGINE
-   ========================================================================== */
-
+// ==========================================
+// MAP INTERACTION & ENGINE
+// ==========================================
 function initMapControls() {
   const viewport = document.getElementById('viewport');
   if (!viewport) return;
@@ -402,6 +431,8 @@ function initMapControls() {
 
   viewport.addEventListener('mousedown', (e) => {
     if (isPlacingMode || e.button !== 0) return;
+    if (e.target.closest('.circle-marker') || e.target.closest('#floating-detail-card')) return;
+
     isDraggingMap = true;
     startMouseX = e.clientX - panX;
     startMouseY = e.clientY - panY;
@@ -458,6 +489,7 @@ function initMapControls() {
     if (!isPlacingMode || !selectedTenantNo || appMode !== 'edit') return;
 
     const img = document.getElementById('denah-img');
+    if (!img) return;
     const rect = img.getBoundingClientRect();
 
     const clickX = e.clientX - rect.left;
@@ -488,18 +520,20 @@ function zoomAtPoint(factor, clientX, clientY, isAbsoluteFactor = false) {
 
   const vRect = viewport.getBoundingClientRect();
 
-  const targetX = (clientX !== undefined) ? (clientX - vRect.left) : (vRect.width / 2);
-  const targetY = (clientY !== undefined) ? (clientY - vRect.top) : (vRect.height / 2);
+  const mouseX = (clientX !== undefined) ? (clientX - vRect.left) : (vRect.width / 2);
+  const mouseY = (clientY !== undefined) ? (clientY - vRect.top) : (vRect.height / 2);
 
   const oldScale = scale;
   let newScale = isAbsoluteFactor ? factor : scale * factor;
   
-  newScale = Math.max(0.1, Math.min(8, newScale));
+  newScale = Math.max(0.05, Math.min(10, newScale));
 
   if (newScale === oldScale) return;
 
-  panX = targetX - (targetX - panX) * (newScale / oldScale);
-  panY = targetY - (targetY - panY) * (newScale / oldScale);
+  const scaleRatio = newScale / oldScale;
+
+  panX = mouseX - (mouseX - panX) * scaleRatio;
+  panY = mouseY - (mouseY - panY) * scaleRatio;
   
   scale = newScale;
   clampBoundaries();
@@ -512,18 +546,20 @@ function clampBoundaries() {
   if (!viewport || !img) return;
 
   const vRect = viewport.getBoundingClientRect();
-  const naturalW = img.naturalWidth || img.width;
-  const naturalH = img.naturalHeight || img.height;
+  const naturalW = img.naturalWidth || 800;
+  const naturalH = img.naturalHeight || 600;
 
-  if (!naturalW || !naturalH) return;
+  const isRotated = (rotation === 90 || rotation === 270);
+  const effWidth = isRotated ? naturalH : naturalW;
+  const effHeight = isRotated ? naturalW : naturalH;
 
-  const scaledW = naturalW * scale;
-  const scaledH = naturalH * scale;
+  const scaledW = effWidth * scale;
+  const scaledH = effHeight * scale;
 
-  const minX = vRect.width - scaledW - (vRect.width * 0.5);
-  const maxX = vRect.width * 0.5;
-  const minY = vRect.height - scaledH - (vRect.height * 0.5);
-  const maxY = vRect.height * 0.5;
+  const minX = vRect.width - scaledW - (vRect.width * 0.6);
+  const maxX = vRect.width * 0.6;
+  const minY = vRect.height - scaledH - (vRect.height * 0.6);
+  const maxY = vRect.height * 0.6;
 
   panX = Math.min(Math.max(panX, minX), maxX);
   panY = Math.min(Math.max(panY, minY), maxY);
@@ -532,27 +568,43 @@ function clampBoundaries() {
 function zoomIn() { zoomAtPoint(1.25); }
 function zoomOut() { zoomAtPoint(0.8); }
 
+function rotateMap() {
+  rotation = (rotation + 90) % 360;
+  resetZoomToFit();
+}
+
 function resetZoomToFit() {
   const viewport = document.getElementById('viewport');
+  const container = document.getElementById('map-container');
   const img = document.getElementById('denah-img');
-  
-  if (!viewport || !img) return;
+
+  if (!viewport || !img || !container) return;
+
+  container.style.transformOrigin = "0 0";
 
   const vRect = viewport.getBoundingClientRect();
-  const naturalW = img.naturalWidth || img.width;
-  const naturalH = img.naturalHeight || img.height;
+  
+  let naturalW = img.naturalWidth || img.width;
+  let naturalH = img.naturalHeight || img.height;
 
-  if (!naturalW || !naturalH || vRect.width === 0 || vRect.height === 0) return;
+  if (!naturalW || !naturalH || vRect.width === 0 || vRect.height === 0) {
+    setTimeout(resetZoomToFit, 50);
+    return;
+  }
 
-  const scaleX = vRect.width / naturalW;
-  const scaleY = vRect.height / naturalH;
-  scale = Math.min(scaleX, scaleY) * 0.9; 
+  const isRotated = (rotation === 90 || rotation === 270);
+  const effWidth = isRotated ? naturalH : naturalW;
+  const effHeight = isRotated ? naturalW : naturalH;
 
-  const scaledWidth = naturalW * scale;
-  const scaledHeight = naturalH * scale;
+  const scaleX = vRect.width / effWidth;
+  const scaleY = vRect.height / effHeight;
+  scale = Math.min(scaleX, scaleY) * 0.9;
 
-  panX = (vRect.width - scaledWidth) / 2;
-  panY = (vRect.height - scaledHeight) / 2;
+  const renderedW = effWidth * scale;
+  const renderedH = effHeight * scale;
+
+  panX = (vRect.width - renderedW) / 2;
+  panY = (vRect.height - renderedH) / 2;
 
   requestUpdateMapTransform();
 }
@@ -564,33 +616,33 @@ function requestUpdateMapTransform() {
 
 function updateMapTransform() {
   const container = document.getElementById('map-container');
-  if (container) {
-    container.style.transform = `translate3d(${panX}px, ${panY}px, 0px) scale(${scale})`;
-  }
-}
+  if (!container) return;
 
-function centerMapOnCoordinate(xPercent, yPercent) {
-  const viewport = document.getElementById('viewport');
   const img = document.getElementById('denah-img');
-  if (!viewport || !img) return;
+  const w = (img && img.naturalWidth) ? img.naturalWidth : (img ? img.width : 800);
+  const h = (img && img.naturalHeight) ? img.naturalHeight : (img ? img.height : 600);
 
-  const vRect = viewport.getBoundingClientRect();
-  const naturalW = img.naturalWidth || img.width;
-  const naturalH = img.naturalHeight || img.height;
+  let offsetX = 0;
+  let offsetY = 0;
 
-  if (!naturalW || !naturalH) return;
+  if (rotation === 90) {
+    offsetX = h * scale;
+  } else if (rotation === 180) {
+    offsetX = w * scale;
+    offsetY = h * scale;
+  } else if (rotation === 270) {
+    offsetY = w * scale;
+  }
 
-  const markerPixelX = (xPercent / 100) * naturalW;
-  const markerPixelY = (yPercent / 100) * naturalH;
+  const finalX = panX + offsetX;
+  const finalY = panY + offsetY;
 
-  panX = (vRect.width / 2) - (markerPixelX * scale);
-  panY = (vRect.height / 2) - (markerPixelY * scale);
-
-  clampBoundaries();
-  requestUpdateMapTransform();
+  container.style.transform = `translate3d(${finalX}px, ${finalY}px, 0px) rotate(${rotation}deg) scale(${scale})`;
 }
 
-// DIPERBARUI: Klik tenant/marker tidak lagi menggeser peta ke tengah
+// ==========================================
+// SELEKSI & PLOTTING ACTION
+// ==========================================
 function selectTenant(no) {
   selectedTenantNo = no;
   renderTenantList();
@@ -617,10 +669,16 @@ function startPlacement(no) {
   isPlacingMode = true;
   
   const t = tenantsData.find(item => item.no === no);
-  document.getElementById('target-tenant-name').innerText = t ? t.lokasi : `#${no}`;
-  document.getElementById('active-action-bar').classList.remove('hidden');
-  document.getElementById('active-action-bar').classList.add('flex');
-  document.getElementById('viewport').classList.add('placing-mode');
+  const targetName = document.getElementById('target-tenant-name');
+  const actionBar = document.getElementById('active-action-bar');
+  const viewport = document.getElementById('viewport');
+
+  if (targetName) targetName.innerText = t ? t.lokasi : `#${no}`;
+  if (actionBar) {
+    actionBar.classList.remove('hidden');
+    actionBar.classList.add('flex');
+  }
+  if (viewport) viewport.classList.add('placing-mode');
   
   renderTenantList();
   renderMarkersOnMap();
@@ -645,6 +703,7 @@ function startDraggingMarker(event, no) {
   selectTenant(no);
 
   const img = document.getElementById('denah-img');
+  if (!img) return;
   let isDragging = true;
 
   function onMouseMove(e) {
@@ -698,6 +757,9 @@ function deleteCoordinate(no) {
   }
 }
 
+// ==========================================
+// MODAL MANAGEMENT & FORM
+// ==========================================
 function openModal(mode, no = null) {
   if (!isSuperAdmin()) {
     alert("Anda tidak memiliki hak akses untuk menambah/mengubah data tenant.");
@@ -709,32 +771,41 @@ function openModal(mode, no = null) {
   const title = document.getElementById('modalTitle');
   const btnDelete = document.getElementById('btnDeleteInModal');
 
-  form.reset();
-  document.getElementById('editNo').value = '';
+  if (form) form.reset();
+  const editNoEl = document.getElementById('editNo');
+  if (editNoEl) editNoEl.value = '';
 
   if (mode === 'add') {
-    title.innerText = 'Tambah Tenant Master';
-    btnDelete.classList.add('hidden');
-    document.getElementById('inputLantai').value = currentFloor;
-    document.getElementById('inputUkuran').value = '38';
+    if (title) title.innerText = 'Tambah Tenant Master';
+    if (btnDelete) btnDelete.classList.add('hidden');
+    
+    const inputLantai = document.getElementById('inputLantai');
+    const inputUkuran = document.getElementById('inputUkuran');
+    if (inputLantai) inputLantai.value = currentFloor;
+    if (inputUkuran) inputUkuran.value = '38';
   } else if (mode === 'edit' && no) {
     const tenant = tenantsData.find(t => t.no === no);
     if (!tenant) return;
 
-    title.innerText = `Edit Tenant #${tenant.no}`;
-    btnDelete.classList.remove('hidden');
+    if (title) title.innerText = `Edit Tenant #${tenant.no}`;
+    if (btnDelete) btnDelete.classList.remove('hidden');
 
-    document.getElementById('editNo').value = tenant.no;
-    document.getElementById('inputLokasi').value = tenant.lokasi || '';
-    document.getElementById('inputLantai').value = tenant.lantai || currentFloor;
-    document.getElementById('inputUkuran').value = tenant.ukuran || 38;
+    if (editNoEl) editNoEl.value = tenant.no;
+    const inputLokasi = document.getElementById('inputLokasi');
+    const inputLantai = document.getElementById('inputLantai');
+    const inputUkuran = document.getElementById('inputUkuran');
+
+    if (inputLokasi) inputLokasi.value = tenant.lokasi || '';
+    if (inputLantai) inputLantai.value = tenant.lantai || currentFloor;
+    if (inputUkuran) inputUkuran.value = tenant.ukuran || 38;
   }
 
-  modal.classList.remove('hidden');
+  if (modal) modal.classList.remove('hidden');
 }
 
 function closeModal() {
-  document.getElementById('modal').classList.add('hidden');
+  const modal = document.getElementById('modal');
+  if (modal) modal.classList.add('hidden');
 }
 
 async function saveTenantData(e) {
@@ -795,7 +866,9 @@ async function saveTenantData(e) {
 }
 
 async function deleteTenantInModal() {
-  const no = document.getElementById('editNo').value;
+  const editNo = document.getElementById('editNo');
+  if (!editNo) return;
+  const no = editNo.value;
   if (!no) return;
 
   if (!confirm(`Apakah Anda yakin ingin menghapus data tenant #${no}?`)) return;
@@ -816,6 +889,9 @@ async function deleteTenantInModal() {
   }
 }
 
+// ==========================================
+// SEARCH, FILTER, EXPORT
+// ==========================================
 function setFilter(filterType) {
   activeFilter = filterType;
   ['all', 'plotted', 'unplotted'].forEach(f => {
@@ -860,16 +936,17 @@ function handleSearchKeyDown(e) {
 function clearGlobalSearch() {
   const searchInput = document.getElementById('globalSearchInput');
   if (searchInput) searchInput.value = '';
-  document.getElementById('btnClearSearch').classList.add('hidden');
+  const btnClear = document.getElementById('btnClearSearch');
+  if (btnClear) btnClear.classList.add('hidden');
   closeFloatingCard();
   renderTenantList();
 }
 
 function onImageLoaded() {
-  setTimeout(() => {
+  requestAnimationFrame(() => {
     resetZoomToFit();
     renderMarkersOnMap();
-  }, 50);
+  });
 }
 
 function escapeHtml(str) {
