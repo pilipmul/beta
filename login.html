@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Login SOT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50/80 via-slate-50 to-amber-50/60 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/40 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col justify-between selection:bg-blue-500 selection:text-white transition-colors duration-200">
+
+    <div class="hidden sm:block"></div>
+
+    <div class="w-full max-w-md mx-auto p-6 my-auto">
+        <div class="relative p-[3px] rounded-[28px] bg-gradient-to-r from-blue-500 via-red-500 via-amber-400 to-emerald-500 shadow-xl shadow-blue-500/10 dark:shadow-blue-500/5 box-border isolate">
+            <div class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-[25px] p-8 relative overflow-hidden transition-colors">
+                
+                <div class="absolute -top-12 -right-12 w-36 h-36 bg-gradient-to-br from-red-400/25 to-amber-300/30 dark:from-red-600/20 dark:to-amber-500/15 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-gradient-to-tr from-blue-400/25 to-emerald-300/30 dark:from-blue-600/20 dark:to-emerald-500/15 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div class="text-center mb-8 relative">
+                    <!-- Bagian Logo SOT yang Diperbarui -->
+                    <div class="inline-flex bg-gradient-to-tr from-blue-500 via-red-500 via-amber-400 to-emerald-500 p-1 rounded-2xl shadow-md shadow-blue-500/20 mb-4 justify-center items-center">
+                        <div class="bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border-2 border-slate-200 dark:border-slate-700/80 transition-colors flex items-center justify-center">
+                            <span class="text-5xl font-black tracking-wider text-blue-600 drop-shadow-[0_0_12px_rgba(37,99,235,0.9)] dark:text-white dark:drop-shadow-none">SOT</span>
+                        </div>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide uppercase mt-1">PBC Integrated Portal</p>
+                </div>
+
+                <div class="space-y-4 relative">
+                    
+                    <div class="relative">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </span>
+                            <input type="text" id="nama" placeholder="Nama" autocomplete="off" 
+                                class="w-full bg-slate-50 dark:bg-slate-800/80 border-2 border-slate-200 dark:border-slate-700/80 rounded-2xl pl-11 pr-4 py-3.5 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/40 transition duration-200 font-medium">
+                        </div>
+                        <div id="autocomplete-box" class="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-800 border-2 border-blue-100 dark:border-slate-700 rounded-2xl max-h-48 overflow-y-auto z-50 shadow-2xl hidden divide-y divide-slate-100 dark:divide-slate-700/60"></div>
+                    </div>
+
+                    <div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-slate-500 pointer-events-none">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </span>
+                            <input type="password" id="pin" placeholder="PIN" 
+                                inputmode="numeric" pattern="[0-9]*" maxlength="6"
+                                class="w-full bg-slate-50 dark:bg-slate-800/80 border-2 border-slate-200 dark:border-slate-700/80 rounded-2xl pl-11 pr-4 py-3.5 text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:focus:ring-blue-900/40 transition duration-200 font-medium">
+                        </div>
+                    </div>
+
+                    <button onclick="login()" id="btn-submit" class="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-base py-3.5 px-4 rounded-2xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/40 active:scale-[0.98] transition duration-200 cursor-pointer mt-2 disabled:bg-slate-200 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed disabled:scale-100 disabled:shadow-none">
+                        Log in
+                    </button>
+
+                    <div class="msg pt-2 text-center text-sm font-semibold min-h-[24px] flex items-center justify-center" id="msg"></div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer class="w-full text-center py-4 text-xs font-medium text-slate-400 dark:text-slate-500 border-t border-slate-200/60 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm transition-colors">
+        <p>Power by: PBC Internal Dev Team</p>
+    </footer>
+
+    <script>
+    // ------------------------------------------------------------------------
+    // KONFIGURASI SUPABASE
+    // ------------------------------------------------------------------------
+    const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
+    
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let userDataNames = [];
+    let currentMatches = [];
+
+    function setupAutocomplete(input, box, data) {
+        input.oninput = () => {
+            const val = input.value.trim().toLowerCase();
+            if (!val) {
+                box.style.display = "none";
+                currentMatches = [];
+                return;
+            }
+
+            currentMatches = data
+                .filter(d => d && d.toLowerCase().includes(val))
+                .slice(0, 10);
+
+            box.innerHTML = currentMatches.map(m =>
+                `<div class="autocomplete-item px-4 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-700/80 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition duration-150">${m}</div>`
+            ).join('');
+            box.style.display = currentMatches.length ? "block" : "none";
+
+            box.querySelectorAll(".autocomplete-item").forEach(div => {
+                div.onclick = () => {
+                    input.value = div.textContent;
+                    box.style.display = "none";
+                    currentMatches = [];
+                    document.getElementById("pin").focus();
+                };
+            });
+        };
+
+        document.addEventListener("click", (e) => {
+            if (e.target !== input && e.target !== box) {
+                box.style.display = "none";
+            }
+        });
+    }
+
+    async function loadUsers() {
+        try {
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('nama');
+
+            if (error) {
+                console.error("Error dari Supabase:", error);
+                throw error;
+            }
+
+            if (data) {
+                userDataNames = data.map(u => u.nama).filter(Boolean);
+                setupAutocomplete(
+                    document.getElementById("nama"), 
+                    document.getElementById("autocomplete-box"), 
+                    userDataNames
+                );
+            }
+        } catch (err) {
+            console.error("User data error:", err);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        loadUsers();
+
+        const pinInput = document.getElementById("pin");
+        const namaInput = document.getElementById("nama");
+        const box = document.getElementById("autocomplete-box");
+
+        pinInput.oninput = function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        };
+
+        namaInput.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                if (box.style.display === "block" && currentMatches.length > 0) {
+                    namaInput.value = currentMatches[0];
+                    box.style.display = "none";
+                    currentMatches = [];
+                }
+                pinInput.focus();
+            }
+        };
+
+        pinInput.onkeydown = (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                login();
+            }
+        };
+    });
+
+    async function login() {
+        const nama = document.getElementById("nama").value.trim();
+        const pin = document.getElementById("pin").value.trim();
+        const msg = document.getElementById("msg");
+        const btnSubmit = document.getElementById("btn-submit");
+    
+        const baseMsgClass = "msg pt-2 text-center text-sm font-semibold min-h-[24px] flex items-center justify-center ";
+    
+        if (!nama || !pin) {
+            msg.innerHTML = "Isi nama dan PIN!";
+            msg.className = baseMsgClass + "text-amber-500 dark:text-amber-400 animate-pulse";
+            return;
+        }
+    
+        if (pin.length !== 6) {
+            msg.innerHTML = "6-digit PIN required!";
+            msg.className = baseMsgClass + "text-amber-500 dark:text-amber-400";
+            return;
+        }
+    
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = "Syncing";
+        msg.innerHTML = "<div class='inline-block animate-spin h-4 w-4 border-2 border-slate-300 dark:border-slate-600 border-t-blue-600 dark:border-t-blue-400 rounded-full mr-2 vertical-middle'></div> Verifying";
+        msg.className = baseMsgClass + "text-slate-500 dark:text-slate-400";
+    
+        try {
+            const { data, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('nama', nama)
+                .eq('pin', pin)
+                .maybeSingle();
+    
+            if (error) throw error;
+    
+            if (data) {
+                msg.innerHTML = "✓ Redirecting...";
+                msg.className = baseMsgClass + "text-emerald-600 dark:text-emerald-400 font-bold";
+                
+                localStorage.setItem("user", JSON.stringify({
+                    success: true,
+                    data: data
+                }));
+    
+                setTimeout(() => { 
+                    window.location.href = "dashboard.html"; 
+                }, 1000);
+            } else {
+                msg.innerHTML = "Invalid Name or PIN..";
+                msg.className = baseMsgClass + "text-red-500 dark:text-red-400";
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = "Log in";
+            }
+        } catch (err) {
+            console.error("Supabase Login Error:", err);
+            msg.innerHTML = "Supabase error.";
+            msg.className = baseMsgClass + "text-red-500 dark:text-red-400";
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = "Log in";
+        }
+    }
+    </script>
+</body>
+</html>

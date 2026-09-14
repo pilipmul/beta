@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasks - SOT</title>
+    
+    <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+    <script>
+        (function checkAuth() {
+            try {
+                const session = localStorage.getItem("user");
+                const userData = session ? JSON.parse(session) : null;
+                if (!userData || !userData.akses || userData.akses.tasks !== "Y") {
+                    window.location.replace("login.html"); 
+                    document.documentElement.style.display = "none";
+                    throw new Error("Akses ditolak");
+                }
+            } catch(e) {
+                window.location.replace("login.html");
+            }
+        })();
+    </script>
+
+    <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+    <link rel="stylesheet" href="global-header.css">
+    <!-- IMPORT CUSTOM TASKS STYLES -->
+    <link rel="stylesheet" href="tasks.css">
+
+    <!-- Tailwind CSS v4 & Supabase JS Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen font-['Inter',sans-serif] flex flex-col overflow-hidden transition-colors duration-200">
+
+    <div id="loading-overlay" style="display: none;">
+        <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Menyinkronkan Tasks SOT...
+    </div>
+
+    <!-- CONTAINER ELEMEN TOPBAR HOLLOW OVERLAY -->
+    <div id="global-header"></div>
+
+    <!-- APP BODY WRAPPER -->
+    <div class="app-body">
+        
+        <!-- SIDEBAR MODUL TASKS KIRI -->
+        <div class="module-sidebar custom-scroll">
+            <div class="nav-item active" id="nav-all">
+                <i class="fas fa-sun"></i> Semua Tugas
+            </div>
+            <div class="nav-item" id="nav-important">
+                <i class="far fa-star"></i> Penting
+            </div>
+            <div class="nav-item" id="nav-recurring">
+                <i class="fas fa-sync-alt"></i> Tugas Berulang Otomatis
+            </div>
+            <div class="nav-item" id="nav-completed">
+                <i class="far fa-check-circle"></i> Selesai
+            </div>
+
+            <div class="divider"></div>
+            <div class="list-section-title">Grup / List</div>
+            <div id="custom-sidebar-lists"></div>
+
+            <div class="create-list-btn" id="btnCreateNewList">
+                <i class="fas fa-plus"></i> New List
+            </div>
+        </div>
+
+        <!-- MAIN DASHBOARD CONTENT -->
+        <div class="main-content custom-scroll">
+            <div class="header-area">
+                <div class="header-title-wrapper">
+                    <div class="header-title" id="current-list-title">Semua Tugas</div>
+                </div>
+                
+                <div class="header-controls">
+                    <!-- SEARCH BOX DISAMPING TOMBOL SORT DUE -->
+                    <div class="header-search-box">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="taskLocalSearchInput" placeholder="Cari tugas...">
+                        <button id="btnClearLocalSearch" class="clear-btn">✕</button>
+                    </div>
+
+                    <!-- TOMBOL SORT BY DUE DATE -->
+                    <button class="sort-btn" id="btnSortOrder" title="Urutkan Berdasarkan Batas Waktu">
+                        <i class="fas fa-sort-amount-down-alt" id="sort-icon"></i>
+                        <span id="sort-text">Due (A-Z)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <i class="fas fa-plus"></i>
+                <input type="text" class="task-input" id="task-input" placeholder="Tambah Tugas Baru...">
+                <button class="add-btn" id="btnAddTask">Tambah</button>
+            </div>
+
+            <div class="task-list" id="active-task-list-container"></div>
+            
+            <div id="completed-section" style="display: none;">
+                <button class="completed-toggle-btn" id="btnToggleCompleted">
+                    <i class="fas fa-chevron-right" id="completed-toggle-icon"></i>
+                    <span id="completed-toggle-text">Tampilkan tugas selesai</span>
+                </button>
+                <div class="task-list" id="completed-task-list-container" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- PANEL DETAIL & EDIT TUGAS (RIGHT SIDE) -->
+        <div id="detailPanel" class="detail-panel">
+            <div class="panel-header">
+                <h3>Detail & Edit Tugas</h3>
+                <span class="close-btn" id="btnCloseDetailPanel">&times;</span>
+            </div>
+            <div class="panel-body custom-scroll">
+                <input type="hidden" id="edit-task-id">
+                <div class="form-group">
+                    <label>Judul Tugas</label>
+                    <input type="text" id="edit-task-title" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Batas Waktu (Deadline)</label>
+                    <input type="date" id="edit-task-due" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Selesai (Completion)</label>
+                    <input type="date" id="edit-task-completion" class="form-control" readonly style="opacity: 0.7;">
+                </div>
+                <div class="form-group">
+                    <label>Pengulangan Otomatis</label>
+                    <select id="edit-task-repeat" class="form-control">
+                        <option value="none">Tidak Berulang</option>
+                        <option value="daily">Setiap Hari</option>
+                        <option value="weekly">Setiap Minggu</option>
+                        <option value="monthly">Setiap Bulan</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pindahkan ke List / Grup</label>
+                    <select id="edit-task-list" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>Catatan Tambahan</label>
+                    <textarea id="edit-task-note" class="form-control" rows="8" style="resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <button class="btn btn-secondary" id="btnCancelDetailPanel">Batal</button>
+                <button class="btn btn-primary" id="btnSaveDetailPanel">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL BUAT LIST / GRUP -->
+    <div id="newListModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Buat List / Grup Baru</h2>
+                <span class="close-btn" id="btnCloseNewListModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nama List / Grup Baru</label>
+                    <input type="text" id="new-list-name" class="form-control" placeholder="Contoh: Teknis Listrik, Sipil, Admin..." autocomplete="off">
+                </div>
+                
+                <div class="form-group" id="group-method-section">
+                    <label>Metode Pengisian Tugas Pertama</label>
+                    <div class="method-options">
+                        <div class="method-card" id="cardMethodMove">
+                            <input type="radio" name="list-method" id="method-move" value="1" checked>
+                            <div class="method-details">
+                                <h4>Pindahkan Tugas yang Sudah Ada</h4>
+                                <p>Memilih salah satu tugas mandiri saat ini untuk dimasukkan ke grup baru.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="method-card" id="cardMethodNew">
+                            <input type="radio" name="list-method" id="method-new" value="2">
+                            <div class="method-details">
+                                <h4>Buat Tugas Baru Langsung</h4>
+                                <p>Membuat item tugas kosong baru di dalam lingkup grup ini.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group" id="sub-select-task-group" style="display:none;">
+                    <label>Pilih Tugas Mandiri Tersedia</label>
+                    <select id="new-list-task-select" class="form-control"></select>
+                </div>
+
+                <div class="form-group" id="sub-input-task-group" style="display:none;">
+                    <label>Judul Tugas Baru di List Ini</label>
+                    <input type="text" id="new-list-task-title" class="form-control" placeholder="Ketik nama tugas...">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelNewListModal">Batal</button>
+                <button class="btn btn-primary" id="btnSubmitNewList">Proses Buat List</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT NAMA LIST -->
+    <div id="editListModal" class="modal">
+        <div class="modal-content" style="width: 400px;">
+            <div class="modal-header">
+                <h2>Edit Nama List / Grup</h2>
+                <span class="close-btn" id="btnCloseEditListModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="old-list-name">
+                <div class="form-group">
+                    <label>Nama List Baru</label>
+                    <input type="text" id="edit-list-name-input" class="form-control" placeholder="Ubah nama list..." autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelEditListModal">Batal</button>
+                <button class="btn btn-primary" id="btnSubmitRenameList">Simpan Nama</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS LIST -->
+    <div id="deleteListModal" class="modal">
+        <div class="modal-content" style="width: 440px;">
+            <div class="modal-header">
+                <h2>Hapus List / Grup</h2>
+                <span class="close-btn" id="btnCloseDeleteListModal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="delete-list-message" style="font-size: 13px; margin-bottom: 14px; color: var(--text-color);"></p>
+                
+                <div class="form-group">
+                    <label>Pilih Opsi Penghapusan:</label>
+                    <div class="method-options">
+                        <div class="method-card" id="cardDelOptKeep">
+                            <input type="radio" name="delete-list-option" id="del-opt-keep" value="keep" checked>
+                            <div class="method-details">
+                                <h4>Hapus List Sahaja</h4>
+                                <p>Tugas di dalam list ini akan tetap ada (berubah menjadi tanpa grup/tugas mandiri).</p>
+                            </div>
+                        </div>
+                        
+                        <div class="method-card" id="cardDelOptAll">
+                            <input type="radio" name="delete-list-option" id="del-opt-all" value="all">
+                            <div class="method-details">
+                                <h4 style="color: #ef4444;">Hapus List Beserta Seluruh Tugasnya</h4>
+                                <p>Semua tugas yang ada di dalam list ini akan ikut dihapus secara permanen.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelDeleteListModal">Batal</button>
+                <button class="btn btn-primary" style="background-color: #ef4444;" id="btnConfirmDeleteList">Hapus List</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMPORT SCRIPT TEMPLATE HEADER TERPUSAT & UTAMA TASKS -->
+    <script src="header-template.js"></script>
+    <script src="tasks.js"></script>
+</body>
+</html>
