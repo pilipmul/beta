@@ -992,13 +992,6 @@ async function exportToPDF() {
       ctx.lineWidth = 2;
       ctx.strokeStyle = strokeColor;
       ctx.stroke();
-
-      // Gambar Teks Nomor Tenant di Dalam Marker
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 12px Roboto, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(t.no), xPx, yPx);
     });
 
     // 5. Ekspor Canvas ke PDF menggunakan jsPDF
