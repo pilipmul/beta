@@ -994,7 +994,6 @@ async function exportToPDF() {
       ctx.stroke();
     });
 
-    // 5. Ekspor Canvas ke PDF menggunakan jsPDF
     const imgData = canvas.toDataURL('image/jpeg', 0.92);
     const { jsPDF } = window.jspdf;
 
