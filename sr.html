@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumentasi Perbaikan - SOT</title>
+
+  <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
+  <script>
+    (function checkAuth() {
+      const userSessionString = localStorage.getItem("user");
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+      try {
+        const userData = JSON.parse(userSessionString);
+        if (!userData) {
+          window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+        }
+      } catch (err) {
+        window.location.replace("login.html");
+      }
+    })();
+  </script>
+
+  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
+  <link rel="stylesheet" href="global-header.css">
+
+  <!-- Tailwind CSS v4 Browser Build & Fonts -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      font-family: 'Roboto', sans-serif;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    input[type="checkbox"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 0.875rem;
+      height: 0.875rem;
+      border-radius: 9999px !important;
+      border: 1px solid #dadce0;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease-in-out;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    input[type="checkbox"]:checked {
+      background-color: #1a73e8;
+      border-color: #1a73e8;
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      width: 3.5px;
+      height: 7px;
+      border: solid white;
+      border-width: 0 1.5px 1.5px 0;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      input[type="checkbox"] { border-color: #5f6368; }
+      input[type="checkbox"]:checked { background-color: #8ab4f8; border-color: #8ab4f8; }
+      input[type="checkbox"]:checked::after { border-color: #121212; }
+    }
+
+    .floating-scroll-area {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.5); }
+    .custom-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+    @media (prefers-color-scheme: dark) {
+      .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); }
+      .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+    }
+
+    #global-header {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #global-header > * { pointer-events: auto; }
+    #global-header aside, #global-header .sidebar {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+
+  <!-- SUPABASE JS SDK VIA CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen h-[100dvh] font-['Roboto',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <div id="global-header"></div>
+
+  <div id="main-content" class="flex-1 w-full h-full flex flex-col overflow-hidden">
+    
+    <!-- HEADER RESPONSIVE -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
+      <div class="flex items-center gap-1.5 shrink-0">
+        <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Dokumentasi Perbaikan</h2>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
+        <!-- Total Laporan: Tampil di Desktop (Sebelah Kiri Search), Hilang di Mobile -->
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap hidden sm:inline-block">
+          Total Laporan: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+        <!-- Search Bar -->
+        <div class="relative flex items-center w-full max-w-[150px] xs:max-w-[180px] sm:max-w-64">
+          <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
+                 placeholder="Cari perbaikan..." 
+                 class="w-full h-7 sm:h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+        </div>
+
+        <!-- Hamburger Menu Button -->
+        <div class="relative flex items-center shrink-0">
+          <button type="button" id="hamburgerBtn" onclick="toggleHamburgerMenu(event)" class="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-48 sm:w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+            <div id="custom-hamburger-content"></div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-2 sm:p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+          <div class="bg-white dark:bg-[#1e1e1e] rounded-xl sm:rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative">
+            
+            <!-- TABLE CONTAINER (TABLE-FIXED DENGAN MIN WIDTH) -->
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs table-fixed min-w-[700px]">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th scope="col" class="p-2.5 w-[8%] relative text-center">
+                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">No</span><button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[20%] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Objek</span><button id="btn-filter-subject" onclick="toggleFilterMenu('subject', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[15%] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Item</span><button id="btn-filter-item" onclick="toggleFilterMenu('item', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[15%] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Tanggal</span><button id="btn-filter-date" onclick="toggleFilterMenu('date', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[30%] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Catatan</span><button id="btn-filter-notes" onclick="toggleFilterMenu('notes', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[12%] text-center relative">
+                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">Dokumentasi</span></div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr>
+                    <td colspan="6" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Filter Popover -->
+            <div id="filterPopover" class="fixed hidden z-[10005] w-56 sm:w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+              <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+                <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↑</span> A-Z
+                </button>
+                <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↓</span> Z-A
+                </button>
+              </div>
+
+              <div class="space-y-2 normal-case">
+                <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                       class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+                
+                <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" />
+                    Pilih Semua
+                  </label>
+                  <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
+                </div>
+
+                <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
+                </div>
+
+                <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+                  <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+                  <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAGINATION BAR -->
+            <div class="flex flex-col sm:flex-row justify-between items-center p-2.5 sm:p-3 bg-[#f8f9fa] dark:bg-[#252525] border-t border-[#dadce0] dark:border-[#3c4043] text-xs gap-2 sm:gap-3">
+              <span id="pageInfo" class="text-[#5f6368] dark:text-[#9aa0a6] text-[11px] sm:text-xs">Menampilkan 0 data</span>
+              
+              <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-1 text-[#5f6368] dark:text-[#9aa0a6]">
+                  <span>Hal:</span>
+                  <input type="number" id="jumpPageInput" min="1" 
+                         onkeydown="if(event.key==='Enter') jumpToPage()"
+                         class="w-10 sm:w-12 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-1 py-0.5 text-center text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8]" />
+                  <span id="totalPagesText">/ 1</span>
+                  <button onclick="jumpToPage()" 
+                          class="px-2 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-lg font-medium transition cursor-pointer">
+                    Go
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <button id="btnHome" onclick="goToHome()" title="Halaman Pertama"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    |&lt;
+                  </button>
+                  <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    &lt;
+                  </button>
+                  <button id="btnNext" onclick="changePage(1)" title="Berikutnya"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    &gt;
+                  </button>
+                  <button id="btnEnd" onclick="goToEnd()" title="Halaman Terakhir"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    &gt;|
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- MODAL FORM CRUD -->
+  <div id="crudModal" class="fixed inset-0 bg-black/60 z-[10005] hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1e1e1e] max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043] max-h-[90dvh] flex flex-col">
+      <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 sm:px-6 py-3.5 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center shrink-0">
+        <h3 id="formModalTitle" class="font-bold text-sm sm:text-base">Add Report</h3>
+        <button onclick="closeFormModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+      </div>
+      <form id="logbookForm" onsubmit="handleFormSubmit(event)" class="p-4 sm:p-6 space-y-3.5 text-xs overflow-y-auto custom-scroll flex-1">
+        <input type="hidden" id="logbookId">
+        
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Nama Objek / Deskripsi</label>
+          <input type="text" id="inputObjek" required placeholder="Contoh: AC Ruang Rapat Lt. 2" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Item / Perangkat</label>
+            <input type="text" id="inputItem" placeholder="Contoh: Lampu" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tanggal Perbaikan</label>
+            <input type="date" id="inputTanggal" required class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Catatan / Notes</label>
+          <textarea id="inputNotes" rows="2" placeholder="Tambahkan catatan perbaikan..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Foto Before</label>
+          <div id="dropzoneBefore" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-lg p-3 sm:p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-[#f8f9fa] dark:hover:bg-[#252525] transition relative">
+            <input type="file" id="fileBefore" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'before')">
+            <div id="previewContainerBefore" class="hidden flex items-center justify-between bg-[#f1f3f4] dark:bg-[#2d2d2d] p-2 rounded-lg">
+              <img id="imgPreviewBefore" class="h-12 w-12 object-cover rounded-md" src="" alt="Before Preview">
+              <span id="fileNameBefore" class="text-xs text-[#202124] dark:text-[#e8eaed] truncate max-w-[150px] sm:max-w-[180px]"></span>
+              <button type="button" onclick="removeSelectedFile('before')" class="text-red-500 font-bold text-sm px-2 cursor-pointer">&times;</button>
+            </div>
+            <div id="placeholderBefore" onclick="document.getElementById('fileBefore').click()">
+              <svg class="w-6 h-6 mx-auto text-[#5f6368] dark:text-[#9aa0a6] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Klik / Seret foto ke sini</p>
+            </div>
+          </div>
+          <input type="hidden" id="inputFotoBefore">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Foto After</label>
+          <div id="dropzoneAfter" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] rounded-lg p-3 sm:p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-[#f8f9fa] dark:hover:bg-[#252525] transition relative">
+            <input type="file" id="fileAfter" accept="image/*" class="hidden" onchange="handleFileSelect(event, 'after')">
+            <div id="previewContainerAfter" class="hidden flex items-center justify-between bg-[#f1f3f4] dark:bg-[#2d2d2d] p-2 rounded-lg">
+              <img id="imgPreviewAfter" class="h-12 w-12 object-cover rounded-md" src="" alt="After Preview">
+              <span id="fileNameAfter" class="text-xs text-[#202124] dark:text-[#e8eaed] truncate max-w-[150px] sm:max-w-[180px]"></span>
+              <button type="button" onclick="removeSelectedFile('after')" class="text-red-500 font-bold text-sm px-2 cursor-pointer">&times;</button>
+            </div>
+            <div id="placeholderAfter" onclick="document.getElementById('fileAfter').click()">
+              <svg class="w-6 h-6 mx-auto text-[#5f6368] dark:text-[#9aa0a6] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Klik / Seret foto ke sini</p>
+            </div>
+          </div>
+          <input type="hidden" id="inputFotoAfter">
+        </div>
+
+        <div class="pt-3 flex justify-between items-center border-t border-[#f1f3f4] dark:border-[#3c4043] shrink-0">
+          <div>
+            <button type="button" id="btnDeleteModal" onclick="handleDeleteFromModal()" class="hidden px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              <span>Hapus</span>
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeFormModal()" class="px-3.5 sm:px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg text-xs font-semibold transition cursor-pointer">Batal</button>
+            <button type="submit" id="btnSaveSubmit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg text-xs font-semibold transition cursor-pointer">Simpan Data</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Preview Foto Dokumentasi -->
+  <div id="imageModal" class="fixed inset-0 bg-black/80 z-[10005] hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="relative max-w-3xl w-full bg-white dark:bg-[#1e1e1e] rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-[#dadce0] dark:border-[#3c4043]">
+      <div class="p-3 sm:p-4 border-b border-[#dadce0] dark:border-[#3c4043] flex justify-between items-center bg-[#f8f9fa] dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed]">
+        <div>
+          <h3 id="modalTitle" class="font-bold text-xs sm:text-sm">Preview Dokumentasi</h3>
+          <span id="modalStatusBadge" class="mt-1 inline-block bg-blue-600 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wider">BEFORE</span>
+        </div>
+        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white transition cursor-pointer text-xl font-bold">&times;</button>
+      </div>
+      <div class="p-2 relative flex justify-center items-center bg-[#f1f3f4] dark:bg-[#121212] min-h-[40vh] max-h-[75vh]">
+        <button id="prevBtn" onclick="changeSlide('before')" class="absolute left-2 sm:left-4 z-10 bg-black/50 hover:bg-black/80 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed">&lt;</button>
+        <img id="modalImage" src="" alt="Dokumentasi Perbaikan" class="max-w-full max-h-[70vh] object-contain rounded-lg">
+        <button id="nextBtn" onclick="changeSlide('after')" class="absolute right-2 sm:right-4 z-10 bg-black/50 hover:bg-black/80 text-white w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-base sm:text-lg transition cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed">&gt;</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="header-template.js"></script>
+  <script src="sr.js"></script>
+</body>
+</html>
