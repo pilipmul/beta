@@ -64,7 +64,6 @@ function toggleDropdownMenu(containerId, e) {
   if (e) e.stopPropagation();
   const target = document.getElementById(containerId);
   
-  // Tutup dropdown lain yang sedang terbuka
   document.querySelectorAll('.dropdown-container').forEach(el => {
     if (el.id !== containerId) el.classList.remove('is-open');
   });
@@ -152,7 +151,6 @@ document.addEventListener('click', (e) => {
   const dropdown = document.getElementById('customDropdownMenu');
   const floatingCard = document.getElementById('floating-detail-card');
 
-  // Tutup dropdown seluler jika klik diluar area dropdown
   if (!e.target.closest('.dropdown-container')) {
     closeAllDropdowns();
   }
@@ -181,20 +179,18 @@ function switchFloor(floorKey) {
   closeFloatingCard();
   closeAllDropdowns();
 
-  const labelEl = document.getElementById('current-floor-label');
-  if (labelEl) {
-    labelEl.innerText = FLOOR_LABELS[floorKey] || 'Basement';
-  }
+  document.querySelectorAll('.current-floor-label').forEach(el => {
+    el.innerText = FLOOR_LABELS[floorKey] || 'Basement';
+  });
 
   ['basement', 'dasar', 'satu', 'dua', 'rooftop'].forEach(f => {
-    const tab = document.getElementById(`tab-floor-${f}`);
-    if (tab) {
+    document.querySelectorAll(`.tab-floor-${f}`).forEach(tab => {
       if (f === floorKey) {
-        tab.className = "w-full text-left px-3 py-2 font-semibold text-[#1a73e8] dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center justify-between";
+        tab.className = `tab-floor-${f} w-full text-left px-3 py-2 font-semibold text-[#1a73e8] dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center justify-between`;
       } else {
-        tab.className = "w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between";
+        tab.className = `tab-floor-${f} w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between`;
       }
-    }
+    });
   });
 
   const denahImg = document.getElementById('denah-img');
@@ -212,28 +208,40 @@ function setActiveCategory(cat) {
   closeFloatingCard();
   closeAllDropdowns();
 
-  const mainBtn = document.getElementById('category-dropdown-btn');
-  const labelEl = document.getElementById('current-category-label');
-  const btnTenant = document.getElementById('btn-cat-tenant');
-  const btnHse = document.getElementById('btn-cat-hse');
   const tLayer = document.getElementById('marker-tenant-layer');
   const hLayer = document.getElementById('marker-hse-layer');
 
   if (cat === 'tenant') {
-    if (mainBtn) mainBtn.className = "bg-blue-600 text-white border border-blue-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition";
-    if (labelEl) labelEl.innerHTML = `<i class="fa-solid fa-store text-[10px]"></i> Tenant`;
+    document.querySelectorAll('.category-dropdown-btn').forEach(btn => {
+      btn.className = "category-dropdown-btn bg-blue-600 text-white border border-blue-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition";
+    });
+    document.querySelectorAll('.current-category-label').forEach(el => {
+      el.innerHTML = `<i class="fa-solid fa-store text-[10px]"></i> Tenant`;
+    });
     
-    if (btnTenant) btnTenant.className = "w-full text-left px-3 py-2 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center gap-2";
-    if (btnHse) btnHse.className = "w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
+    document.querySelectorAll('.btn-cat-tenant').forEach(btn => {
+      btn.className = "btn-cat-tenant w-full text-left px-3 py-2 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center gap-2";
+    });
+    document.querySelectorAll('.btn-cat-hse').forEach(btn => {
+      btn.className = "btn-cat-hse w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
+    });
 
     if (tLayer) tLayer.style.display = 'block';
     if (hLayer) hLayer.style.display = 'none';
   } else {
-    if (mainBtn) mainBtn.className = "bg-emerald-600 text-white border border-emerald-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition";
-    if (labelEl) labelEl.innerHTML = `<i class="fa-solid fa-shield-halved text-[10px]"></i> HSE`;
+    document.querySelectorAll('.category-dropdown-btn').forEach(btn => {
+      btn.className = "category-dropdown-btn bg-emerald-600 text-white border border-emerald-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition";
+    });
+    document.querySelectorAll('.current-category-label').forEach(el => {
+      el.innerHTML = `<i class="fa-solid fa-shield-halved text-[10px]"></i> HSE`;
+    });
 
-    if (btnHse) btnHse.className = "w-full text-left px-3 py-2 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 transition cursor-pointer flex items-center gap-2";
-    if (btnTenant) btnTenant.className = "w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
+    document.querySelectorAll('.btn-cat-hse').forEach(btn => {
+      btn.className = "btn-cat-hse w-full text-left px-3 py-2 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 transition cursor-pointer flex items-center gap-2";
+    });
+    document.querySelectorAll('.btn-cat-tenant').forEach(btn => {
+      btn.className = "btn-cat-tenant w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
+    });
 
     if (tLayer) tLayer.style.display = 'none';
     if (hLayer) hLayer.style.display = 'block';
@@ -275,7 +283,7 @@ function setAppMode(mode) {
 }
 
 // ==========================================
-// MAP TRANSFORM ENGINE (PAN / ZOOM / ROTATE)
+// MAP TRANSFORM ENGINE (PAN / PINCH-ZOOM / ROTATE)
 // ==========================================
 function initMapControls() {
   const viewport = document.getElementById('viewport');
@@ -310,35 +318,65 @@ function initMapControls() {
     }
   });
 
+  // GESTUR PINCH & TOUCH FIX UNTUK MOBILE
   viewport.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
+      isDraggingMap = false;
       initialPinchDistance = getTouchDistance(e.touches);
       initialScale = scale;
     } else if (e.touches.length === 1 && !isPlacingMode) {
+      if (e.target.closest('.circle-marker') || e.target.closest('.hse-marker') || e.target.closest('#floating-detail-card')) return;
       isDraggingMap = true;
       startMouseX = e.touches[0].clientX - panX;
       startMouseY = e.touches[0].clientY - panY;
     }
-  }, { passive: true });
+  }, { passive: false });
 
   viewport.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2 && initialPinchDistance) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
       const currentDist = getTouchDistance(e.touches);
-      const factor = currentDist / initialPinchDistance;
-      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      zoomAtPoint(factor, centerX, centerY, true);
-      initialPinchDistance = currentDist;
+      if (initialPinchDistance && initialPinchDistance > 0) {
+        const factor = currentDist / initialPinchDistance;
+        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        
+        let targetScale = initialScale * factor;
+        targetScale = Math.max(0.05, Math.min(10, targetScale));
+        
+        zoomAtPoint(targetScale / scale, centerX, centerY);
+      }
     } else if (e.touches.length === 1 && isDraggingMap) {
       panX = e.touches[0].clientX - startMouseX;
       panY = e.touches[0].clientY - startMouseY;
       requestUpdateMapTransform();
     }
-  }, { passive: true });
+  }, { passive: false });
 
-  viewport.addEventListener('touchend', () => {
-    initialPinchDistance = null;
-    isDraggingMap = false;
+  viewport.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      initialPinchDistance = null;
+    }
+    if (e.touches.length === 0) {
+      isDraggingMap = false;
+      clampBoundaries();
+    }
+  });
+
+  viewport.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+    initialScale = scale;
+  });
+
+  viewport.addEventListener('gesturechange', (e) => {
+    e.preventDefault();
+    let targetScale = initialScale * e.scale;
+    targetScale = Math.max(0.05, Math.min(10, targetScale));
+    zoomAtPoint(targetScale / scale, e.clientX, e.clientY);
+  });
+
+  viewport.addEventListener('gestureend', (e) => {
+    e.preventDefault();
     clampBoundaries();
   });
 
@@ -373,10 +411,10 @@ function initMapControls() {
 function getTouchDistance(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
+  return Math.hypot(dx, dy);
 }
 
-function zoomAtPoint(factor, clientX, clientY, isAbsoluteFactor = false) {
+function zoomAtPoint(factor, clientX, clientY) {
   const viewport = document.getElementById('viewport');
   if (!viewport) return;
 
@@ -385,7 +423,7 @@ function zoomAtPoint(factor, clientX, clientY, isAbsoluteFactor = false) {
   const mouseY = (clientY !== undefined) ? (clientY - vRect.top) : (vRect.height / 2);
 
   const oldScale = scale;
-  let newScale = isAbsoluteFactor ? factor : scale * factor;
+  let newScale = scale * factor;
   newScale = Math.max(0.05, Math.min(10, newScale));
 
   if (newScale === oldScale) return;
