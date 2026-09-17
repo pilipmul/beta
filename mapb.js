@@ -79,7 +79,7 @@ async function showTenantDetailPopup(noTenant) {
     }
 
     contentContainer.innerHTML = `
-      <!-- Header Popup Tenant -->
+      <!-- Header Popup Tenant dengan Nomor di Header -->
       <div class="flex items-start justify-between border-b border-slate-200 dark:border-zinc-800 pb-2 mb-3">
         <div class="pr-2 min-w-0">
           <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block">
@@ -96,12 +96,6 @@ async function showTenantDetailPopup(noTenant) {
 
       <!-- Detail Informasi Tabel Tenant -->
       <div class="space-y-2 text-xs text-slate-700 dark:text-slate-300 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto custom-scroll pr-1">
-        
-        <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
-          <span class="text-slate-400 font-medium">No. Database</span>
-          <span class="font-mono font-semibold text-blue-600 dark:text-blue-400">#${data.no}</span>
-        </div>
-
         <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
           <span class="text-slate-400 font-medium">Status</span>
           <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor}">
@@ -138,7 +132,6 @@ async function showTenantDetailPopup(noTenant) {
           <span class="text-slate-400 font-medium">Validasi</span>
           <span class="font-medium">${escapeHtml(data.validasi || '-')}</span>
         </div>
-
       </div>
     `;
 
