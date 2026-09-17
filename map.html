@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Denah Interaktif & Plotter - SOT</title>
 
   <!-- PROTEKSI LOGIN INSTAN -->
@@ -229,57 +229,60 @@
     <!-- HEADER UTAMA SOT STYLE -->
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between shrink-0 gap-2 overflow-visible">
       
-      <!-- INTEGRASI JUDUL, DROPDOWN LANTAI & KATEGORI -->
+      <!-- INTEGRASI JUDUL & DROPDOWN DESKTOP -->
       <div class="flex items-center gap-2 sm:gap-4 overflow-visible py-0.5">
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed] whitespace-nowrap">
           Denah Interaktif
         </h2>
 
-        <!-- DROPDOWN LANTAI (HOVER & TOUCH FRIENDLY) -->
-        <div class="relative dropdown-container shrink-0" id="dropdown-floor-container">
-          <button id="floor-dropdown-btn" type="button" onclick="toggleDropdownMenu('dropdown-floor-container', event)" class="bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] px-3 py-1 rounded-lg text-xs font-semibold text-[#202124] dark:text-[#e8eaed] flex items-center gap-2 shadow-xs cursor-pointer hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] transition">
-            <span id="current-floor-label">Basement</span>
-            <i class="fa-solid fa-chevron-down text-[10px] text-[#5f6368] dark:text-[#9aa0a6]"></i>
-          </button>
+        <!-- TAMPIL DI HEADER HANYA PADA DESKTOP (>= sm) -->
+        <div class="hidden sm:flex items-center gap-2 overflow-visible">
+          <!-- DROPDOWN LANTAI (DESKTOP) -->
+          <div class="relative dropdown-container shrink-0" id="dropdown-floor-container">
+            <button type="button" onclick="toggleDropdownMenu('dropdown-floor-container', event)" class="bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] px-3 py-1 rounded-lg text-xs font-semibold text-[#202124] dark:text-[#e8eaed] flex items-center gap-2 shadow-xs cursor-pointer hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] transition">
+              <span class="current-floor-label">Basement</span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-[#5f6368] dark:text-[#9aa0a6]"></i>
+            </button>
 
-          <div class="dropdown-menu absolute left-0 top-full pt-1 w-32 hidden z-[99999]">
-            <div class="bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg shadow-xl overflow-hidden py-1 text-xs">
-              <button onclick="switchFloor('basement')" id="tab-floor-basement" type="button" class="w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
-                <span>Basement</span>
-              </button>
-              <button onclick="switchFloor('dasar')" id="tab-floor-dasar" type="button" class="w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
-                <span>Dasar</span>
-              </button>
-              <button onclick="switchFloor('satu')" id="tab-floor-satu" type="button" class="w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
-                <span>Lt 1</span>
-              </button>
-              <button onclick="switchFloor('dua')" id="tab-floor-dua" type="button" class="w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
-                <span>Lt 2</span>
-              </button>
-              <button onclick="switchFloor('rooftop')" id="tab-floor-rooftop" type="button" class="w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
-                <span>Rooftop</span>
-              </button>
+            <div class="dropdown-menu absolute left-0 top-full pt-1 w-32 hidden z-[99999]">
+              <div class="bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg shadow-xl overflow-hidden py-1 text-xs">
+                <button onclick="switchFloor('basement')" type="button" class="tab-floor-basement w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                  <span>Basement</span>
+                </button>
+                <button onclick="switchFloor('dasar')" type="button" class="tab-floor-dasar w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                  <span>Dasar</span>
+                </button>
+                <button onclick="switchFloor('satu')" type="button" class="tab-floor-satu w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                  <span>Lt 1</span>
+                </button>
+                <button onclick="switchFloor('dua')" type="button" class="tab-floor-dua w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                  <span>Lt 2</span>
+                </button>
+                <button onclick="switchFloor('rooftop')" type="button" class="tab-floor-rooftop w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                  <span>Rooftop</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- DROPDOWN KATEGORI TENANT / HSE (HOVER & TOUCH FRIENDLY) -->
-        <div class="relative dropdown-container shrink-0" id="dropdown-category-container">
-          <button id="category-dropdown-btn" type="button" onclick="toggleDropdownMenu('dropdown-category-container', event)" class="bg-blue-600 text-white border border-blue-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition">
-            <span id="current-category-label" class="flex items-center gap-1.5">
-              <i class="fa-solid fa-store text-[10px]"></i> Tenant
-            </span>
-            <i class="fa-solid fa-chevron-down text-[10px] text-white/80"></i>
-          </button>
-
-          <div class="dropdown-menu absolute left-0 top-full pt-1 w-32 hidden z-[99999]">
-            <div class="bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg shadow-xl overflow-hidden py-1 text-xs">
-              <button onclick="setActiveCategory('tenant')" id="btn-cat-tenant" type="button" class="w-full text-left px-3 py-2 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center gap-2">
+          <!-- DROPDOWN KATEGORI (DESKTOP) -->
+          <div class="relative dropdown-container shrink-0" id="dropdown-category-container">
+            <button type="button" onclick="toggleDropdownMenu('dropdown-category-container', event)" class="category-dropdown-btn bg-blue-600 text-white border border-blue-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition">
+              <span class="current-category-label flex items-center gap-1.5">
                 <i class="fa-solid fa-store text-[10px]"></i> Tenant
-              </button>
-              <button onclick="setActiveCategory('hse')" id="btn-cat-hse" type="button" class="w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2">
-                <i class="fa-solid fa-shield-halved text-[10px]"></i> HSE
-              </button>
+              </span>
+              <i class="fa-solid fa-chevron-down text-[10px] text-white/80"></i>
+            </button>
+
+            <div class="dropdown-menu absolute left-0 top-full pt-1 w-32 hidden z-[99999]">
+              <div class="bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg shadow-xl overflow-hidden py-1 text-xs">
+                <button onclick="setActiveCategory('tenant')" type="button" class="btn-cat-tenant w-full text-left px-3 py-2 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center gap-2">
+                  <i class="fa-solid fa-store text-[10px]"></i> Tenant
+                </button>
+                <button onclick="setActiveCategory('hse')" type="button" class="btn-cat-hse w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2">
+                  <i class="fa-solid fa-shield-halved text-[10px]"></i> HSE
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -350,20 +353,79 @@
           <div id="floating-detail-content"></div>
         </div>
 
-        <!-- KONTROL ZOOM & ROTATE -->
-        <div class="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-30 flex flex-col bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-lg overflow-hidden">
-          <button onclick="zoomIn()" title="Zoom In" class="p-2 sm:p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white border-b border-[#dadce0] dark:border-[#3c4043] transition cursor-pointer">
-            <i class="fa-solid fa-plus text-xs"></i>
-          </button>
-          <button onclick="rotateMap()" title="Putar Denah (90°)" class="p-2 sm:p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white border-b border-[#dadce0] dark:border-[#3c4043] transition cursor-pointer">
-            <i class="fa-solid fa-rotate-right text-xs"></i>
-          </button>
-          <button onclick="resetZoomToFit()" title="Reset Zoom Out Maksimal" class="px-2 sm:px-2.5 py-1.5 sm:py-2 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#1a73e8] dark:text-[#8ab4f8] border-b border-[#dadce0] dark:border-[#3c4043] text-[10px] font-bold transition cursor-pointer">
-            RESET
-          </button>
-          <button onclick="zoomOut()" title="Zoom Out" class="p-2 sm:p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white transition cursor-pointer">
-            <i class="fa-solid fa-minus text-xs"></i>
-          </button>
+        <!-- PANEL FLOATING SISI KANAN LAYAR (MOBILE DROPDOWNS & ZOOM CONTROLS) -->
+        <div class="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-30 flex flex-col items-end gap-2">
+          
+          <!-- DROPDOWN KHUSUS MOBILE (HANYA TAMPIL DI < sm) -->
+          <div class="flex sm:hidden flex-col items-end gap-2 mb-1">
+            
+            <!-- DROPDOWN KATEGORI (MOBILE) -->
+            <div class="relative dropdown-container shrink-0" id="dropdown-category-mobile-container">
+              <button type="button" onclick="toggleDropdownMenu('dropdown-category-mobile-container', event)" class="category-dropdown-btn bg-blue-600 text-white border border-blue-600 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg cursor-pointer transition">
+                <span class="current-category-label flex items-center gap-1.5">
+                  <i class="fa-solid fa-store text-[10px]"></i> Tenant
+                </span>
+                <i class="fa-solid fa-chevron-down text-[10px] text-white/80"></i>
+              </button>
+
+              <div class="dropdown-menu absolute right-0 bottom-full mb-1 w-32 hidden z-[99999]">
+                <div class="bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-2xl overflow-hidden py-1 text-xs">
+                  <button onclick="setActiveCategory('tenant')" type="button" class="btn-cat-tenant w-full text-left px-3 py-2 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center gap-2">
+                    <i class="fa-solid fa-store text-[10px]"></i> Tenant
+                  </button>
+                  <button onclick="setActiveCategory('hse')" type="button" class="btn-cat-hse w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2">
+                    <i class="fa-solid fa-shield-halved text-[10px]"></i> HSE
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- DROPDOWN LANTAI (MOBILE) -->
+            <div class="relative dropdown-container shrink-0" id="dropdown-floor-mobile-container">
+              <button type="button" onclick="toggleDropdownMenu('dropdown-floor-mobile-container', event)" class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] px-3 py-1.5 rounded-xl text-xs font-semibold text-[#202124] dark:text-[#e8eaed] flex items-center gap-2 shadow-lg cursor-pointer transition">
+                <span class="current-floor-label">Basement</span>
+                <i class="fa-solid fa-chevron-down text-[10px] text-[#5f6368] dark:text-[#9aa0a6]"></i>
+              </button>
+
+              <div class="dropdown-menu absolute right-0 bottom-full mb-1 w-32 hidden z-[99999]">
+                <div class="bg-white dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-2xl overflow-hidden py-1 text-xs">
+                  <button onclick="switchFloor('basement')" type="button" class="tab-floor-basement w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                    <span>Basement</span>
+                  </button>
+                  <button onclick="switchFloor('dasar')" type="button" class="tab-floor-dasar w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                    <span>Dasar</span>
+                  </button>
+                  <button onclick="switchFloor('satu')" type="button" class="tab-floor-satu w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                    <span>Lt 1</span>
+                  </button>
+                  <button onclick="switchFloor('dua')" type="button" class="tab-floor-dua w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                    <span>Lt 2</span>
+                  </button>
+                  <button onclick="switchFloor('rooftop')" type="button" class="tab-floor-rooftop w-full text-left px-3 py-2 font-medium transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between">
+                    <span>Rooftop</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- KONTROL ZOOM & ROTATE -->
+          <div class="flex flex-col bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-lg overflow-hidden">
+            <button onclick="zoomIn()" title="Zoom In" class="p-2 sm:p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white border-b border-[#dadce0] dark:border-[#3c4043] transition cursor-pointer">
+              <i class="fa-solid fa-plus text-xs"></i>
+            </button>
+            <button onclick="rotateMap()" title="Putar Denah (90°)" class="p-2 sm:p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white border-b border-[#dadce0] dark:border-[#3c4043] transition cursor-pointer">
+              <i class="fa-solid fa-rotate-right text-xs"></i>
+            </button>
+            <button onclick="resetZoomToFit()" title="Reset Zoom Out Maksimal" class="px-2 sm:px-2.5 py-1.5 sm:py-2 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#1a73e8] dark:text-[#8ab4f8] border-b border-[#dadce0] dark:border-[#3c4043] text-[10px] font-bold transition cursor-pointer">
+              RESET
+            </button>
+            <button onclick="zoomOut()" title="Zoom Out" class="p-2 sm:p-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-white transition cursor-pointer">
+              <i class="fa-solid fa-minus text-xs"></i>
+            </button>
+          </div>
+
         </div>
 
         <!-- INTERACTIVE MAP CANVAS -->
