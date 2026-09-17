@@ -280,7 +280,6 @@ async function showHSEDetailPopup(noHSE) {
 
   let item = hseData.find(h => h.no === noHSE);
 
-  // Jika data belum ada di state local, ambil langsung dari Supabase
   if (!item) {
     try {
       const { data, error } = await supabaseClient
@@ -324,7 +323,7 @@ async function showHSEDetailPopup(noHSE) {
   }
 
   contentContainer.innerHTML = `
-    <!-- Header Popup HSE dengan Nomor Database -->
+    <!-- Header Popup HSE dengan Nomor di Header -->
     <div class="flex items-start justify-between border-b border-slate-200 dark:border-zinc-800 pb-2 mb-3">
       <div class="pr-2 min-w-0">
         <div class="flex items-center gap-1.5 mb-1">
@@ -346,13 +345,6 @@ async function showHSEDetailPopup(noHSE) {
 
     <!-- Detail Informasi Tabel HSE -->
     <div class="space-y-2 text-xs text-slate-700 dark:text-slate-300 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto custom-scroll pr-1">
-      
-      <!-- BARIS NOMOR DATABASE -->
-      <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
-        <span class="text-slate-400 font-medium">No. Database</span>
-        <span class="font-mono font-semibold text-emerald-500">#${item.no}</span>
-      </div>
-
       <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
         <span class="text-slate-400 font-medium">Jenis</span>
         <span class="font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(item.jenis || '-')}</span>
