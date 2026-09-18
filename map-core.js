@@ -330,7 +330,7 @@ function setAppMode(mode) {
 }
 
 // ==========================================
-// MAP TRANSFORM ENGINE (SAMA PERSIS KODE AWAL)
+// MAP TRANSFORM ENGINE (PAN & ZOOM ENGINE)
 // ==========================================
 function initMapControls() {
   const viewport = document.getElementById('viewport');
@@ -432,7 +432,7 @@ function getTouchDistance(touches) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// LOGIKA DARI KODE AWAL
+// LOGIKA ZOOM FLEKSIBEL LENGKAP
 function zoomIn() { 
   zoomAtPoint(1.25); 
 }
@@ -446,8 +446,8 @@ function zoomAtPoint(factor, clientX, clientY, isAbsoluteFactor = false) {
   if (!viewport) return;
 
   const vRect = viewport.getBoundingClientRect();
-  const mouseX = (clientX !== undefined) ? (clientX - vRect.left) : (vRect.width / 2);
-  const mouseY = (clientY !== undefined) ? (clientY - vRect.top) : (vRect.height / 2);
+  const mouseX = (clientX !== undefined && clientX !== null) ? (clientX - vRect.left) : (vRect.width / 2);
+  const mouseY = (clientY !== undefined && clientY !== null) ? (clientY - vRect.top) : (vRect.height / 2);
 
   const oldScale = scale;
   let newScale = isAbsoluteFactor ? factor : scale * factor;
@@ -480,7 +480,6 @@ function clampBoundaries() {
   const scaledW = effWidth * scale;
   const scaledH = effHeight * scale;
 
-  // Nilai pembatas fleksibel persis kode awal
   const minX = vRect.width - scaledW - (vRect.width * 0.8);
   const maxX = vRect.width * 0.8;
   const minY = vRect.height - scaledH - (vRect.height * 0.8);
@@ -502,14 +501,13 @@ function resetZoomToFit() {
 
   if (!viewport || !img || !container) return;
 
-  // KEMBALIKAN TRANSFORM ORIGIN KE TENANG PERTAMA BUKA (KODE AWAL)
   container.style.transformOrigin = "0 0";
   const vRect = viewport.getBoundingClientRect();
 
-  let naturalW = img.naturalWidth || img.width;
-  let naturalH = img.naturalHeight || img.height;
+  let naturalW = img.naturalWidth || img.width || 800;
+  let naturalH = img.naturalHeight || img.height || 600;
 
-  if (!naturalW || !naturalH || vRect.width === 0 || vRect.height === 0) {
+  if (vRect.width === 0 || vRect.height === 0) {
     setTimeout(resetZoomToFit, 50);
     return;
   }
@@ -536,30 +534,12 @@ function requestUpdateMapTransform() {
   animFrameReq = requestAnimationFrame(updateMapTransform);
 }
 
+// FIX UTAMA: PERBAIKAN URUTAN TRANSFORMASI CSS (translate3d -> scale -> rotate)
 function updateMapTransform() {
   const container = document.getElementById('map-container');
   if (!container) return;
 
-  const img = document.getElementById('denah-img');
-  const w = (img && img.naturalWidth) ? img.naturalWidth : (img ? img.width : 800);
-  const h = (img && img.naturalHeight) ? img.naturalHeight : (img ? img.height : 600);
-
-  let offsetX = 0;
-  let offsetY = 0;
-
-  if (rotation === 90) {
-    offsetX = h * scale;
-  } else if (rotation === 180) {
-    offsetX = w * scale;
-    offsetY = h * scale;
-  } else if (rotation === 270) {
-    offsetY = w * scale;
-  }
-
-  const finalX = panX + offsetX;
-  const finalY = panY + offsetY;
-
-  container.style.transform = `translate3d(${finalX}px, ${finalY}px, 0px) rotate(${rotation}deg) scale(${scale})`;
+  container.style.transform = `translate3d(${panX}px, ${panY}px, 0px) scale(${scale}) rotate(${rotation}deg)`;
 }
 
 function onImageLoaded() {
