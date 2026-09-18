@@ -21,14 +21,6 @@ const FLOOR_LABELS = {
   rooftop: "Rooftop"
 };
 
-const FLOOR_SHORT_CODES = {
-  basement: "B",
-  dasar: "G",
-  satu: "1",
-  dua: "2",
-  rooftop: "R"
-};
-
 // ==========================================
 // STATE GLOBAL APP & MAP
 // ==========================================
@@ -38,7 +30,7 @@ let activeFilter = 'all';
 let isPlacingMode = false;
 let appMode = 'view';
 
-// Transformasi Kamera & Map (Murni Kode Awal)
+// Transformasi Kamera & Map
 let scale = 1;
 let panX = 0;
 let panY = 0;
@@ -53,7 +45,7 @@ let initialScale = 1;
 const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
 
 // ==========================================
-// HELPER PERMISSION, HAMBURGER & DROPDOWN
+// HELPER PERMISSION, HAMBURGER & DROPDOWN TOUCH
 // ==========================================
 function isSuperAdmin() {
   try {
@@ -191,27 +183,12 @@ function switchFloor(floorKey) {
     el.innerText = FLOOR_LABELS[floorKey] || 'Basement';
   });
 
-  const mobileActiveText = document.getElementById('mobile-floor-text-active');
-  if (mobileActiveText) {
-    mobileActiveText.innerText = FLOOR_SHORT_CODES[floorKey] || 'B';
-  }
-
   ['basement', 'dasar', 'satu', 'dua', 'rooftop'].forEach(f => {
     document.querySelectorAll(`.tab-floor-${f}`).forEach(tab => {
-      const isMobileBtn = tab.classList.contains('btn-floor-mobile');
-
       if (f === floorKey) {
-        if (isMobileBtn) {
-          tab.className = `btn-floor-mobile tab-floor-${f} w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer bg-blue-600 text-white font-bold shadow-sm`;
-        } else {
-          tab.className = `tab-floor-${f} w-full text-left px-3 py-2 font-semibold text-[#1a73e8] dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center justify-between`;
-        }
+        tab.className = `tab-floor-${f} w-full text-left px-3 py-2 font-semibold text-[#1a73e8] dark:text-[#8ab4f8] bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center justify-between`;
       } else {
-        if (isMobileBtn) {
-          tab.className = `btn-floor-mobile tab-floor-${f} w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer hover:bg-slate-100 dark:hover:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] font-bold`;
-        } else {
-          tab.className = `tab-floor-${f} w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between`;
-        }
+        tab.className = `tab-floor-${f} w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center justify-between`;
       }
     });
   });
@@ -235,61 +212,35 @@ function setActiveCategory(cat) {
   const hLayer = document.getElementById('marker-hse-layer');
 
   if (cat === 'tenant') {
-    document.querySelectorAll('#dropdown-category-container .category-dropdown-btn').forEach(btn => {
+    document.querySelectorAll('.category-dropdown-btn').forEach(btn => {
       btn.className = "category-dropdown-btn bg-blue-600 text-white border border-blue-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition";
     });
-    
-    document.querySelectorAll('#dropdown-category-mobile-container .category-dropdown-btn').forEach(btn => {
-      btn.className = "category-dropdown-btn bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] w-9 h-9 rounded-xl shadow-lg cursor-pointer transition active:scale-95 flex items-center justify-center text-[#202124] dark:text-[#e8eaed]";
-    });
-
     document.querySelectorAll('.current-category-label').forEach(el => {
-      el.innerHTML = `<i class="fa-solid fa-store text-xs sm:text-[10px]"></i> <span class="hidden sm:inline">Tenant</span>`;
+      el.innerHTML = `<i class="fa-solid fa-store text-[10px]"></i> Tenant`;
     });
     
     document.querySelectorAll('.btn-cat-tenant').forEach(btn => {
-      if (btn.classList.contains('w-9')) {
-        btn.className = "btn-cat-tenant w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer text-blue-600 bg-blue-50 dark:bg-blue-900/30";
-      } else {
-        btn.className = "btn-cat-tenant w-full text-left px-3 py-2 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center gap-2";
-      }
+      btn.className = "btn-cat-tenant w-full text-left px-3 py-2 font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 transition cursor-pointer flex items-center gap-2";
     });
     document.querySelectorAll('.btn-cat-hse').forEach(btn => {
-      if (btn.classList.contains('w-9')) {
-        btn.className = "btn-cat-hse w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043]";
-      } else {
-        btn.className = "btn-cat-hse w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
-      }
+      btn.className = "btn-cat-hse w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
     });
 
     if (tLayer) tLayer.style.display = 'block';
     if (hLayer) hLayer.style.display = 'none';
   } else {
-    document.querySelectorAll('#dropdown-category-container .category-dropdown-btn').forEach(btn => {
+    document.querySelectorAll('.category-dropdown-btn').forEach(btn => {
       btn.className = "category-dropdown-btn bg-emerald-600 text-white border border-emerald-600 px-3 py-1 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-xs cursor-pointer transition";
     });
-
-    document.querySelectorAll('#dropdown-category-mobile-container .category-dropdown-btn').forEach(btn => {
-      btn.className = "category-dropdown-btn bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] w-9 h-9 rounded-xl shadow-lg cursor-pointer transition active:scale-95 flex items-center justify-center text-[#202124] dark:text-[#e8eaed]";
-    });
-
     document.querySelectorAll('.current-category-label').forEach(el => {
-      el.innerHTML = `<i class="fa-solid fa-shield-halved text-xs sm:text-[10px]"></i> <span class="hidden sm:inline">HSE</span>`;
+      el.innerHTML = `<i class="fa-solid fa-shield-halved text-[10px]"></i> HSE`;
     });
 
     document.querySelectorAll('.btn-cat-hse').forEach(btn => {
-      if (btn.classList.contains('w-9')) {
-        btn.className = "btn-cat-hse w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30";
-      } else {
-        btn.className = "btn-cat-hse w-full text-left px-3 py-2 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 transition cursor-pointer flex items-center gap-2";
-      }
+      btn.className = "btn-cat-hse w-full text-left px-3 py-2 font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 transition cursor-pointer flex items-center gap-2";
     });
     document.querySelectorAll('.btn-cat-tenant').forEach(btn => {
-      if (btn.classList.contains('w-9')) {
-        btn.className = "btn-cat-tenant w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043]";
-      } else {
-        btn.className = "btn-cat-tenant w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
-      }
+      btn.className = "btn-cat-tenant w-full text-left px-3 py-2 font-medium text-[#202124] dark:text-[#e8eaed] transition hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] cursor-pointer flex items-center gap-2";
     });
 
     if (tLayer) tLayer.style.display = 'none';
@@ -300,11 +251,13 @@ function setActiveCategory(cat) {
 }
 
 function refreshActiveModule() {
-  if (typeof renderTenantList === 'function') renderTenantList();
-  if (typeof renderTenantMarkers === 'function') renderTenantMarkers();
-  
-  if (typeof renderHSEList === 'function') renderHSEList();
-  if (typeof renderHSEMarkers === 'function') renderHSEMarkers();
+  if (activeCategory === 'tenant') {
+    if (typeof renderTenantList === 'function') renderTenantList();
+    if (typeof renderTenantMarkers === 'function') renderTenantMarkers();
+  } else if (activeCategory === 'hse') {
+    if (typeof renderHSEList === 'function') renderHSEList();
+    if (typeof renderHSEMarkers === 'function') renderHSEMarkers();
+  }
 }
 
 function setAppMode(mode) {
@@ -330,7 +283,7 @@ function setAppMode(mode) {
 }
 
 // ==========================================
-// MAP TRANSFORM ENGINE (PERSIS MURNI KODE AWAL)
+// MAP TRANSFORM ENGINE (PAN / PINCH-ZOOM / ROTATE)
 // ==========================================
 function initMapControls() {
   const viewport = document.getElementById('viewport');
@@ -365,8 +318,10 @@ function initMapControls() {
     }
   });
 
+  // GESTUR PINCH & TOUCH FIX UNTUK MOBILE
   viewport.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
+      isDraggingMap = false;
       initialPinchDistance = getTouchDistance(e.touches);
       initialScale = scale;
     } else if (e.touches.length === 1 && !isPlacingMode) {
@@ -375,26 +330,55 @@ function initMapControls() {
       startMouseX = e.touches[0].clientX - panX;
       startMouseY = e.touches[0].clientY - panY;
     }
-  }, { passive: true });
+  }, { passive: false });
 
   viewport.addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2 && initialPinchDistance) {
+    if (e.touches.length === 2) {
+      e.preventDefault();
       const currentDist = getTouchDistance(e.touches);
-      const factor = currentDist / initialPinchDistance;
-      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      zoomAtPoint(factor, centerX, centerY, true);
-      initialPinchDistance = currentDist;
+      if (initialPinchDistance && initialPinchDistance > 0) {
+        const factor = currentDist / initialPinchDistance;
+        const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        
+        let targetScale = initialScale * factor;
+        targetScale = Math.max(0.05, Math.min(10, targetScale));
+        
+        // DIBETULKAN: Tambahkan flag true untuk isAbsoluteFactor
+        zoomAtPoint(targetScale, centerX, centerY, true);
+      }
     } else if (e.touches.length === 1 && isDraggingMap) {
       panX = e.touches[0].clientX - startMouseX;
       panY = e.touches[0].clientY - startMouseY;
       requestUpdateMapTransform();
     }
-  }, { passive: true });
+  }, { passive: false });
 
-  viewport.addEventListener('touchend', () => {
-    initialPinchDistance = null;
-    isDraggingMap = false;
+  viewport.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      initialPinchDistance = null;
+    }
+    if (e.touches.length === 0) {
+      isDraggingMap = false;
+      clampBoundaries();
+    }
+  });
+
+  viewport.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+    initialScale = scale;
+  });
+
+  viewport.addEventListener('gesturechange', (e) => {
+    e.preventDefault();
+    let targetScale = initialScale * e.scale;
+    targetScale = Math.max(0.05, Math.min(10, targetScale));
+    // DIBETULKAN: Tambahkan flag true untuk isAbsoluteFactor
+    zoomAtPoint(targetScale, e.clientX, e.clientY, true);
+  });
+
+  viewport.addEventListener('gestureend', (e) => {
+    e.preventDefault();
     clampBoundaries();
   });
 
@@ -429,16 +413,7 @@ function initMapControls() {
 function getTouchDistance(touches) {
   const dx = touches[0].clientX - touches[1].clientX;
   const dy = touches[0].clientY - touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// FUNGSI ZOOM DARI KODE AWAL
-function zoomIn() { 
-  zoomAtPoint(1.25); 
-}
-
-function zoomOut() { 
-  zoomAtPoint(0.8); 
+  return Math.hypot(dx, dy);
 }
 
 function zoomAtPoint(factor, clientX, clientY, isAbsoluteFactor = false) {
@@ -489,6 +464,9 @@ function clampBoundaries() {
   panY = Math.min(Math.max(panY, minY), maxY);
 }
 
+function zoomIn() { zoomAtPoint(1.25); }
+function zoomOut() { zoomAtPoint(0.8); }
+
 function rotateMap() {
   rotation = (rotation + 90) % 360;
   resetZoomToFit();
@@ -534,7 +512,6 @@ function requestUpdateMapTransform() {
   animFrameReq = requestAnimationFrame(updateMapTransform);
 }
 
-// UTUTAN TRANSFORMASI ASLI KODE AWAL
 function updateMapTransform() {
   const container = document.getElementById('map-container');
   if (!container) return;
@@ -650,6 +627,7 @@ async function exportToPDF() {
 
     ctx.drawImage(denahImg, 0, 0, imgW, imgH);
 
+    // Export PDF khusus Layer Aktif
     if (typeof tenantsData !== 'undefined') {
       const floorTenants = tenantsData.filter(t => t.lantai === currentFloor);
       floorTenants.forEach(t => {
