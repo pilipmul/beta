@@ -344,7 +344,8 @@ function initMapControls() {
 
   viewport.addEventListener('mousedown', (e) => {
     if (isPlacingMode || e.button !== 0) return;
-    if (e.target.closest('.circle-marker') || e.target.closest('.hse-marker') || e.target.closest('#floating-detail-card')) return;
+    // PENGECUALIAN LENGKAP: Abaikan klik jika pada tombol/ikon kontrol
+    if (e.target.closest('.circle-marker') || e.target.closest('.hse-marker') || e.target.closest('#floating-detail-card') || e.target.closest('button')) return;
 
     isDraggingMap = true;
     startMouseX = e.clientX - panX;
@@ -370,6 +371,7 @@ function initMapControls() {
       initialPinchDistance = getTouchDistance(e.touches);
       initialScale = scale;
     } else if (e.touches.length === 1 && !isPlacingMode) {
+      if (e.target.closest('.circle-marker') || e.target.closest('.hse-marker') || e.target.closest('#floating-detail-card') || e.target.closest('button')) return;
       isDraggingMap = true;
       startMouseX = e.touches[0].clientX - panX;
       startMouseY = e.touches[0].clientY - panY;
