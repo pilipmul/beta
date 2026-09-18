@@ -1,6 +1,6 @@
 // ==========================================
 // CONFIG & SUPABASE CLIENT
-// =========================================
+// ==========================================
 const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -330,7 +330,7 @@ function setAppMode(mode) {
 }
 
 // ==========================================
-// MAP TRANSFORM ENGINE (PAN / ZOOM / ROTATE)
+// MAP TRANSFORM ENGINE (SAMA PERSIS KODE AWAL)
 // ==========================================
 function initMapControls() {
   const viewport = document.getElementById('viewport');
@@ -344,7 +344,6 @@ function initMapControls() {
 
   viewport.addEventListener('mousedown', (e) => {
     if (isPlacingMode || e.button !== 0) return;
-    // PENGECUALIAN LENGKAP: Abaikan klik jika pada tombol/ikon kontrol
     if (e.target.closest('.circle-marker') || e.target.closest('.hse-marker') || e.target.closest('#floating-detail-card') || e.target.closest('button')) return;
 
     isDraggingMap = true;
@@ -481,10 +480,11 @@ function clampBoundaries() {
   const scaledW = effWidth * scale;
   const scaledH = effHeight * scale;
 
-  const minX = vRect.width - scaledW - (vRect.width * 0.6);
-  const maxX = vRect.width * 0.6;
-  const minY = vRect.height - scaledH - (vRect.height * 0.6);
-  const maxY = vRect.height * 0.6;
+  // Nilai pembatas fleksibel persis kode awal
+  const minX = vRect.width - scaledW - (vRect.width * 0.8);
+  const maxX = vRect.width * 0.8;
+  const minY = vRect.height - scaledH - (vRect.height * 0.8);
+  const maxY = vRect.height * 0.8;
 
   panX = Math.min(Math.max(panX, minX), maxX);
   panY = Math.min(Math.max(panY, minY), maxY);
@@ -502,6 +502,7 @@ function resetZoomToFit() {
 
   if (!viewport || !img || !container) return;
 
+  // KEMBALIKAN TRANSFORM ORIGIN KE TENANG PERTAMA BUKA (KODE AWAL)
   container.style.transformOrigin = "0 0";
   const vRect = viewport.getBoundingClientRect();
 
