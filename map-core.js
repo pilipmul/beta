@@ -253,15 +253,16 @@ function setActiveCategory(cat) {
   const tLayer = document.getElementById('marker-tenant-layer');
   const hLayer = document.getElementById('marker-hse-layer');
 
-  // Samakan class ukuran tombol agar konsisten w-8 h-8 sm:w-9 sm:h-9
-  const btnClass = "category-dropdown-btn bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-lg cursor-pointer transition active:scale-95 flex items-center justify-center text-[#202124] dark:text-[#e8eaed]";
+  // Samakan class ukuran tombol agar konsisten w-7 h-7 sm:w-8 sm:h-8
+  const btnClass = "category-dropdown-btn bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-xs cursor-pointer transition active:scale-95 flex items-center justify-center text-[#202124] dark:text-[#e8eaed]";
 
   if (cat === 'tenant') {
     document.querySelectorAll('.category-dropdown-btn').forEach(btn => {
       btn.className = btnClass;
     });
     document.querySelectorAll('.current-category-label').forEach(el => {
-      el.innerHTML = `<i class="fa-solid fa-store text-xs leading-none"></i>`;
+      // Tambahkan 'leading-none' untuk menetralkan line-height FontAwesome
+      el.innerHTML = `<i class="fa-solid fa-store text-[11px] sm:text-xs leading-none"></i>`;
     });
     
     document.querySelectorAll('.btn-cat-tenant').forEach(btn => {
@@ -278,7 +279,8 @@ function setActiveCategory(cat) {
       btn.className = btnClass;
     });
     document.querySelectorAll('.current-category-label').forEach(el => {
-      el.innerHTML = `<i class="fa-solid fa-shield-halved text-xs leading-none"></i>`;
+      // Tambahkan 'leading-none' untuk menetralkan line-height FontAwesome
+      el.innerHTML = `<i class="fa-solid fa-shield-halved text-[11px] sm:text-xs leading-none"></i>`;
     });
 
     document.querySelectorAll('.btn-cat-hse').forEach(btn => {
