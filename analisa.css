@@ -1,0 +1,116 @@
+/* Modal Container & Animation */
+.analisa-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 10010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.analisa-modal-card {
+  width: 100%;
+  max-width: 44rem;
+  max-height: 90dvh;
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid #dadce0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: scaleUp 0.2s ease-out;
+}
+
+@media (prefers-color-scheme: dark) {
+  .analisa-modal-card {
+    background-color: #1e1e1e;
+    border-color: #3c4043;
+    color: #e8eaed;
+  }
+}
+
+/* Stat Box Grid */
+.analisa-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .analisa-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.analisa-stat-box {
+  background-color: #f8f9fa;
+  border: 1px solid #e8eaed;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+@media (prefers-color-scheme: dark) {
+  .analisa-stat-box {
+    background-color: #252525;
+    border-color: #3c4043;
+  }
+}
+
+.analisa-stat-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5f6368;
+  margin-bottom: 0.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .analisa-stat-label {
+    color: #9aa0a6;
+  }
+}
+
+.analisa-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a73e8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .analisa-stat-value {
+    color: #8ab4f8;
+  }
+}
+
+.analisa-stat-subtext {
+  font-size: 0.75rem;
+  color: #70757a;
+  margin-top: 0.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .analisa-stat-subtext {
+    color: #bdc1c6;
+  }
+}
+
+/* Modal Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
