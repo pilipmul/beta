@@ -1,0 +1,827 @@
+/**
+ * Logika Utama Modul Inventory (Mode Casual & Switching Tampilan)
+ */
+
+const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const PAGE_SIZE = 200;
+let currentPage = 1;
+let totalRows = 0;
+let rawDataMap = new Map();
+let fetchedData = [];
+let dbFilterOptions = {};
+
+let activeFilterColumn = null;
+let draftFilterSelections = new Set();
+let currentViewMode = 'casual'; // 'casual' atau 'analisa'
+
+let globalSearchQuery = sessionStorage.getItem('inventory_globalSearchQuery') || '';
+let sortConfig = JSON.parse(sessionStorage.getItem('inventory_sortConfig')) || { column: null, direction: null };
+
+let filterSelections = {};
+try {
+  const savedFilters = JSON.parse(sessionStorage.getItem('inventory_filterSelections'));
+  if (savedFilters && typeof savedFilters === 'object') {
+    Object.keys(savedFilters).forEach(key => {
+      if (Array.isArray(savedFilters[key])) {
+        filterSelections[key] = new Set(savedFilters[key]);
+      }
+    });
+  }
+} catch {
+  filterSelections = {};
+}
+
+function isSuperAdmin() {
+  try {
+    const session = localStorage.getItem("user");
+    if (!session) return false;
+    const userData = JSON.parse(session);
+    return userData && (userData.nama === "Dede Hidayat" || userData.username === "Dede Hidayat");
+  } catch {
+    return false;
+  }
+}
+
+function saveStateToSession() {
+  sessionStorage.setItem('inventory_globalSearchQuery', globalSearchQuery);
+  sessionStorage.setItem('inventory_sortConfig', JSON.stringify(sortConfig));
+
+  const serializableFilters = {};
+  Object.keys(filterSelections).forEach(key => {
+    if (filterSelections[key] && filterSelections[key].size > 0) {
+      serializableFilters[key] = Array.from(filterSelections[key]);
+    }
+  });
+  sessionStorage.setItem('inventory_filterSelections', JSON.stringify(serializableFilters));
+}
+
+function toggleHamburgerMenu(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('customDropdownMenu');
+  if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+function switchViewMode(mode) {
+  currentViewMode = mode;
+  const badge = document.getElementById('viewModeBadge');
+  
+  if (badge) {
+    if (mode === 'analisa') {
+      badge.innerText = 'Analisa View';
+      badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20';
+    } else {
+      badge.innerText = 'Casual View';
+      badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20';
+    }
+  }
+
+  renderHamburgerMenuContent();
+  renderCurrentView();
+}
+
+function renderHamburgerMenuContent() {
+  const container = document.getElementById('custom-hamburger-content');
+  if (!container) return;
+
+  let html = '';
+  
+  if (currentViewMode === 'casual') {
+    html += `
+      <button onclick="switchViewMode('analisa'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+        <svg class="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span>Tampilan Analisa</span>
+      </button>
+    `;
+  } else {
+    html += `
+      <button onclick="switchViewMode('casual'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+        <span>Tampilan Casual</span>
+      </button>
+    `;
+  }
+
+  if (isSuperAdmin() && currentViewMode === 'casual') {
+    html += `
+      <button onclick="openModal('add'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Tambah Item</span>
+      </button>
+    `;
+  }
+
+  html += `
+    <button onclick="exportCSV(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+      <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+      <span>Export CSV</span>
+    </button>
+  `;
+
+  container.innerHTML = html;
+}
+
+function renderCurrentView() {
+  const container = document.getElementById('dynamicContainer');
+  if (!container) return;
+
+  if (currentViewMode === 'casual') {
+    container.innerHTML = getCasualViewHtml();
+    fetchTableData();
+  } else if (currentViewMode === 'analisa') {
+    if (typeof getAnalisaViewHtml === 'function') {
+      container.innerHTML = getAnalisaViewHtml();
+      if (typeof runSpecificAnalysis === 'function') {
+        runSpecificAnalysis();
+      }
+    }
+  }
+}
+
+function getCasualViewHtml() {
+  return `
+    <div class="bg-white dark:bg-[#1e1e1e] rounded-xl sm:rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative">
+      <div class="overflow-x-auto custom-scroll w-full">
+        <table class="w-full text-left border-collapse text-xs min-w-[700px]">
+          <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+            <tr>
+              <th scope="col" class="p-2.5 w-[7%] relative text-center">
+                <div class="flex items-center justify-center gap-0.5"><span class="truncate">No</span><button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button></div>
+              </th>
+              <th scope="col" class="p-2.5 w-[35%] relative">
+                <div class="flex items-center justify-between gap-0.5"><span class="truncate">Item</span><button id="btn-filter-item" onclick="toggleFilterMenu('item', event)"></button></div>
+              </th>
+              <th scope="col" class="p-2.5 w-[15%] relative">
+                <div class="flex items-center justify-between gap-0.5"><span class="truncate">Code</span><button id="btn-filter-code" onclick="toggleFilterMenu('code', event)"></button></div>
+              </th>
+              <th scope="col" class="p-2.5 w-[8%] text-center relative">
+                <div class="flex items-center justify-center gap-0.5"><span class="truncate">Satuan</span><button id="btn-filter-satuan" onclick="toggleFilterMenu('satuan', event)"></button></div>
+              </th>
+              <th scope="col" class="p-2.5 w-[12%] relative">
+                <div class="flex items-center justify-between gap-0.5"><span class="truncate">COA</span><button id="btn-filter-coa" onclick="toggleFilterMenu('coa', event)"></button></div>
+              </th>
+              <th scope="col" class="p-2.5 w-[8%] text-center relative">
+                <div class="flex items-center justify-center gap-0.5"><span class="truncate">Balance</span><button id="btn-filter-balance" onclick="toggleFilterMenu('balance', event)"></button></div>
+              </th>
+              <th scope="col" class="p-2.5 w-[15%] text-center relative">
+                <div class="flex items-center justify-center gap-0.5"><span class="truncate">Project</span><button id="btn-filter-project" onclick="toggleFilterMenu('project', event)"></button></div>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+            <tr>
+              <td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Filter Popover -->
+      <div id="filterPopover" class="fixed hidden z-[10005] w-56 sm:w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+        <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+          <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+            <span>↑</span> A-Z
+          </button>
+          <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+            <span>↓</span> Z-A
+          </button>
+        </div>
+
+        <div class="space-y-2 normal-case">
+          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+          
+          <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" />
+              Pilih Semua
+            </label>
+            <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
+          </div>
+
+          <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
+          </div>
+
+          <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+            <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGINATION BAR -->
+      <div class="flex flex-col sm:flex-row justify-between items-center p-2.5 sm:p-3 bg-[#f8f9fa] dark:bg-[#252525] border-t border-[#dadce0] dark:border-[#3c4043] text-xs gap-2 sm:gap-3">
+        <span id="pageInfo" class="text-[#5f6368] dark:text-[#9aa0a6] text-[11px] sm:text-xs">Menampilkan 0 data</span>
+        
+        <div class="flex items-center gap-2 sm:gap-3">
+          <div class="flex items-center gap-1 text-[#5f6368] dark:text-[#9aa0a6]">
+            <span>Hal:</span>
+            <input type="number" id="jumpPageInput" min="1" 
+                   onkeydown="if(event.key==='Enter') jumpToPage()"
+                   class="w-10 sm:w-12 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-1 py-0.5 text-center text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8]" />
+            <span id="totalPagesText">/ 1</span>
+            <button onclick="jumpToPage()" 
+                    class="px-2 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-lg font-medium transition cursor-pointer">
+              Go
+            </button>
+          </div>
+
+          <div class="flex items-center gap-1">
+            <button id="btnHome" onclick="goToHome()" title="Halaman Pertama"
+                    class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+              |&lt;
+            </button>
+            <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya"
+                    class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+              &lt;
+            </button>
+            <button id="btnNext" onclick="changePage(1)" title="Berikutnya"
+                    class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+              &gt;
+            </button>
+            <button id="btnEnd" onclick="goToEnd()" title="Halaman Terakhir"
+                    class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+              &gt;|
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof renderHeader === 'function') {
+    renderHeader({ subtitle: "Inventory" });
+  }
+
+  renderHamburgerMenuContent();
+  renderCurrentView();
+
+  if (globalSearchQuery) {
+    const searchInput = document.getElementById('globalSearchInput');
+    const btnClear = document.getElementById('btnClearSearch');
+    if (searchInput) searchInput.value = globalSearchQuery;
+    if (btnClear) btnClear.classList.remove('hidden');
+  }
+
+  _supabase
+    .channel('public:item')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'item' }, () => {
+      if (currentViewMode === 'casual') fetchTableData();
+      else if (typeof runSpecificAnalysis === 'function') runSpecificAnalysis();
+    })
+    .subscribe();
+});
+
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('#hamburgerBtn');
+  const dropdown = document.getElementById('customDropdownMenu');
+
+  if (btn) {
+    e.stopPropagation();
+    toggleHamburgerMenu(e);
+    return;
+  }
+
+  if (dropdown && !dropdown.classList.contains('hidden') && !dropdown.contains(e.target)) {
+    dropdown.classList.add('hidden');
+  }
+
+  const popover = document.getElementById('filterPopover');
+  if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+    closeFilterPopover();
+  }
+});
+
+function triggerGlobalSearch() {
+  const val = document.getElementById('globalSearchInput').value.trim();
+  globalSearchQuery = val;
+  window.globalSearchQuery = val;
+  currentPage = 1;
+  document.getElementById('btnClearSearch').classList.toggle('hidden', val === '');
+  saveStateToSession();
+  
+  if (currentViewMode === 'casual') {
+    fetchTableData();
+  } else if (currentViewMode === 'analisa') {
+    if (typeof applyAndRenderAnalisaTable === 'function') {
+      applyAndRenderAnalisaTable();
+    }
+  }
+}
+
+function clearGlobalSearch() {
+  document.getElementById('globalSearchInput').value = '';
+  document.getElementById('btnClearSearch').classList.add('hidden');
+  globalSearchQuery = '';
+  window.globalSearchQuery = '';
+  currentPage = 1;
+  saveStateToSession();
+  
+  if (currentViewMode === 'casual') {
+    fetchTableData();
+  } else if (currentViewMode === 'analisa') {
+    if (typeof applyAndRenderAnalisaTable === 'function') {
+      applyAndRenderAnalisaTable();
+    }
+  }
+}
+
+function updateFilterButtonStyles() {
+  const allColumns = ['no', 'item', 'code', 'satuan', 'coa', 'balance', 'project'];
+
+  allColumns.forEach(col => {
+    const btn = document.getElementById(`btn-filter-${col}`);
+    if (!btn) return;
+
+    const isActive = filterSelections[col] && filterSelections[col].size > 0;
+
+    if (isActive) {
+      btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer transition-transform duration-150 scale-140 inline-block";
+      btn.innerHTML = `<svg class="w-2 h-2" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="currentColor" stroke="none"/></svg>`;
+    } else {
+      btn.className = "p-0.5 text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer transition-transform duration-150 scale-100 inline-block";
+      btn.innerHTML = `<svg class="w-2 h-2" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+    }
+  });
+}
+
+function applySupabaseFilters(query) {
+  if (globalSearchQuery !== '') {
+    query = query.or(
+      `item.ilike.%${globalSearchQuery}%,` +
+      `code.ilike.%${globalSearchQuery}%,` +
+      `satuan.ilike.%${globalSearchQuery}%,` +
+      `coa.ilike.%${globalSearchQuery}%,` +
+      `project.ilike.%${globalSearchQuery}%`
+    );
+  }
+
+  for (const colKey in filterSelections) {
+    const selectedSet = filterSelections[colKey];
+    if (selectedSet && selectedSet.size > 0) {
+      const selectedArray = Array.from(selectedSet);
+      const hasBlank = selectedArray.includes('-');
+      const nonBlankValues = selectedArray.filter(v => v !== '-');
+
+      if (hasBlank && nonBlankValues.length > 0) {
+        query = query.or(`${colKey}.in.(${nonBlankValues.map(v => `"${v}"`).join(',')}),${colKey}.is.null,${colKey}.eq.`);
+      } else if (hasBlank) {
+        query = query.or(`${colKey}.is.null,${colKey}.eq.`);
+      } else if (nonBlankValues.length > 0) {
+        query = query.in(colKey, nonBlankValues);
+      }
+    }
+  }
+  return query;
+}
+
+async function fetchTableData() {
+  const tbody = document.getElementById('tableBody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
+
+  try {
+    let countQuery = _supabase.from('item').select('*', { count: 'exact', head: true });
+    countQuery = applySupabaseFilters(countQuery);
+
+    const { count, error: countErr } = await countQuery;
+    if (countErr) throw countErr;
+
+    totalRows = count || 0;
+    document.getElementById('totalDataCount').innerText = totalRows;
+
+    if (totalRows === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data inventory tidak ditemukan.</td></tr>`;
+      updatePaginationUI();
+      updateFilterButtonStyles();
+      return;
+    }
+
+    const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const fromIndex = (currentPage - 1) * PAGE_SIZE;
+    const toIndex = Math.min(currentPage * PAGE_SIZE - 1, totalRows - 1);
+
+    let dataQuery = _supabase.from('item').select('*');
+    dataQuery = applySupabaseFilters(dataQuery);
+
+    if (sortConfig.column && sortConfig.direction) {
+      dataQuery = dataQuery.order(sortConfig.column, { ascending: sortConfig.direction === 'asc' });
+    } else {
+      dataQuery = dataQuery.order('no', { ascending: true });
+    }
+
+    dataQuery = dataQuery.range(fromIndex, toIndex);
+
+    const { data, error } = await dataQuery;
+    if (error) throw error;
+
+    fetchedData = data || [];
+    rawDataMap.clear();
+    fetchedData.forEach(row => rawDataMap.set(row.no, row));
+
+    renderTable();
+
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
+  }
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (fetchedData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data yang sesuai filter.</td></tr>`;
+    updatePaginationUI();
+    updateFilterButtonStyles();
+    return;
+  }
+
+  const allowEdit = isSuperAdmin();
+
+  fetchedData.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors';
+
+    const projectText = escapeHtml(row.project || '-');
+    const projectBtn = allowEdit 
+      ? `<button onclick="openModalForNo(${row.no})" title="Edit Item #${row.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`
+      : `<span class="inline-block max-w-full px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${projectText}</span>`;
+
+    tr.innerHTML = `
+      <td class="p-2.5 text-center font-mono text-[#5f6368] dark:text-[#9aa0a6]">${row.no}</td>
+      <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.item || '-')}</td>
+      <td class="p-2.5 font-mono text-[#5f6368] dark:text-[#9aa0a6] truncate" title="${escapeHtml(row.code || '')}">${escapeHtml(row.code || '-')}</td>
+      <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.satuan || '-')}</td>
+      <td class="p-2.5 font-mono text-[#5f6368] dark:text-[#9aa0a6] truncate" title="${escapeHtml(row.coa || '')}">${escapeHtml(row.coa || '-')}</td>
+      <td class="p-2.5 text-center font-bold text-[#202124] dark:text-[#f1f3f4] bg-[#f8f9fa] dark:bg-[#252525]">${row.balance ?? '0'}</td>
+      <td class="p-2.5 text-center truncate">${projectBtn}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  updatePaginationUI();
+  updateFilterButtonStyles();
+}
+
+async function toggleFilterMenu(columnKey, event) {
+  event.stopPropagation();
+  activeFilterColumn = columnKey;
+
+  const popover = document.getElementById('filterPopover');
+  const rect = event.currentTarget.getBoundingClientRect();
+  
+  let leftPos = Math.max(10, Math.min(rect.left + window.scrollX - 100, window.innerWidth - 230));
+
+  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+  popover.style.left = `${leftPos}px`;
+  document.getElementById('filterSearchInput').value = '';
+  
+  if (!dbFilterOptions[columnKey]) {
+    try {
+      const { data, error } = await _supabase.from('item').select(columnKey);
+      if (!error && data) {
+        const allVals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+        dbFilterOptions[columnKey] = Array.from(new Set(allVals)).sort();
+      } else {
+        dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
+      }
+    } catch {
+      dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
+    }
+  }
+
+  const activeSaved = filterSelections[activeFilterColumn];
+  const allOpts = dbFilterOptions[activeFilterColumn] || [];
+
+  draftFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allOpts);
+
+  renderFilterCheckboxes();
+  popover.classList.remove('hidden');
+}
+
+function closeFilterPopover() {
+  const popover = document.getElementById('filterPopover');
+  if (popover) popover.classList.add('hidden');
+}
+
+function renderFilterCheckboxes() {
+  const container = document.getElementById('filterItemsList');
+  if (!container) return;
+  const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
+  const uniqueValues = dbFilterOptions[activeFilterColumn] || Array.from(new Set(fetchedData.map(r => (r[activeFilterColumn] !== null && r[activeFilterColumn] !== undefined && r[activeFilterColumn] !== '') ? String(r[activeFilterColumn]) : '-'))).sort();
+
+  container.innerHTML = '';
+  let visibleCount = 0, visibleCheckedCount = 0;
+
+  uniqueValues.forEach(val => {
+    if (searchVal && !val.toLowerCase().includes(searchVal)) return;
+
+    visibleCount++;
+    const isChecked = draftFilterSelections.has(val);
+    if (isChecked) visibleCheckedCount++;
+
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
+    
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.value = val;
+    checkbox.checked = isChecked;
+    checkbox.className = 'filter-cb';
+    
+    checkbox.onchange = (e) => {
+      if (e.target.checked) draftFilterSelections.add(val);
+      else draftFilterSelections.delete(val);
+      updateSelectAllState();
+    };
+
+    label.appendChild(checkbox);
+    const span = document.createElement('span');
+    span.className = 'truncate';
+    span.innerText = val;
+    label.appendChild(span);
+
+    container.appendChild(label);
+  });
+
+  const selectAllCb = document.getElementById('selectAllCheckbox');
+  if (selectAllCb) selectAllCb.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
+}
+
+function updateSelectAllState() {
+  const cbs = document.querySelectorAll('#filterItemsList .filter-cb');
+  const allChecked = cbs.length > 0 && Array.from(cbs).every(cb => cb.checked);
+  const selectAllCb = document.getElementById('selectAllCheckbox');
+  if (selectAllCb) selectAllCb.checked = allChecked;
+}
+
+function toggleSelectAllFilters(checked) {
+  document.querySelectorAll('#filterItemsList .filter-cb').forEach(cb => {
+    cb.checked = checked;
+    if (checked) draftFilterSelections.add(cb.value);
+    else draftFilterSelections.delete(cb.value);
+  });
+}
+
+function clearFilterColumn() {
+  delete filterSelections[activeFilterColumn];
+  draftFilterSelections = new Set(dbFilterOptions[activeFilterColumn] || []);
+  document.getElementById('filterSearchInput').value = '';
+  renderFilterCheckboxes();
+  currentPage = 1;
+  saveStateToSession();
+  fetchTableData();
+}
+
+function applyFilter() {
+  const allOpts = dbFilterOptions[activeFilterColumn] || [];
+  if (draftFilterSelections.size === 0 || draftFilterSelections.size === allOpts.length) {
+    delete filterSelections[activeFilterColumn];
+  } else {
+    filterSelections[activeFilterColumn] = new Set(draftFilterSelections);
+  }
+  closeFilterPopover();
+  currentPage = 1;
+  saveStateToSession();
+  fetchTableData();
+}
+
+function applySort(direction) {
+  sortConfig = { column: activeFilterColumn, direction };
+  closeFilterPopover();
+  currentPage = 1;
+  saveStateToSession();
+  fetchTableData();
+}
+
+function updatePaginationUI() {
+  const pageInfo = document.getElementById('pageInfo');
+  if (!pageInfo) return;
+
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE) || 1;
+  const startRow = totalRows === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const endRow = Math.min(currentPage * PAGE_SIZE, totalRows);
+
+  pageInfo.innerText = `Menampilkan ${startRow}-${endRow} dari ${totalRows} data`;
+  document.getElementById('totalPagesText').innerText = `/ ${totalPages}`;
+  document.getElementById('jumpPageInput').value = currentPage;
+
+  const isFirstPage = currentPage <= 1;
+  const isLastPage = currentPage >= totalPages;
+
+  document.getElementById('btnHome').disabled = isFirstPage;
+  document.getElementById('btnPrev').disabled = isFirstPage;
+  document.getElementById('btnNext').disabled = isLastPage;
+  document.getElementById('btnEnd').disabled = isLastPage;
+}
+
+function goToHome() {
+  if (currentPage !== 1) {
+    currentPage = 1;
+    fetchTableData();
+  }
+}
+
+function goToEnd() {
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE) || 1;
+  if (currentPage !== totalPages) {
+    currentPage = totalPages;
+    fetchTableData();
+  }
+}
+
+function changePage(delta) {
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE) || 1;
+  const newPage = currentPage + delta;
+
+  if (newPage >= 1 && newPage <= totalPages) {
+    currentPage = newPage;
+    fetchTableData();
+  }
+}
+
+function jumpToPage() {
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE) || 1;
+  const input = document.getElementById('jumpPageInput');
+  let val = parseInt(input.value, 10);
+
+  if (isNaN(val) || val < 1) val = 1;
+  if (val > totalPages) val = totalPages;
+
+  currentPage = val;
+  fetchTableData();
+}
+
+function openModal(mode, data = null) {
+  const modal = document.getElementById('modal');
+  const form = document.getElementById('itemForm');
+  const title = document.getElementById('modalTitle');
+  const btnDelete = document.getElementById('btnDeleteInModal');
+
+  form.reset();
+  document.getElementById('editNo').value = '';
+
+  if (mode === 'add') {
+    title.innerText = 'Add Item Master';
+    btnDelete.classList.add('hidden');
+  } else if (mode === 'edit' && data) {
+    title.innerText = `Edit Item #${data.no}`;
+    btnDelete.classList.remove('hidden');
+
+    document.getElementById('editNo').value = data.no;
+    document.getElementById('inputItem').value = data.item || '';
+    document.getElementById('inputCode').value = data.code || '';
+    document.getElementById('inputSatuan').value = data.satuan || '';
+    document.getElementById('inputProject').value = data.project || '';
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function openModalForNo(no) {
+  const data = rawDataMap.get(no);
+  if (data) openModal('edit', data);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.add('hidden');
+}
+
+async function saveData(e) {
+  e.preventDefault();
+
+  const editNo = document.getElementById('editNo').value;
+  const item = document.getElementById('inputItem').value.trim();
+  const code = document.getElementById('inputCode').value.trim() || null;
+  const satuan = document.getElementById('inputSatuan').value.trim() || null;
+  const project = document.getElementById('inputProject').value.trim() || null;
+
+  try {
+    if (editNo) {
+      const payloadUpdate = { item, code, satuan, project };
+
+      const { error } = await _supabase
+        .from('item')
+        .update(payloadUpdate)
+        .eq('no', editNo);
+
+      if (error) throw error;
+    } else {
+      const { data: maxNoData, error: maxNoError } = await _supabase
+        .from('item')
+        .select('no')
+        .order('no', { ascending: false })
+        .limit(1);
+
+      if (maxNoError) throw maxNoError;
+
+      let nextNo = 1;
+      if (maxNoData && maxNoData.length > 0 && maxNoData[0].no) {
+        nextNo = parseInt(maxNoData[0].no, 10) + 1;
+      }
+
+      const payloadInsert = { no: nextNo, item, code, satuan, project };
+
+      const { error } = await _supabase
+        .from('item')
+        .insert([payloadInsert]);
+
+      if (error) throw error;
+    }
+
+    closeModal();
+    dbFilterOptions = {};
+    await fetchTableData();
+
+  } catch (err) {
+    alert('Gagal menyimpan item: ' + err.message);
+  }
+}
+
+async function deleteDataInModal() {
+  const no = document.getElementById('editNo').value;
+  if (!no) return;
+
+  if (!confirm(`Apakah Anda yakin ingin menghapus item #${no}?`)) return;
+
+  try {
+    const { error } = await _supabase
+      .from('item')
+      .delete()
+      .eq('no', no);
+
+    if (error) throw error;
+
+    closeModal();
+    dbFilterOptions = {};
+    await fetchTableData();
+
+  } catch (err) {
+    alert('Gagal menghapus item: ' + err.message);
+  }
+}
+
+async function exportCSV() {
+  if (currentViewMode === 'analisa') {
+    if (typeof exportAnalisaCSV === 'function') {
+      exportAnalisaCSV();
+    } else {
+      alert('Fungsi export analisa belum siap.');
+    }
+    return;
+  }
+
+  try {
+    let query = _supabase.from('item').select('*').order('no', { ascending: true });
+    query = applySupabaseFilters(query);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      alert('Tidak ada data untuk diexport.');
+      return;
+    }
+
+    const headers = ['no', 'item', 'code', 'satuan', 'coa', 'balance', 'project'];
+    const csvRows = [headers.join(',')];
+
+    data.forEach(row => {
+      const values = headers.map(header => `"${String(row[header] ?? '').replace(/"/g, '""')}"`);
+      csvRows.push(values.join(','));
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + csvRows.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `item_master_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+  } catch (err) {
+    alert('Gagal mengunduh CSV: ' + err.message);
+  }
+}
+
+window.switchViewMode = switchViewMode;
