@@ -23,8 +23,8 @@ function getCurrentUser() {
     try {
         const session = localStorage.getItem("user");
         if (session) {
-            const userData = JSON.parse(session);
-            // Sesuaikan properti nama user di localStorage (misal: userData.nama atau userData.username)
+            const raw = JSON.parse(session);
+            const userData = raw.data || raw;
             return userData.nama || userData.username || userData.name || "";
         }
     } catch(e) {
@@ -145,8 +145,8 @@ async function fetchTasksFromSOT() {
         
         let query = _supabase.from('task').select('*');
         
-        // Filter berdasarkan PIC yang login
-        if (currentUser) {
+        // Filter berdasarkan PIC yang login jika bukan Super Admin
+        if (currentUser && currentUser.toLowerCase() !== "dede hidayat") {
             query = query.eq('pic', currentUser);
         }
 

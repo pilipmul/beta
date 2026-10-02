@@ -8,15 +8,47 @@
     <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
     <script>
         (function checkAuth() {
+            const userSessionString = localStorage.getItem("user");
+            
+            // 1. Jika tidak ada sesi -> redirect ke login.html
+            if (!userSessionString) {
+                window.location.replace("login.html");
+                return;
+            }
+
             try {
-                const session = localStorage.getItem("user");
-                const userData = session ? JSON.parse(session) : null;
-                if (!userData || !userData.akses || userData.akses.tasks !== "Y") {
-                    window.location.replace("login.html"); 
-                    document.documentElement.style.display = "none";
-                    throw new Error("Akses ditolak");
+                const rawUser = JSON.parse(userSessionString);
+                const userData = rawUser.data || rawUser;
+                
+                if (!userData) {
+                    window.location.replace("login.html");
+                    return;
                 }
-            } catch(e) {
+
+                // 2. Super Admin (Dede Hidayat) lolos tanpa syarat
+                const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
+                if (username === "dede hidayat") {
+                    return;
+                }
+
+                // 3. Fungsi penilai nilai akses
+                function checkVal(val) {
+                    if (!val) return false;
+                    const str = String(val).trim().toUpperCase();
+                    return str === "Y" || str === "TRUE" || str === "1";
+                }
+
+                // 4. Cek akses tasks (baik userData.task/tasks maupun userData.akses.TASK)
+                const hasAccess = checkVal(userData.task) || 
+                                  checkVal(userData.tasks) || 
+                                  checkVal(userData.TASK) || 
+                                  (userData.akses && (checkVal(userData.akses.TASK) || checkVal(userData.akses.task) || checkVal(userData.akses.tasks)));
+
+                if (!hasAccess) {
+                    window.location.replace("dashboard.html");
+                }
+
+            } catch (err) {
                 window.location.replace("login.html");
             }
         })();
