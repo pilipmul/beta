@@ -5,14 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eskalasi Budget - SOT</title>
     
-    <!-- Auth Guard LocalStorage -->
+    <!-- Auth Guard LocalStorage Fleksibel (Domain & Format Agnostic) -->
     <script>
-        (function() {
-            const session = localStorage.getItem("user");
-            const userData = session ? JSON.parse(session) : null;
-            if (!userData || !userData.akses || userData.akses.eskalasi !== "Y") {
+        (function checkAuth() {
+            const userSessionString = localStorage.getItem("user");
+            
+            // 1. Jika tidak ada sesi -> redirect ke login.html
+            if (!userSessionString) {
                 window.location.replace("login.html");
-                document.documentElement.style.display = "none";
+                return;
+            }
+
+            try {
+                const rawUser = JSON.parse(userSessionString);
+                const userData = rawUser.data || rawUser;
+                
+                if (!userData) {
+                    window.location.replace("login.html");
+                    return;
+                }
+
+                // 2. Super Admin (Dede Hidayat) lolos tanpa syarat
+                const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
+                if (username === "dede hidayat") {
+                    return;
+                }
+
+                // 3. Fungsi penilai nilai akses
+                function checkVal(val) {
+                    if (!val) return false;
+                    const str = String(val).trim().toUpperCase();
+                    return str === "Y" || str === "TRUE" || str === "1";
+                }
+
+                // 4. Cek akses eskalasi (baik userData.eskalasi maupun userData.akses.ESKALASI)
+                const hasAccess = checkVal(userData.eskalasi) || 
+                                  checkVal(userData.ESKALASI) || 
+                                  (userData.akses && (checkVal(userData.akses.ESKALASI) || checkVal(userData.akses.eskalasi)));
+
+                if (!hasAccess) {
+                    window.location.replace("dashboard.html");
+                }
+
+            } catch (err) {
+                window.location.replace("login.html");
             }
         })();
     </script>
@@ -310,24 +346,24 @@
                 </div>
             
                 <div class="border-t border-[#f1f3f4] dark:border-[#3c4043] pt-4">
-    <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-2 text-center">Daftar Item Pengajuan (Max 13)</label>
-    <div class="overflow-visible border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-inner bg-white dark:bg-[#1e1e1e]">
-        <table class="w-full text-xs table-fixed">
-            <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider rounded-t-xl border-b border-[#dadce0] dark:border-[#3c4043]">
-                <tr>
-                    <th scope="col" class="px-3 py-3 font-semibold text-center w-[60%] rounded-tl-xl">Item</th>
-                    <th scope="col" class="px-3 py-3 font-semibold text-center w-[15%]">Qty</th>
-                    <th scope="col" class="px-3 py-3 font-semibold text-center w-[25%] rounded-tr-xl">Biaya</th>
-                </tr>
-            </thead>
-            <tbody id="itemRows" class="divide-y divide-[#f1f3f4] dark:divide-[#3c4043] bg-white dark:bg-[#1e1e1e]"></tbody>
-        </table>
-    </div>
-    <button type="button" id="btnAddRow" class="mt-3 inline-flex items-center gap-1.5 bg-[#e8f0fe] dark:bg-[#2c384e] text-[#1a73e8] dark:text-[#8ab4f8] hover:bg-[#d2e3fc] dark:hover:bg-[#384866] font-semibold text-xs px-4 py-2 rounded-lg transition shadow-xs cursor-pointer" onclick="tambahBaris()">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        Add Item
-    </button>
-</div>
+                    <label class="block font-semibold uppercase tracking-wider text-[#5f6368] dark:text-[#9aa0a6] mb-2 text-center">Daftar Item Pengajuan (Max 13)</label>
+                    <div class="overflow-visible border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-inner bg-white dark:bg-[#1e1e1e]">
+                        <table class="w-full text-xs table-fixed">
+                            <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider rounded-t-xl border-b border-[#dadce0] dark:border-[#3c4043]">
+                                <tr>
+                                    <th scope="col" class="px-3 py-3 font-semibold text-center w-[60%] rounded-tl-xl">Item</th>
+                                    <th scope="col" class="px-3 py-3 font-semibold text-center w-[15%]">Qty</th>
+                                    <th scope="col" class="px-3 py-3 font-semibold text-center w-[25%] rounded-tr-xl">Biaya</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemRows" class="divide-y divide-[#f1f3f4] dark:divide-[#3c4043] bg-white dark:bg-[#1e1e1e]"></tbody>
+                        </table>
+                    </div>
+                    <button type="button" id="btnAddRow" class="mt-3 inline-flex items-center gap-1.5 bg-[#e8f0fe] dark:bg-[#2c384e] text-[#1a73e8] dark:text-[#8ab4f8] hover:bg-[#d2e3fc] dark:hover:bg-[#384866] font-semibold text-xs px-4 py-2 rounded-lg transition shadow-xs cursor-pointer" onclick="tambahBaris()">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Add Item
+                    </button>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-[#f1f3f4] dark:border-[#3c4043] pt-4 items-end">
                     <div>
@@ -509,32 +545,31 @@
         }
 
         function renderTable(data) {
-    const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
-    
-    const counterEl = document.getElementById("totalDataCount");
-    if (counterEl) counterEl.innerText = data.length;
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            
+            const counterEl = document.getElementById("totalDataCount");
+            if (counterEl) counterEl.innerText = data.length;
 
-    data.forEach((row, index) => {
-        const subjectText = escapeHtml(row[2]);
-        const kodeText = escapeHtml(row[1]);
+            data.forEach((row, index) => {
+                const subjectText = escapeHtml(row[2]);
+                const kodeText = escapeHtml(row[1]);
 
-        tbody.innerHTML += `
-            <tr class="hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors">
-                <td class="p-2.5 text-center whitespace-nowrap text-[#5f6368] dark:text-[#9aa0a6] font-medium">${index + 1}</td>
-                <td class="p-2.5 font-semibold text-[#1a73e8] dark:text-[#8ab4f8] whitespace-nowrap">
-                    <!-- Kode Eskalasi sebagai tombol interaktif untuk edit -->
-                    <button type="button" onclick="loadAndEditEskalasi('${kodeText}')" class="hover:underline cursor-pointer focus:outline-none text-left">
-                        ${kodeText}
-                    </button>
-                </td>
-                <td class="p-2.5 text-[#202124] dark:text-[#e8eaed] truncate" title="${subjectText}">${subjectText}</td>
-                <td class="p-2.5 text-[#5f6368] dark:text-[#bdc1c6] whitespace-nowrap">${escapeHtml(row[3])}</td>
-                <td class="p-2.5 text-[#202124] dark:text-[#e8eaed] font-semibold whitespace-nowrap">${escapeHtml(row[4])}</td>
-            </tr>
-        `;
-    });
-}
+                tbody.innerHTML += `
+                    <tr class="hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors">
+                        <td class="p-2.5 text-center whitespace-nowrap text-[#5f6368] dark:text-[#9aa0a6] font-medium">${index + 1}</td>
+                        <td class="p-2.5 font-semibold text-[#1a73e8] dark:text-[#8ab4f8] whitespace-nowrap">
+                            <button type="button" onclick="loadAndEditEskalasi('${kodeText}')" class="hover:underline cursor-pointer focus:outline-none text-left">
+                                ${kodeText}
+                            </button>
+                        </td>
+                        <td class="p-2.5 text-[#202124] dark:text-[#e8eaed] truncate" title="${subjectText}">${subjectText}</td>
+                        <td class="p-2.5 text-[#5f6368] dark:text-[#bdc1c6] whitespace-nowrap">${escapeHtml(row[3])}</td>
+                        <td class="p-2.5 text-[#202124] dark:text-[#e8eaed] font-semibold whitespace-nowrap">${escapeHtml(row[4])}</td>
+                    </tr>
+                `;
+            });
+        }
 
         const menu = document.getElementById('filterMenu');
         const searchBox = document.getElementById('menuSearch');
