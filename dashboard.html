@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <!-- FAVICON DINAMIS (FLEKSIBEL LOKAL & HOSTING) -->
+  <!-- AUTO-INJECT FAVICON (KOMPATIBEL GITHUB PAGES, HOSTING & LOKAL) -->
   <script>
     (function injectFavicon() {
       function applyFavicon() {
@@ -17,11 +17,7 @@
         favicon.type = 'image/png';
         favicon.sizes = '512x512';
         
-        // Cek protokol (file:// vs http/https)
-        const isLocalFile = window.location.protocol === 'file:';
-        const iconPath = isLocalFile ? 'favicon-512.png' : '/favicon-512.png';
-        
-        favicon.href = iconPath + '?v=' + new Date().getTime();
+        favicon.href = './favicon-512.png?v=' + new Date().getTime();
       }
 
       if (document.head) {
@@ -33,7 +29,6 @@
   </script>
 
   <script>
-    // Verifikasi Sesi sebelum halaman dimuat
     (function() {
       try {
         const session = localStorage.getItem("user") || sessionStorage.getItem("user");
@@ -57,9 +52,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - SOT</title>
 
-  <!-- IMPORT GLOBAL NAVIGATION ISOLATION STYLES -->
   <link rel="stylesheet" href="global-header.css">
-
   <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -86,7 +79,6 @@
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center gap-2 sm:gap-4 w-full box-border">
         
-        <!-- SISI KIRI: Avatar & Title -->
         <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold ring-2 ring-blue-400/50 shadow-md text-xs sm:text-sm shrink-0">
             <span id="nav-header-avatar">U</span>
@@ -98,7 +90,6 @@
           </div>
         </div>
 
-        <!-- SISI KANAN: Search & Hamburger Control -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
           <div class="relative w-32 sm:w-64">
             <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
@@ -141,7 +132,6 @@
 
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-5" id="navigationGrid">
 
-        <!-- Map -->
         <a href="map.html" id="map" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-sky-300 dark:hover:border-sky-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -162,7 +152,6 @@
           </div>
         </a>
 
-        <!-- Eskalasi -->
         <a href="eskalasi.html" id="eskalasi" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-blue-300 dark:hover:border-blue-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -180,7 +169,6 @@
           </div>
         </a>
 
-        <!-- RKM -->
         <a href="RKM.html" id="RKM" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-red-300 dark:hover:border-red-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -198,7 +186,6 @@
           </div>
         </a>
 
-        <!-- Dok. Perbaikan -->
         <a href="sr.html" id="dokPerbaikan" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-amber-300 dark:hover:border-amber-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -216,7 +203,6 @@
           </div>
         </a>
 
-        <!-- Tasks -->
         <a href="tasks.html" id="tasks" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -234,7 +220,6 @@
           </div>
         </a>
 
-        <!-- Syncflow -->
         <a href="syncflow.html" id="syncflow" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-blue-300 dark:hover:border-blue-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -252,7 +237,6 @@
           </div>
         </a>
 
-        <!-- Logistics -->
         <a href="logistics.html" id="logistics" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -270,7 +254,6 @@
           </div>
         </a>
 
-        <!-- Inventory -->
         <a href="inventory.html" id="inventory" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-red-300 dark:hover:border-red-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -288,7 +271,6 @@
           </div>
         </a>
 
-        <!-- Tenant -->
         <a href="tenant.html" id="tenant" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-teal-300 dark:hover:border-teal-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-teal-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -308,7 +290,6 @@
           </div>
         </a>
 
-        <!-- HSE -->
         <a href="hse.html" id="hse" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-emerald-300 dark:hover:border-emerald-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -326,7 +307,6 @@
           </div>
         </a>
 
-        <!-- Access Control -->
         <a href="access.html" id="accesControl" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-amber-300 dark:hover:border-amber-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>
@@ -344,7 +324,6 @@
           </div>
         </a>
 
-        <!-- Assets -->
         <a href="assets.html" id="assets" style="display: none;" class="group relative bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 hover:border-purple-300 dark:hover:border-purple-500 rounded-xl sm:rounded-2xl p-3 sm:p-5 shadow-xs hover:shadow-lg transition-all duration-200 flex-col justify-between overflow-hidden">
           <div class="absolute top-0 left-0 right-0 h-1 bg-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div>

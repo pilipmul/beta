@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <!-- AUTO-INJECT FAVICON DINAMIS (FLEKSIBEL LOKAL & HOSTING) -->
+    <!-- AUTO-INJECT FAVICON (KOMPATIBEL GITHUB PAGES, HOSTING & LOKAL) -->
     <script>
         (function injectFavicon() {
             function applyFavicon() {
@@ -17,11 +17,8 @@
                 favicon.type = 'image/png';
                 favicon.sizes = '512x512';
                 
-                // Cek protokol (file:// vs http/https)
-                const isLocalFile = window.location.protocol === 'file:';
-                const iconPath = isLocalFile ? 'favicon-512.png' : '/favicon-512.png';
-                
-                favicon.href = iconPath + '?v=' + new Date().getTime();
+                // Gunakan relative path './' agar mendukung sub-folder/repository GitHub Pages
+                favicon.href = './favicon-512.png?v=' + new Date().getTime();
             }
 
             if (document.head) {
@@ -242,7 +239,6 @@
                 msg.innerHTML = "✓ Redirecting...";
                 msg.className = baseMsgClass + "text-emerald-600 dark:text-emerald-400 font-bold";
                 
-                // PEMBENTUKAN STRUKTUR DUAL-COMPATIBLE (AKSES BERTINGKAT & ROOT)
                 const aksesMapping = {
                     MAP: data.map,
                     ESKALASI: data.eskalasi,
@@ -258,7 +254,6 @@
                     ACCESS: data.acces
                 };
 
-                // Payload user yang lengkap dengan objek 'akses' dan data root
                 const userPayload = { 
                     success: true, 
                     data: { ...data, akses: aksesMapping }, 
@@ -269,7 +264,6 @@
                 const userStr = JSON.stringify(userPayload);
                 const rawUserStr = JSON.stringify(userPayload.data);
 
-                // SIMPAN KE STORAGE DOMAIN SAAT INI
                 localStorage.setItem("user", userStr);
                 localStorage.setItem("sot_user", rawUserStr);
                 localStorage.setItem("currentUser", rawUserStr);
@@ -280,10 +274,8 @@
                 sessionStorage.setItem("sot_user", rawUserStr);
                 sessionStorage.setItem("userName", data.nama || "");
 
-                // HITUNG MODUL AKTIF UNTUK MENENTUKAN ALUR REDIRECT
                 const isAdmin = (data.nama || "").toLowerCase().trim() === "dede hidayat";
                 
-                // Daftar perizinan modul
                 const permissions = [
                     checkAccessVal(data.map),
                     checkAccessVal(data.eskalasi),
@@ -302,11 +294,9 @@
                 const activeCount = permissions.filter(Boolean).length;
 
                 setTimeout(() => { 
-                    // JIKA HANYA MEMILIKI 1 MODUL DAN MODUL TERSEBUT ADALAH SYNCFLOW, LANGSUNG MASUK KE SYNCFLOW
                     if (!isAdmin && activeCount === 1 && checkAccessVal(data.sync)) {
                         window.location.replace("syncflow.html");
                     } else {
-                        // JIKA MULTI MODUL ATAU ADMIN, BARU MASUK DASHBOARD (MENGGUNAKAN RELATIVE PATH)
                         window.location.replace("dashboard.html");
                     }
                 }, 300);

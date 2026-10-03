@@ -1,5 +1,5 @@
 /**
- * Auto-inject Favicon untuk semua modul aplikasi SOT (Fleksibel Local & Host)
+ * Auto-inject Favicon untuk semua modul aplikasi SOT (Kompatibel GitHub Pages & Lokal)
  */
 (function injectFavicon() {
     function applyFavicon() {
@@ -13,16 +13,10 @@
         
         favicon.rel = 'icon';
         favicon.type = 'image/png';
-        favicon.sizes = 'any'; // Memastikan gambar berukuran 512px diterima browser
+        favicon.sizes = '512x512';
         
-        // Cek apakah protokolnya dibuka langsung dari Local Disk (file://)
-        const isLocalFile = window.location.protocol === 'file:';
-        
-        // Jika file:// gunakan relatif 'favicon-512.png', jika server/host gunakan '/favicon-512.png'
-        const iconPath = isLocalFile ? 'favicon-512.png' : '/favicon-512.png';
-        
-        // Tambahkan timestamp query parameter untuk bypass cache browser
-        favicon.href = iconPath + '?v=' + new Date().getTime();
+        // Menggunakan relatif './' mendukung sub-folder repository GitHub Pages
+        favicon.href = './favicon-512.png?v=' + new Date().getTime();
     }
 
     if (document.head) {
@@ -107,7 +101,7 @@ function renderHeader() {
               <!-- Tasks -->
               <a id="nav-tasks" href="tasks.html" class="hidden flex items-center gap-2.5 px-1 py-1.5 text-slate-400 hover:text-white transition no-underline" title="Tasks">
                 <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012-2M9 5a2 2 0 012 2h2a2 2 0 012 2"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
                 <span class="sidebar-text truncate">Tasks</span>
               </a>
@@ -248,11 +242,9 @@ function initNavbarAccess() {
     const userData = user.data || user;
     const displayName = userData.nama || userData.username || "U";
     
-    // Set inisial avatar
     const headerAvatarEl = document.getElementById("nav-header-avatar");
     if (headerAvatarEl) headerAvatarEl.textContent = displayName.charAt(0).toUpperCase();
 
-    // Pengecekan case-insensitive yang aman untuk Super Admin
     const isSuperAdmin = (userData.nama || userData.username || "").toString().trim().toLowerCase() === "dede hidayat";
 
     const modules = [
@@ -276,19 +268,16 @@ function initNavbarAccess() {
 
         let allowed = isSuperAdmin;
 
-        // 1. Cek langsung di userData[mod.key]
         if (!allowed && userData[mod.key] !== undefined && userData[mod.key] !== null) {
             const val = String(userData[mod.key]).trim().toUpperCase();
             allowed = (val === "Y" || val === "TRUE" || val === "1");
         }
 
-        // 2. Cek fallback di objek userData.akses[mod.aksKey]
         if (!allowed && userData.akses && userData.akses[mod.aksKey] !== undefined) {
             const val = String(userData.akses[mod.aksKey]).trim().toUpperCase();
             allowed = (val === "Y" || val === "TRUE" || val === "1");
         }
 
-        // 3. Fallback HSE
         if (!allowed && mod.key === 'hse') {
             const altKey = userData.hse || userData.tenant || userData.log || userData.item;
             if (altKey !== undefined && altKey !== null) {
