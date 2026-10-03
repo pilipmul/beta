@@ -1,4 +1,38 @@
 /**
+ * Auto-inject Favicon untuk semua modul aplikasi SOT (Fleksibel Local & Host)
+ */
+(function injectFavicon() {
+    function applyFavicon() {
+        if (!document.head) return;
+        
+        let favicon = document.querySelector("link[rel*='icon']");
+        if (!favicon) {
+            favicon = document.createElement('link');
+            document.head.appendChild(favicon);
+        }
+        
+        favicon.rel = 'icon';
+        favicon.type = 'image/png';
+        favicon.sizes = 'any'; // Memastikan gambar berukuran 512px diterima browser
+        
+        // Cek apakah protokolnya dibuka langsung dari Local Disk (file://)
+        const isLocalFile = window.location.protocol === 'file:';
+        
+        // Jika file:// gunakan relatif 'favicon-512.png', jika server/host gunakan '/favicon-512.png'
+        const iconPath = isLocalFile ? 'favicon-512.png' : '/favicon-512.png';
+        
+        // Tambahkan timestamp query parameter untuk bypass cache browser
+        favicon.href = iconPath + '?v=' + new Date().getTime();
+    }
+
+    if (document.head) {
+        applyFavicon();
+    } else {
+        document.addEventListener('DOMContentLoaded', applyFavicon);
+    }
+})();
+
+/**
  * Global Navigation Controller - Auto Hover Expandable Sidebar
  */
 function renderHeader() {
@@ -73,7 +107,7 @@ function renderHeader() {
               <!-- Tasks -->
               <a id="nav-tasks" href="tasks.html" class="hidden flex items-center gap-2.5 px-1 py-1.5 text-slate-400 hover:text-white transition no-underline" title="Tasks">
                 <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012-2M9 5a2 2 0 012 2h2a2 2 0 012 2"/>
                 </svg>
                 <span class="sidebar-text truncate">Tasks</span>
               </a>
@@ -242,7 +276,7 @@ function initNavbarAccess() {
 
         let allowed = isSuperAdmin;
 
-        // 1. Cek langsung di userData[mod.key] (sesuai output dari login.html)
+        // 1. Cek langsung di userData[mod.key]
         if (!allowed && userData[mod.key] !== undefined && userData[mod.key] !== null) {
             const val = String(userData[mod.key]).trim().toUpperCase();
             allowed = (val === "Y" || val === "TRUE" || val === "1");

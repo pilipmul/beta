@@ -1,6 +1,37 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  <!-- FAVICON DINAMIS (FLEKSIBEL LOKAL & HOSTING) -->
+  <script>
+    (function injectFavicon() {
+      function applyFavicon() {
+        if (!document.head) return;
+        
+        let favicon = document.querySelector("link[rel*='icon']");
+        if (!favicon) {
+          favicon = document.createElement('link');
+          document.head.appendChild(favicon);
+        }
+        
+        favicon.rel = 'icon';
+        favicon.type = 'image/png';
+        favicon.sizes = '512x512';
+        
+        // Cek protokol (file:// vs http/https)
+        const isLocalFile = window.location.protocol === 'file:';
+        const iconPath = isLocalFile ? 'favicon-512.png' : '/favicon-512.png';
+        
+        favicon.href = iconPath + '?v=' + new Date().getTime();
+      }
+
+      if (document.head) {
+        applyFavicon();
+      } else {
+        document.addEventListener('DOMContentLoaded', applyFavicon);
+      }
+    })();
+  </script>
+
   <script>
     // Verifikasi Sesi sebelum halaman dimuat
     (function() {
