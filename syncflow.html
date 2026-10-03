@@ -1,10 +1,37 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <!-- AUTO-INJECT FAVICON (KOMPATIBEL GITHUB PAGES, VERCEL, HOSTING & LOKAL) -->
+    <script>
+        (function injectFavicon() {
+            function applyFavicon() {
+                if (!document.head) return;
+                
+                let favicon = document.querySelector("link[rel*='icon']");
+                if (!favicon) {
+                    favicon = document.createElement('link');
+                    document.head.appendChild(favicon);
+                }
+                
+                favicon.rel = 'icon';
+                favicon.type = 'image/png';
+                favicon.sizes = '512x512';
+                
+                // Menggunakan relative path './' mendukung sub-folder/repository GitHub Pages dan Vercel
+                favicon.href = './favicon-512.png?v=' + new Date().getTime();
+            }
+
+            if (document.head) {
+                applyFavicon();
+            } else {
+                document.addEventListener('DOMContentLoaded', applyFavicon);
+            }
+        })();
+    </script>
+
     <meta charset="UTF-8">
     <title>SyncFlow - SOT</title> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/main/Logo%201.png">
     
     <!-- Auth Guard LocalStorage Terperbaiki -->
     <script>
@@ -311,7 +338,7 @@
         .spinning { animation: spin 1s linear infinite; }
         
         #historyPopup { position: fixed; top: 60px; right: 16px; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 310px; max-height: 420px; overflow-y: auto; padding: 0; display: none; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 9000; }
-        .history-header { position: sticky; top: 0; background: var(--bg-card); padding: 10px 14px; z-index: 10; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; min-height: 45px; }
+        .history-header { position: sticky; top: 0; background: var(--bg-card); padding: 10px 14px; z-index: 10; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-between; min-height: 45px; }
         #historySearchInput { display: none; width: 85%; height: 30px; border: 1px solid var(--border-color); border-radius: 16px; padding: 0 10px; font-size: 0.85rem; text-align: left; background: var(--bg-input-readonly); color: var(--text-primary); }
         #searchToggleBtn { cursor: pointer; display: flex; align-items: center; }
         
@@ -816,32 +843,31 @@
         document.getElementById("btnIn").onclick = () => handleSubmit("in");
         document.getElementById("btnOut").onclick = () => handleSubmit("out");
         
-        // KODE BARU (AMAN & BERSIH)
-window.onload = function() {
-    fetchDataAndUpdateUI();
+        window.onload = function() {
+            fetchDataAndUpdateUI();
 
-    // Prioritaskan nama asli dari sesi login
-    const sessionUser = getUserSession();
-    const validatedName = sessionUser ? sessionUser.nama : "";
+            // Prioritaskan nama asli dari sesi login
+            const sessionUser = getUserSession();
+            const validatedName = sessionUser ? sessionUser.nama : "";
 
-    if (validatedName) {
-        try {
-            const nameInput = document.getElementById("name");
-            if (nameInput) {
-                nameInput.value = validatedName;
-                nameInput.dispatchEvent(new Event('input'));
+            if (validatedName) {
+                try {
+                    const nameInput = document.getElementById("name");
+                    if (nameInput) {
+                        nameInput.value = validatedName;
+                        nameInput.dispatchEvent(new Event('input'));
+                    }
+                } catch (e) {
+                    console.error("Gagal mengisi nama user:", e);
+                }
             }
-        } catch (e) {
-            console.error("Gagal mengisi nama user:", e);
-        }
-    }
 
-    // Bersihkan parameter ?user= dari address bar tanpa me-reload halaman
-    if (window.history && window.history.replaceState) {
-        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
-    }
-};
+            // Bersihkan parameter ?user= dari address bar tanpa me-reload halaman
+            if (window.history && window.history.replaceState) {
+                const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+            }
+        };
     </script>
 </body>
 </html>
