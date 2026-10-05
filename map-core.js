@@ -253,7 +253,6 @@ function setActiveCategory(cat) {
   const tLayer = document.getElementById('marker-tenant-layer');
   const hLayer = document.getElementById('marker-hse-layer');
 
-  // Samakan class ukuran tombol agar konsisten w-7 h-7 sm:w-8 sm:h-8
   const btnClass = "category-dropdown-btn bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] w-7 h-7 sm:w-8 sm:h-8 rounded-lg shadow-xs cursor-pointer transition active:scale-95 flex items-center justify-center text-[#202124] dark:text-[#e8eaed]";
 
   if (cat === 'tenant') {
@@ -261,7 +260,6 @@ function setActiveCategory(cat) {
       btn.className = btnClass;
     });
     document.querySelectorAll('.current-category-label').forEach(el => {
-      // Tambahkan 'leading-none' untuk menetralkan line-height FontAwesome
       el.innerHTML = `<i class="fa-solid fa-store text-[11px] sm:text-xs leading-none"></i>`;
     });
     
@@ -279,7 +277,6 @@ function setActiveCategory(cat) {
       btn.className = btnClass;
     });
     document.querySelectorAll('.current-category-label').forEach(el => {
-      // Tambahkan 'leading-none' untuk menetralkan line-height FontAwesome
       el.innerHTML = `<i class="fa-solid fa-shield-halved text-[11px] sm:text-xs leading-none"></i>`;
     });
 
@@ -604,7 +601,6 @@ function closeFloatingCard() {
     floatingCard.classList.remove('translate-x-0', 'opacity-100', 'pointer-events-auto');
   }
   
-  // Reset status seleksi marker
   if (typeof selectedTenantNo !== 'undefined') selectedTenantNo = null;
   if (typeof selectedHSENo !== 'undefined') selectedHSENo = null;
   
@@ -708,7 +704,7 @@ function renderSearchDropdownResults(searchVal) {
     if (typeof hseData === 'undefined' || !Array.isArray(hseData)) return;
 
     const matched = hseData.filter(h => 
-      `${h.jenis} ${h.tipe} ${h.lokasi}`.toLowerCase().includes(query) || String(h.no).includes(query)
+      `${h.kategori} ${h.tipe} ${h.lokasi}`.toLowerCase().includes(query) || String(h.no).includes(query)
     );
 
     if (matched.length === 0) {
@@ -716,7 +712,7 @@ function renderSearchDropdownResults(searchVal) {
     } else {
       html = matched.map(h => {
         const config = (typeof getHSEVisualConfig === 'function') 
-          ? getHSEVisualConfig(h.jenis) 
+          ? getHSEVisualConfig(h.kategori) 
           : { bgColor: 'bg-slate-500', icon: 'fa-shield-halved' };
 
         return `
@@ -726,7 +722,7 @@ function renderSearchDropdownResults(searchVal) {
                 <i class="fa-solid ${config.icon}"></i>
               </div>
               <div>
-                <div class="font-bold text-slate-800 dark:text-slate-100">${escapeHtml(h.jenis)} - ${escapeHtml(h.lokasi)}</div>
+                <div class="font-bold text-slate-800 dark:text-slate-100">${escapeHtml(h.kategori)} - ${escapeHtml(h.lokasi)}</div>
                 <div class="text-[10px] text-slate-400 uppercase">Lantai: ${escapeHtml(h.lantai)} • #${h.no}</div>
               </div>
             </div>
@@ -741,7 +737,6 @@ function renderSearchDropdownResults(searchVal) {
   dropdown.classList.remove('hidden');
 }
 
-// Handler saat item sugesti Tenant diklik
 function selectTenantFromSearch(no) {
   closeSearchDropdown();
   
@@ -751,11 +746,8 @@ function selectTenantFromSearch(no) {
   const searchInput = document.getElementById('globalSearchInput');
   const btnClear = document.getElementById('btnClearSearch');
 
-  // 1. Ambil nilai query saat ini untuk mengecek apakah user mencari nama penyewa atau kode lokasi
   const currentQuery = searchInput ? searchInput.value.trim().toLowerCase() : '';
   
-  // 2. Jika query cocok dengan nama penyewa, isi search box dengan nama penyewa. 
-  // Jika tidak, prioritaskan lokasi/kode unik (seperti LB-a2-1)
   let selectedText = tenant.lokasi;
   if (tenant.penyewa && tenant.penyewa.toLowerCase().includes(currentQuery)) {
     selectedText = tenant.penyewa;
@@ -768,16 +760,13 @@ function selectTenantFromSearch(no) {
     btnClear.classList.remove('hidden');
   }
 
-  // 3. Eksekusi seleksi lokasi (pindah lantai & buka popup detail)
   if (typeof selectTenant === 'function') {
     selectTenant(no);
   }
 
-  // 4. Perbarui visual peta agar marker lain diredupkan
   refreshActiveModule();
 }
 
-// Handler saat item sugesti HSE diklik
 function selectHSEFromSearch(no) {
   closeSearchDropdown();
   
@@ -787,8 +776,7 @@ function selectHSEFromSearch(no) {
   const searchInput = document.getElementById('globalSearchInput');
   const btnClear = document.getElementById('btnClearSearch');
 
-  // Set search box persis dengan nama/lokasi item HSE yang dipilih
-  const selectedText = hseItem.lokasi !== '-' ? hseItem.lokasi : `${hseItem.jenis} #${hseItem.no}`;
+  const selectedText = hseItem.lokasi !== '-' ? hseItem.lokasi : `${hseItem.kategori} #${hseItem.no}`;
 
   if (searchInput) {
     searchInput.value = selectedText;
@@ -941,14 +929,21 @@ function calculateHSECounts() {
   if (typeof hseData === 'undefined' || !Array.isArray(hseData)) return;
 
   let cctv = 0, apar = 0, hydrant = 0, bak = 0, guardtour = 0;
+  let escalator = 0, ahu = 0, lift = 0, genset = 0, pju = 0, deepwell = 0;
 
   hseData.forEach(h => {
-    const key = String(h.jenis || '').trim().toLowerCase().replace(/\s+/g, '_');
+    const key = String(h.kategori || '').trim().toLowerCase().replace(/\s+/g, '_');
     if (key.includes('cctv')) cctv++;
     else if (key.includes('apar')) apar++;
     else if (key.includes('hydrant')) hydrant++;
     else if (key.includes('bak') || key.includes('kontrol')) bak++;
     else if (key.includes('guard') || key.includes('tour') || key.includes('pin')) guardtour++;
+    else if (key.includes('escalator') || key.includes('eskalator')) escalator++;
+    else if (key.includes('ahu') || key.includes('air_handling')) ahu++;
+    else if (key.includes('lift') || key.includes('elevator')) lift++;
+    else if (key.includes('genset') || key.includes('generator')) genset++;
+    else if (key.includes('pju') || key.includes('penerangan')) pju++;
+    else if (key.includes('deepwell') || key.includes('deep_well') || key.includes('sumur')) deepwell++;
   });
 
   const elCctv = document.getElementById('count-hse-cctv');
@@ -956,12 +951,24 @@ function calculateHSECounts() {
   const elHydrant = document.getElementById('count-hse-hydrant');
   const elBak = document.getElementById('count-hse-bak');
   const elGuardtour = document.getElementById('count-hse-guardtour');
+  const elEscalator = document.getElementById('count-hse-escalator');
+  const elAhu = document.getElementById('count-hse-ahu');
+  const elLift = document.getElementById('count-hse-lift');
+  const elGenset = document.getElementById('count-hse-genset');
+  const elPju = document.getElementById('count-hse-pju');
+  const elDeepwell = document.getElementById('count-hse-deepwell');
 
   if (elCctv) elCctv.innerText = cctv;
   if (elApar) elApar.innerText = apar;
   if (elHydrant) elHydrant.innerText = hydrant;
   if (elBak) elBak.innerText = bak;
   if (elGuardtour) elGuardtour.innerText = guardtour;
+  if (elEscalator) elEscalator.innerText = escalator;
+  if (elAhu) elAhu.innerText = ahu;
+  if (elLift) elLift.innerText = lift;
+  if (elGenset) elGenset.innerText = genset;
+  if (elPju) elPju.innerText = pju;
+  if (elDeepwell) elDeepwell.innerText = deepwell;
 }
 
 // SINKRONISASI OTOMATIS DATA LEGENDA SAAT SWITCH KAT

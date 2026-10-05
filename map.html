@@ -214,7 +214,7 @@
       visibility: visible;
     }
 
-    /* FLOATING DETAIL CARD ANIMATION & OVERRIDE TEKS TERPOTONG */
+    /* FLOATING DETAIL CARD ANIMATION */
     #floating-detail-card {
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
     }
@@ -290,7 +290,6 @@
 
             <div class="dropdown-menu absolute left-0 top-full pt-1 hidden z-[99999]">
               <div class="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md border border-[#dadce0] dark:border-[#3c4043] p-1.5 rounded-xl shadow-2xl flex flex-col gap-1 font-bold text-sm">
-                
                 <button type="button" onclick="switchFloor('rooftop')" title="Rooftop" class="tab-floor-rooftop w-8 h-8 rounded-lg flex items-center justify-center transition cursor-pointer">
                   R
                 </button>
@@ -306,7 +305,6 @@
                 <button type="button" onclick="switchFloor('basement')" title="Basement" class="tab-floor-basement w-8 h-8 rounded-lg flex items-center justify-center transition cursor-pointer">
                   B
                 </button>
-
               </div>
             </div>
           </div>
@@ -331,9 +329,8 @@
                  class="w-full h-7 sm:h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
           <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden cursor-pointer">✕</button>
 
-          <!-- Live Search Result Dropdown (Profesional UI View-Only Mode) -->
+          <!-- Live Search Result Dropdown -->
           <div id="searchResultDropdown" class="hidden absolute right-0 top-full mt-1.5 w-64 sm:w-72 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-2xl overflow-hidden z-[99999] max-h-60 overflow-y-auto custom-scroll text-xs">
-            <!-- Diisi otomatis oleh JavaScript -->
           </div>
         </div>
 
@@ -367,7 +364,6 @@
 
         <!-- Sidebar Content Dynamic -->
         <div class="flex-1 overflow-y-auto divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] custom-scroll" id="sidebar-list-container">
-          <!-- Loaded by JS -->
         </div>
 
         <div class="p-2.5 bg-[#f8f9fa] dark:bg-[#252525] border-t border-[#dadce0] dark:border-[#3c4043] text-xs text-[#5f6368] dark:text-[#9aa0a6] flex justify-between font-mono">
@@ -379,18 +375,16 @@
       <!-- MAP VIEWPORT CONTAINER -->
       <main class="flex-1 relative overflow-hidden bg-[#eef2f6] dark:bg-[#0b1329]" id="viewport">
         
-        <!-- FLOATING DETAIL CARD (OVERFLOW HIDDEN REMOVED FOR AUTO WRAP) -->
+        <!-- FLOATING DETAIL CARD -->
         <div id="floating-detail-card" class="absolute top-3 right-3 sm:top-5 sm:right-5 z-40 w-64 sm:w-72 bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-2xl p-3.5 sm:p-4 transform translate-x-[120%] opacity-0 pointer-events-none transition-all duration-300">
           <div id="floating-detail-content" class="w-full"></div>
         </div>
 
-        <!-- PANEL FLOATING SISI KANAN LAYAR (LEGENDA, MOBILE DROPDOWNS & ZOOM CONTROLS) -->
+        <!-- PANEL FLOATING SISI KANAN LAYAR -->
         <div class="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 z-30 flex flex-col items-end gap-2">
           
-          <!-- DROPDOWN KHUSUS MOBILE (HANYA TAMPIL DI < sm) -->
+          <!-- DROPDOWN KHUSUS MOBILE -->
           <div class="flex sm:hidden flex-col items-end gap-2 mb-1">
-            
-            <!-- DROPDOWN KATEGORI (MOBILE) -->
             <div class="relative dropdown-container shrink-0" id="dropdown-category-mobile-container">
               <button type="button" onclick="toggleDropdownMenu('dropdown-category-mobile-container', event)" class="category-dropdown-btn bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-lg cursor-pointer transition active:scale-95 flex items-center justify-center text-[#202124] dark:text-[#e8eaed]">
                 <span class="current-category-label flex items-center justify-center">
@@ -410,7 +404,6 @@
               </div>
             </div>
 
-            <!-- DROPDOWN LANTAI (MOBILE) -->
             <div class="relative dropdown-container shrink-0" id="dropdown-floor-mobile-container">
               <button type="button" onclick="toggleDropdownMenu('dropdown-floor-mobile-container', event)" class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-lg cursor-pointer transition active:scale-95 flex items-center justify-center text-xs font-bold text-[#202124] dark:text-[#e8eaed]">
                 <span id="mobile-floor-text-active" class="text-center">B</span>
@@ -418,36 +411,24 @@
 
               <div class="dropdown-menu absolute right-0 bottom-full mb-2 hidden z-[99999]">
                 <div class="bg-white/95 dark:bg-[#1e1e1e]/95 backdrop-blur-md border border-[#dadce0] dark:border-[#3c4043] p-1.5 rounded-xl shadow-2xl flex flex-col gap-1 font-bold text-sm">
-                  
-                  <!-- Rooftop -->
                   <button type="button" onclick="switchFloor('rooftop')" title="Rooftop" class="btn-floor-mobile tab-floor-rooftop w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer">
                     R
                   </button>
-
-                  <!-- Lt 2 -->
                   <button type="button" onclick="switchFloor('dua')" title="Lantai 2" class="btn-floor-mobile tab-floor-dua w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer">
                     2
                   </button>
-
-                  <!-- Lt 1 -->
                   <button type="button" onclick="switchFloor('satu')" title="Lantai 1" class="btn-floor-mobile tab-floor-satu w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer">
                     1
                   </button>
-
-                  <!-- Dasar -->
                   <button type="button" onclick="switchFloor('dasar')" title="Dasar" class="btn-floor-mobile tab-floor-dasar w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer">
                     G
                   </button>
-
-                  <!-- Basement -->
                   <button type="button" onclick="switchFloor('basement')" title="Basement" class="btn-floor-mobile tab-floor-basement w-9 h-9 rounded-lg flex items-center justify-center transition cursor-pointer">
                     B
                   </button>
-
                 </div>
               </div>
             </div>
-
           </div>
 
           <!-- TOMBOL LEGENDA INFORMASI PRO -->
@@ -505,7 +486,7 @@
               </div>
 
               <!-- LEGENDA KATEGORI HSE -->
-              <div id="legend-content-hse" class="space-y-1.5 hidden">
+              <div id="legend-content-hse" class="space-y-1.5 hidden pr-1">
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-2">
                     <span class="w-5 h-5 rounded bg-indigo-600 text-white flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-video"></i></span>
@@ -545,7 +526,56 @@
                   </div>
                   <span id="count-hse-guardtour" class="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">0</span>
                 </div>
-              </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-purple-600 text-white flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-stairs"></i></span>
+                    <span class="text-[#5f6368] dark:text-[#bdc1c6] font-medium">Escalator</span>
+                  </div>
+                  <span id="count-hse-escalator" class="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">0</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-cyan-600 text-white flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-fan"></i></span>
+                    <span class="text-[#5f6368] dark:text-[#bdc1c6] font-medium">AHU</span>
+                  </div>
+                  <span id="count-hse-ahu" class="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">0</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-violet-600 text-white flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-elevator"></i></span>
+                    <span class="text-[#5f6368] dark:text-[#bdc1c6] font-medium">Lift</span>
+                  </div>
+                  <span id="count-hse-lift" class="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">0</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-orange-600 text-white flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-bolt"></i></span>
+                    <span class="text-[#5f6368] dark:text-[#bdc1c6] font-medium">Genset</span>
+                  </div>
+                  <span id="count-hse-genset" class="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">0</span>
+                </div>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded bg-yellow-600 text-white flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-lightbulb"></i></span>
+                    <span class="text-[#5f6368] dark:text-[#bdc1c6] font-medium">PJU</span>
+                  </div>
+                  <span id="count-hse-pju" class="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">0</span>
+                </div>
+              
+<div class="flex items-center justify-between">
+  <div class="flex items-center gap-2">
+    <span class="w-5 h-5 rounded bg-teal-600 text-white flex items-center justify-center text-[9px] shrink-0"><i class="fa-solid fa-bore-hole"></i></span>
+    <span class="text-[#5f6368] dark:text-[#bdc1c6] font-medium">Deepwell</span>
+  </div>
+  <span id="count-hse-deepwell" class="font-mono text-[11px] font-bold text-slate-700 dark:text-slate-300">0</span>
+</div>
+
+</div>
 
             </div>
           </div>

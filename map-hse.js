@@ -5,13 +5,19 @@
 let hseData = [];
 let selectedHSENo = null;
 
-// Konfigurasi Visual Ikon & Warna Berdasarkan Jenis Alat
+// Konfigurasi Visual Ikon & Warna Berdasarkan Kategori Alat
 const HSE_CONFIG = {
   cctv: { icon: 'fa-video', bgColor: 'bg-indigo-600 dark:bg-indigo-500', label: 'CCTV' },
   apar: { icon: 'fa-fire-extinguisher', bgColor: 'bg-red-600 dark:bg-red-500', label: 'APAR' },
   hydrant: { icon: 'fa-faucet-drip', bgColor: 'bg-blue-600 dark:bg-blue-500', label: 'Hydrant' },
   bak_kontrol: { icon: 'fa-square-poll-vertical', bgColor: 'bg-amber-600 dark:bg-amber-500', label: 'Bak Kontrol' },
-  pin_guardtour: { icon: 'fa-location-dot', bgColor: 'bg-emerald-600 dark:bg-emerald-500', label: 'Guard Tour' }
+  pin_guardtour: { icon: 'fa-location-dot', bgColor: 'bg-emerald-600 dark:bg-emerald-500', label: 'Guard Tour' },
+  escalator: { icon: 'fa-stairs', bgColor: 'bg-purple-600 dark:bg-purple-500', label: 'Escalator' },
+  ahu: { icon: 'fa-fan', bgColor: 'bg-cyan-600 dark:bg-cyan-500', label: 'AHU' },
+  lift: { icon: 'fa-elevator', bgColor: 'bg-violet-600 dark:bg-violet-500', label: 'Lift' },
+  genset: { icon: 'fa-bolt', bgColor: 'bg-orange-600 dark:bg-orange-500', label: 'Genset' },
+  pju: { icon: 'fa-lightbulb', bgColor: 'bg-yellow-600 dark:bg-yellow-500', label: 'PJU' },
+  deepwell: { icon: 'fa-bore-hole', bgColor: 'bg-teal-600 dark:bg-teal-500', label: 'Deepwell' }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -26,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .subscribe();
 });
 
-// Helper XSS Protection jika belum didefinisikan secara global
+// Helper XSS Protection
 if (typeof escapeHtml !== 'function') {
   function escapeHtml(str) {
     if (!str) return '';
@@ -39,7 +45,41 @@ if (typeof escapeHtml !== 'function') {
   }
 }
 
-// Menutup Floating Detail Card jika belum didefinisikan secara global
+// JSONB Parsing utilities for "update" column
+function getLatestUpdateObj(rawUpdate) {
+  if (!rawUpdate) return null;
+
+  try {
+    let parsed = (typeof rawUpdate === 'string') ? JSON.parse(rawUpdate) : rawUpdate;
+
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed[parsed.length - 1];
+    } else if (typeof parsed === 'object' && parsed !== null) {
+      return parsed;
+    }
+  } catch (e) {
+    if (typeof rawUpdate === 'string') {
+      const parts = rawUpdate.split(',');
+      return {
+        date: parts[0]?.trim() || '',
+        note: parts[1]?.trim() || ''
+      };
+    }
+  }
+  return null;
+}
+
+function formatUpdateDisplay(rawUpdate) {
+  const latest = getLatestUpdateObj(rawUpdate);
+  if (!latest) return '-';
+
+  const dateStr = latest.date || '';
+  const noteStr = latest.note ? `, ${latest.note}` : '';
+  
+  return (dateStr + noteStr).trim() || '-';
+}
+
+// Menutup Floating Detail Card
 if (typeof closeFloatingCard !== 'function') {
   function closeFloatingCard() {
     const floatingCard = document.getElementById('floating-detail-card');
@@ -50,21 +90,27 @@ if (typeof closeFloatingCard !== 'function') {
   }
 }
 
-function getHSEVisualConfig(jenis) {
-  if (!jenis) return { icon: 'fa-shield-halved', bgColor: 'bg-slate-600', label: 'HSE' };
+function getHSEVisualConfig(kategori) {
+  if (!kategori) return { icon: 'fa-shield-halved', bgColor: 'bg-slate-600', label: 'HSE' };
   
-  const key = String(jenis).trim().toLowerCase().replace(/\s+/g, '_');
+  const key = String(kategori).trim().toLowerCase().replace(/\s+/g, '_');
   
   if (key.includes('cctv')) return HSE_CONFIG.cctv;
   if (key.includes('apar')) return HSE_CONFIG.apar;
   if (key.includes('hydrant')) return HSE_CONFIG.hydrant;
   if (key.includes('bak') || key.includes('kontrol')) return HSE_CONFIG.bak_kontrol;
   if (key.includes('guard') || key.includes('tour') || key.includes('pin')) return HSE_CONFIG.pin_guardtour;
+  if (key.includes('escalator') || key.includes('eskalator')) return HSE_CONFIG.escalator;
+  if (key.includes('ahu') || key.includes('air_handling')) return HSE_CONFIG.ahu;
+  if (key.includes('lift') || key.includes('elevator')) return HSE_CONFIG.lift;
+  if (key.includes('genset') || key.includes('generator')) return HSE_CONFIG.genset;
+  if (key.includes('pju') || key.includes('penerangan')) return HSE_CONFIG.pju;
+  if (key.includes('deepwell') || key.includes('deep_well') || key.includes('sumur')) return HSE_CONFIG.deepwell;
 
   return HSE_CONFIG[key] || { 
     icon: 'fa-shield-halved', 
     bgColor: 'bg-slate-600 dark:bg-slate-500', 
-    label: jenis 
+    label: kategori 
   };
 }
 
@@ -100,13 +146,12 @@ async function fetchHSEFromSupabase() {
 
       return {
         no: item.no,
-        tipe: item.tipe || '-',
         lokasi: item.lokasi || '-',
         kondisi: item.kondisi || '-',
-        keterangan: item.keterangan || '-',
         update: item.update || '-',
         dokumentasi: item.dokumentasi || '',
-        jenis: item.jenis || '-',
+        kategori: item.kategori || '-',
+        spek: item.spek || '-',
         lantai: (parsedCoords && parsedCoords.floor) ? parsedCoords.floor : (typeof currentFloor !== 'undefined' ? currentFloor : 'basement'),
         koordinat: parsedCoords,
         ukuran: (parsedCoords && parsedCoords.size) ? parseFloat(parsedCoords.size) : 32
@@ -171,7 +216,7 @@ function renderHSEList() {
   const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
   let filtered = hseData.filter(h => {
-    const displayText = `${h.jenis} ${h.tipe} ${h.lokasi}`.toLowerCase();
+    const displayText = `${h.kategori} ${h.spek} ${h.lokasi}`.toLowerCase();
     const matchSearch = displayText.includes(searchVal) || String(h.no).includes(searchVal);
 
     if (typeof activeFilter !== 'undefined' && activeFilter === 'plotted') return matchSearch && h.koordinat !== null;
@@ -194,8 +239,8 @@ function renderHSEList() {
   container.innerHTML = filtered.map(h => {
     const hasCoords = h.koordinat !== null;
     const isSelected = selectedHSENo === h.no;
-    const config = getHSEVisualConfig(h.jenis);
-    const displayText = `${h.jenis} ${h.tipe} ${h.lokasi}`;
+    const config = getHSEVisualConfig(h.kategori);
+    const displayText = `${h.kategori} - ${h.lokasi}`;
 
     return `
       <div class="p-2.5 flex items-center justify-between transition-colors cursor-pointer hover:bg-slate-100 dark:hover:bg-zinc-800 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-900/30 border-l-4 border-emerald-500' : ''}"
@@ -251,9 +296,9 @@ function renderHSEMarkers() {
 
     const isSelected = selectedHSENo === h.no;
     const markerSize = h.ukuran || 32;
-    const config = getHSEVisualConfig(h.jenis);
+    const config = getHSEVisualConfig(h.kategori);
 
-    const displayText = `${h.jenis} ${h.tipe} ${h.lokasi}`.toLowerCase();
+    const displayText = `${h.kategori} ${h.spek} ${h.lokasi}`.toLowerCase();
     const isMatch = !searchVal || displayText.includes(searchVal) || String(h.no).includes(searchVal);
 
     const marker = document.createElement('div');
@@ -265,7 +310,7 @@ function renderHSEMarkers() {
 
     marker.innerHTML = `
       <i class="fa-solid ${config.icon} text-xs pointer-events-none"></i>
-      <div class="marker-tooltip">[${escapeHtml(h.jenis)}] ${escapeHtml(h.lokasi)}</div>
+      <div class="marker-tooltip">[${escapeHtml(h.kategori)}] ${escapeHtml(h.lokasi)}</div>
     `;
 
     marker.addEventListener('click', (e) => {
@@ -330,7 +375,7 @@ async function showHSEDetailPopup(noHSE) {
 
   if (!item) return;
 
-  const config = getHSEVisualConfig(item.jenis);
+  const config = getHSEVisualConfig(item.kategori);
   const kondisiText = (item.kondisi || '-').trim();
   const kondisiLower = kondisiText.toLowerCase();
 
@@ -353,19 +398,21 @@ async function showHSEDetailPopup(noHSE) {
     }
   }
 
+  const updateFormatted = formatUpdateDisplay(item.update);
+
   contentContainer.innerHTML = `
     <div class="flex items-start justify-between border-b border-slate-200 dark:border-zinc-800 pb-2 mb-3">
       <div class="pr-2 min-w-0">
         <div class="flex items-center gap-1.5 mb-1">
           <span class="px-2 py-0.5 text-[10px] font-bold rounded text-white ${config.bgColor}">
-            ${escapeHtml(item.jenis || 'HSE')}
+            ${escapeHtml(item.kategori || 'HSE')}
           </span>
           <span class="text-[11px] font-mono font-bold text-emerald-500">
             #${item.no}
           </span>
         </div>
-        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug truncate" title="${escapeHtml(item.lokasi || item.tipe || 'Detail HSE')}">
-          ${escapeHtml(item.lokasi || item.tipe || 'Detail HSE')}
+        <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug truncate" title="${escapeHtml(item.lokasi || 'Detail HSE')}">
+          ${escapeHtml(item.lokasi || 'Detail HSE')}
         </h3>
       </div>
       <button onclick="closeFloatingCard(); event.stopPropagation();" 
@@ -377,13 +424,8 @@ async function showHSEDetailPopup(noHSE) {
 
     <div class="space-y-2 text-xs text-slate-700 dark:text-slate-300 max-h-[60vh] sm:max-h-[70vh] overflow-y-auto custom-scroll pr-1">
       <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
-        <span class="text-slate-400 font-medium">Jenis</span>
-        <span class="font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(item.jenis || '-')}</span>
-      </div>
-
-      <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
-        <span class="text-slate-400 font-medium">Tipe</span>
-        <span class="font-medium text-slate-800 dark:text-slate-200">${escapeHtml(item.tipe || '-')}</span>
+        <span class="text-slate-400 font-medium">Kategori</span>
+        <span class="font-semibold text-slate-800 dark:text-slate-200">${escapeHtml(item.kategori || '-')}</span>
       </div>
 
       <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
@@ -399,13 +441,13 @@ async function showHSEDetailPopup(noHSE) {
       </div>
 
       <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
-        <span class="text-slate-400 font-medium">Keterangan</span>
-        <span class="font-medium text-slate-800 dark:text-slate-200 break-words max-w-[150px] text-right" title="${escapeHtml(item.keterangan || '-')}">${escapeHtml(item.keterangan || '-')}</span>
+        <span class="text-slate-400 font-medium">Spesifikasi (Spek)</span>
+        <span class="font-medium text-slate-800 dark:text-slate-200 break-words max-w-[150px] text-right" title="${escapeHtml(item.spek || '-')}">${escapeHtml(item.spek || '-')}</span>
       </div>
 
       <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
         <span class="text-slate-400 font-medium">Update</span>
-        <span class="font-mono text-[11px] text-slate-600 dark:text-slate-400">${escapeHtml(item.update || '-')}</span>
+        <span class="font-mono text-[11px] text-slate-600 dark:text-slate-400 text-right max-w-[150px] truncate" title="${escapeHtml(updateFormatted)}">${escapeHtml(updateFormatted)}</span>
       </div>
 
       <div class="flex justify-between items-center py-1 border-b border-slate-100 dark:border-zinc-800">
@@ -430,7 +472,7 @@ function startHSEPlacement(no) {
   const actionBar = document.getElementById('active-action-bar');
   const viewport = document.getElementById('viewport');
 
-  if (targetName) targetName.innerText = h ? `${h.jenis} - ${h.lokasi}` : `#${no}`;
+  if (targetName) targetName.innerText = h ? `${h.kategori} - ${h.lokasi}` : `#${no}`;
   if (actionBar) {
     actionBar.classList.remove('hidden');
     actionBar.classList.add('flex');

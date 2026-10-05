@@ -1,4 +1,4 @@
-// KONFIGURASI SUPABASE SAMA PERSIS DENGAN TENANT / INVENTORY
+// KONFIGURASI SUPABASE
 const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -30,7 +30,7 @@ try {
   filterSelections = {};
 }
 
-// Daftar akun yang memiliki hak akses CRUD (Create, Update, Delete)
+// Daftar akun yang memiliki hak akses CRUD
 const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
 
 function isSuperAdmin() {
@@ -41,14 +41,46 @@ function isSuperAdmin() {
     const userData = JSON.parse(session);
     if (!userData) return false;
 
-    // Cek apakah nama atau username ada di dalam daftar ALLOWED_EDITORS
     const isEditor = ALLOWED_EDITORS.includes(userData.nama) || ALLOWED_EDITORS.includes(userData.username);
-
     return isEditor || userData.role === "Admin" || userData.role === "SuperAdmin";
   } catch (err) {
     console.error("Gagal verifikasi hak akses editor:", err);
     return false;
   }
+}
+
+// JSONB Parsing utilities for "update" column
+function getLatestUpdateObj(rawUpdate) {
+  if (!rawUpdate) return null;
+
+  try {
+    let parsed = (typeof rawUpdate === 'string') ? JSON.parse(rawUpdate) : rawUpdate;
+
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed[parsed.length - 1];
+    } else if (typeof parsed === 'object' && parsed !== null) {
+      return parsed;
+    }
+  } catch (e) {
+    if (typeof rawUpdate === 'string') {
+      const parts = rawUpdate.split(',');
+      return {
+        date: parts[0]?.trim() || '',
+        note: parts[1]?.trim() || ''
+      };
+    }
+  }
+  return null;
+}
+
+function formatUpdateDisplay(rawUpdate) {
+  const latest = getLatestUpdateObj(rawUpdate);
+  if (!latest) return '-';
+
+  const dateStr = latest.date || '';
+  const noteStr = latest.note ? `, ${latest.note}` : '';
+  
+  return (dateStr + noteStr).trim() || '-';
 }
 
 function saveStateToSession() {
@@ -121,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (typeof renderHeader === 'function') {
     renderHeader({
-      subtitle: "HSE",
+      subtitle: "Health, Safety, and Environment",
       hamburgerItems: hamburgerMenuOptions
     });
   }
@@ -184,7 +216,7 @@ function clearGlobalSearch() {
 }
 
 function updateFilterButtonStyles() {
-  const allColumns = ['no', 'tipe', 'lokasi', 'kondisi', 'keterangan', 'update', 'dokumentasi', 'jenis'];
+  const allColumns = ['no', 'lokasi', 'kondisi', 'dokumentasi', 'kategori', 'spek', 'update'];
 
   allColumns.forEach(col => {
     const btn = document.getElementById(`btn-filter-${col}`);
@@ -205,13 +237,11 @@ function updateFilterButtonStyles() {
 function applySupabaseFilters(query) {
   if (globalSearchQuery !== '') {
     query = query.or(
-      `tipe.ilike.%${globalSearchQuery}%,` +
       `lokasi.ilike.%${globalSearchQuery}%,` +
       `kondisi.ilike.%${globalSearchQuery}%,` +
-      `keterangan.ilike.%${globalSearchQuery}%,` +
-      `update.ilike.%${globalSearchQuery}%,` +
-      `dokumentasi.ilike.%${globalSearchQuery}%,` +
-      `jenis.ilike.%${globalSearchQuery}%`
+      `kategori.ilike.%${globalSearchQuery}%,` +
+      `spek.ilike.%${globalSearchQuery}%,` +
+      `dokumentasi.ilike.%${globalSearchQuery}%`
     );
   }
 
@@ -236,7 +266,7 @@ function applySupabaseFilters(query) {
 
 async function fetchTableData() {
   const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
 
   try {
     let countQuery = _supabase.from('hse').select('*', { count: 'exact', head: true });
@@ -249,7 +279,7 @@ async function fetchTableData() {
     document.getElementById('totalDataCount').innerText = totalRows;
 
     if (totalRows === 0) {
-      tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data HSE tidak ditemukan.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data HSE tidak ditemukan.</td></tr>`;
       updatePaginationUI();
       updateFilterButtonStyles();
       return;
@@ -282,7 +312,7 @@ async function fetchTableData() {
     renderTable();
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
   }
 }
 
@@ -291,7 +321,7 @@ function renderTable() {
   tbody.innerHTML = '';
 
   if (fetchedData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data yang sesuai filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data yang sesuai filter.</td></tr>`;
     updatePaginationUI();
     updateFilterButtonStyles();
     return;
@@ -303,12 +333,10 @@ function renderTable() {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors';
 
-    // No Menjadi Tombol Edit jika akun berhak
     const noBtn = allowEdit 
-      ? `<button onclick="openModalForNo(${row.no})" title="Edit Data HSE #${row.no}" class="inline-block px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-xs transition cursor-pointer">${row.no}</button>`
+      ? `<button onclick="openModalForNo(${row.no})" title="Edit Data HSE #${row.no}" class="inline-block px-2 py-0.5 text-[#1a73e8] dark:text-[#8ab4f8] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] hover:underline rounded font-medium text-xs transition-colors cursor-pointer">${row.no}</button>`
       : `<span class="inline-block px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] font-mono text-xs">${row.no}</span>`;
 
-    // Kondisi Badge Styling
     const kondisiVal = String(row.kondisi || '').toLowerCase();
     let kondisiBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
     if (kondisiVal.includes('baik') || kondisiVal.includes('ok') || kondisiVal.includes('normal')) {
@@ -319,7 +347,6 @@ function renderTable() {
       kondisiBadgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-500/20';
     }
 
-    // Tautan / Tampilan Dokumentasi
     let docHtml = '-';
     if (row.dokumentasi) {
       const docStr = String(row.dokumentasi).trim();
@@ -330,19 +357,20 @@ function renderTable() {
       }
     }
 
+    const updateFormatted = formatUpdateDisplay(row.update);
+
     tr.innerHTML = `
       <td class="p-2.5 text-center font-mono">${noBtn}</td>
-      <td class="p-2.5 font-semibold text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.tipe || '-')}</td>
+      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.kategori || '-')}</td>
       <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.lokasi || '-')}</td>
       <td class="p-2.5 text-center">
         <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${kondisiBadgeClass}">
           ${escapeHtml(row.kondisi || '-')}
         </span>
       </td>
-      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] break-words">${escapeHtml(row.keterangan || '-')}</td>
-      <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.update || '-')}</td>
+      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] break-words">${escapeHtml(row.spek || '-')}</td>
+      <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] truncate" title="${escapeHtml(updateFormatted)}">${escapeHtml(updateFormatted)}</td>
       <td class="p-2.5 truncate" title="${escapeHtml(row.dokumentasi || '')}">${docHtml}</td>
-      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.jenis || '-')}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -368,13 +396,22 @@ async function toggleFilterMenu(columnKey, event) {
     try {
       const { data, error } = await _supabase.from('hse').select(columnKey);
       if (!error && data) {
-        const allVals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+        const allVals = data.map(r => {
+          const val = (columnKey === 'update') ? formatUpdateDisplay(r[columnKey]) : r[columnKey];
+          return (val !== null && val !== undefined && val !== '') ? String(val) : '-';
+        });
         dbFilterOptions[columnKey] = Array.from(new Set(allVals)).sort();
       } else {
-        dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
+        dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => {
+          const val = (columnKey === 'update') ? formatUpdateDisplay(r[columnKey]) : r[columnKey];
+          return (val !== null && val !== undefined && val !== '') ? String(val) : '-';
+        }))).sort();
       }
     } catch {
-      dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
+      dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => {
+        const val = (columnKey === 'update') ? formatUpdateDisplay(r[columnKey]) : r[columnKey];
+        return (val !== null && val !== undefined && val !== '') ? String(val) : '-';
+      }))).sort();
     }
   }
 
@@ -394,7 +431,10 @@ function closeFilterPopover() {
 function renderFilterCheckboxes() {
   const container = document.getElementById('filterItemsList');
   const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
-  const uniqueValues = dbFilterOptions[activeFilterColumn] || Array.from(new Set(fetchedData.map(r => (r[activeFilterColumn] !== null && r[activeFilterColumn] !== undefined && r[activeFilterColumn] !== '') ? String(r[activeFilterColumn]) : '-'))).sort();
+  const uniqueValues = dbFilterOptions[activeFilterColumn] || Array.from(new Set(fetchedData.map(r => {
+    const val = (activeFilterColumn === 'update') ? formatUpdateDisplay(r[activeFilterColumn]) : r[activeFilterColumn];
+    return (val !== null && val !== undefined && val !== '') ? String(val) : '-';
+  }))).sort();
 
   container.innerHTML = '';
   let visibleCount = 0, visibleCheckedCount = 0;
@@ -552,19 +592,22 @@ function openModal(mode, data = null) {
   if (mode === 'add') {
     title.innerText = 'Tambah Data HSE Baru';
     btnDelete.classList.add('hidden');
+    document.getElementById('inputUpdateDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('inputUpdateNote').value = '';
   } else if (mode === 'edit' && data) {
     title.innerText = `Edit Data HSE #${data.no}`;
     btnDelete.classList.remove('hidden');
 
     document.getElementById('editNo').value = data.no;
-    document.getElementById('inputTipe').value = data.tipe || '';
     document.getElementById('inputLokasi').value = data.lokasi || '';
     document.getElementById('inputKondisi').value = data.kondisi || '';
-    document.getElementById('inputKeterangan').value = data.keterangan || '';
-    document.getElementById('inputUpdate').value = data.update || '';
+    document.getElementById('inputSpek').value = data.spek || '';
     document.getElementById('inputDokumentasi').value = data.dokumentasi || '';
-    document.getElementById('inputJenis').value = data.jenis || '';
-    document.getElementById('inputKoordinat').value = data.koordinat || '';
+    document.getElementById('inputKategori').value = data.kategori || '';
+
+    const latestUpdate = getLatestUpdateObj(data.update);
+    document.getElementById('inputUpdateDate').value = latestUpdate?.date || '';
+    document.getElementById('inputUpdateNote').value = latestUpdate?.note || '';
   }
 
   modal.classList.remove('hidden');
@@ -584,16 +627,61 @@ async function saveData(e) {
   if (!isSuperAdmin()) return;
 
   const editNo = document.getElementById('editNo').value;
-  
+  const updateDate = document.getElementById('inputUpdateDate').value.trim();
+  const updateNote = document.getElementById('inputUpdateNote').value.trim();
+
+  let updatedHistory = [];
+
+  if (editNo) {
+    const existingData = rawDataMap.get(parseInt(editNo, 10)) || rawDataMap.get(editNo);
+    let currentHistory = existingData?.update;
+
+    // 1. Parse string to object/array if stored as string
+    if (typeof currentHistory === 'string') {
+      try { 
+        currentHistory = JSON.parse(currentHistory); 
+      } catch { 
+        if (currentHistory.trim()) {
+          const parts = currentHistory.split(',');
+          currentHistory = [{ date: parts[0]?.trim() || '', note: parts[1]?.trim() || '' }];
+        } else {
+          currentHistory = [];
+        }
+      }
+    }
+
+    // 2. Convert single JSON object into array format
+    if (Array.isArray(currentHistory)) {
+      updatedHistory = [...currentHistory];
+    } else if (typeof currentHistory === 'object' && currentHistory !== null) {
+      // If old record was single object like {"date": "...", "note": "..."}
+      if (currentHistory.date || currentHistory.note) {
+        updatedHistory = [currentHistory];
+      }
+    }
+
+    // 3. Append new entry without overwriting existing history
+    if (updateDate || updateNote) {
+      updatedHistory.push({
+        date: updateDate,
+        note: updateNote
+      });
+    }
+  } else if (updateDate || updateNote) {
+    // New record creation
+    updatedHistory.push({
+      date: updateDate,
+      note: updateNote
+    });
+  }
+
   const payload = {
-    tipe: document.getElementById('inputTipe').value.trim() || null,
     lokasi: document.getElementById('inputLokasi').value.trim() || null,
     kondisi: document.getElementById('inputKondisi').value.trim() || null,
-    keterangan: document.getElementById('inputKeterangan').value.trim() || null,
-    update: document.getElementById('inputUpdate').value.trim() || null,
+    update: updatedHistory, // Always sends array to Supabase
     dokumentasi: document.getElementById('inputDokumentasi').value.trim() || null,
-    jenis: document.getElementById('inputJenis').value.trim() || null,
-    koordinat: document.getElementById('inputKoordinat').value.trim() || null
+    kategori: document.getElementById('inputKategori').value.trim() || null,
+    spek: document.getElementById('inputSpek').value.trim() || null
   };
 
   try {
@@ -673,11 +761,15 @@ async function exportCSV() {
       return;
     }
 
-    const headers = ['no', 'tipe', 'lokasi', 'kondisi', 'keterangan', 'update', 'dokumentasi', 'jenis', 'koordinat'];
+    const headers = ['no', 'lokasi', 'kondisi', 'update', 'dokumentasi', 'kategori', 'spek'];
     const csvRows = [headers.join(',')];
 
     data.forEach(row => {
-      const values = headers.map(header => `"${String(row[header] ?? '').replace(/"/g, '""')}"`);
+      const values = headers.map(header => {
+        let rawVal = row[header];
+        if (header === 'update') rawVal = formatUpdateDisplay(rawVal);
+        return `"${String(rawVal ?? '').replace(/"/g, '""')}"`;
+      });
       csvRows.push(values.join(','));
     });
 

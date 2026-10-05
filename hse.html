@@ -134,7 +134,7 @@
     <!-- HEADER -->
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
       <div class="flex items-center gap-1.5 shrink-0">
-        <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">HSE</h2>
+        <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Health, Safety, and Environment</h2>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -149,7 +149,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
           <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
-                 placeholder="Cari tipe, lokasi, kondisi..." 
+                 placeholder="Cari lokasi, spek, kondisi..." 
                  class="w-full h-7 sm:h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
           <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
         </div>
@@ -176,14 +176,14 @@
           <div class="bg-white dark:bg-[#1e1e1e] rounded-xl sm:rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative">
             
             <div class="overflow-x-auto custom-scroll w-full">
-              <table class="w-full text-left border-collapse text-xs min-w-[950px]">
+              <table class="w-full text-left border-collapse text-xs min-w-[1050px]">
                 <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
                   <tr>
-                    <th scope="col" class="p-2.5 w-[6%] text-center relative">
+                    <th scope="col" class="p-2.5 w-[5%] text-center relative">
                       <div class="flex items-center justify-center gap-0.5"><span class="truncate">No</span><button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[12%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Tipe</span><button id="btn-filter-tipe" onclick="toggleFilterMenu('tipe', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[10%] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Kategori</span><button id="btn-filter-kategori" onclick="toggleFilterMenu('kategori', event)"></button></div>
                     </th>
                     <th scope="col" class="p-2.5 w-[14%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Lokasi</span><button id="btn-filter-lokasi" onclick="toggleFilterMenu('lokasi', event)"></button></div>
@@ -191,23 +191,20 @@
                     <th scope="col" class="p-2.5 w-[10%] text-center relative">
                       <div class="flex items-center justify-center gap-0.5"><span class="truncate">Kondisi</span><button id="btn-filter-kondisi" onclick="toggleFilterMenu('kondisi', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[20%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Keterangan</span><button id="btn-filter-keterangan" onclick="toggleFilterMenu('keterangan', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[12%] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Spek</span><button id="btn-filter-spek" onclick="toggleFilterMenu('spek', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[10%] text-center relative">
+                    <th scope="col" class="p-2.5 w-[15%] text-center relative">
                       <div class="flex items-center justify-center gap-0.5"><span class="truncate">Update</span><button id="btn-filter-update" onclick="toggleFilterMenu('update', event)"></button></div>
                     </th>
                     <th scope="col" class="p-2.5 w-[14%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Dokumentasi</span><button id="btn-filter-dokumentasi" onclick="toggleFilterMenu('dokumentasi', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[10%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Jenis</span><button id="btn-filter-jenis" onclick="toggleFilterMenu('jenis', event)"></button></div>
-                    </th>
                   </tr>
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
                   <tr>
-                    <td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
+                    <td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
                   </tr>
                 </tbody>
               </table>
@@ -300,63 +297,58 @@
       </div>
 
       <form id="hseForm" onsubmit="saveData(event)" class="p-4 sm:p-6 space-y-3.5 text-xs overflow-y-auto custom-scroll flex-1" autocomplete="off">
-        <input type="hidden" id="editNo" />
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tipe *</label>
-            <input type="text" id="inputTipe" required placeholder="Tipe APAR, Hydrant, dll..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Lokasi *</label>
-            <input type="text" id="inputLokasi" required placeholder="Lantai, area, unit..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
+  <input type="hidden" id="editNo" />
+  
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div>
+      <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Kategori</label>
+      <input type="text" id="inputKategori" placeholder="Kategori HSE..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <div>
+      <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Lokasi *</label>
+      <input type="text" id="inputLokasi" required placeholder="Lantai, area, unit..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+  </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Kondisi</label>
-            <input type="text" id="inputKondisi" placeholder="Baik, Perlu Perbaikan, dll..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Jenis</label>
-            <input type="text" id="inputJenis" placeholder="Jenis / Kategori..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div>
+      <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Kondisi</label>
+      <input type="text" id="inputKondisi" placeholder="Baik, Perlu Perbaikan, dll..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <div>
+      <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Spesifikasi (Spek)</label>
+      <input type="text" id="inputSpek" placeholder="Spesifikasi alat/unit..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+  </div>
 
-        <div>
-          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Keterangan</label>
-          <textarea id="inputKeterangan" rows="2" placeholder="Catatan atau keterangan..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none custom-scroll"></textarea>
-        </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div>
+      <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tgl Update</label>
+      <input type="date" id="inputUpdateDate" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+    <div>
+      <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Dokumentasi</label>
+      <input type="text" id="inputDokumentasi" placeholder="Link URL..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+    </div>
+  </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tanggal Update</label>
-            <input type="text" id="inputUpdate" placeholder="DD/MM/YYYY atau Tanggal..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Dokumentasi (URL/Link)</label>
-            <input type="text" id="inputDokumentasi" placeholder="Link gambar / dokumen..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
+  <div>
+    <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Ket. Update</label>
+    <textarea id="inputUpdateNote" rows="2" placeholder="Detail keterangan update (misal: unit ada di lokasi)..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none custom-scroll"></textarea>
+  </div>
 
-        <div>
-          <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Koordinat (Opsional / Tersembunyi di Tabel)</label>
-          <input type="text" id="inputKoordinat" placeholder="Lat, Long..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-        </div>
-
-        <div class="pt-4 flex justify-between items-center border-t border-[#f1f3f4] dark:border-[#3c4043] mt-2 shrink-0">
-          <div>
-            <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg font-semibold hidden transition cursor-pointer">
-              🗑️ Hapus
-            </button>
-          </div>
-          <div class="flex gap-2.5">
-            <button type="button" onclick="closeModal()" class="px-3.5 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg font-semibold transition cursor-pointer">Batal</button>
-            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg font-semibold transition cursor-pointer">Simpan</button>
-          </div>
-        </div>
-      </form>
+  <div class="pt-4 flex justify-between items-center border-t border-[#f1f3f4] dark:border-[#3c4043] mt-2 shrink-0">
+    <div>
+      <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" class="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg font-semibold hidden transition cursor-pointer">
+        🗑️ Hapus
+      </button>
+    </div>
+    <div class="flex gap-2.5">
+      <button type="button" onclick="closeModal()" class="px-3.5 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg font-semibold transition cursor-pointer">Batal</button>
+      <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg font-semibold transition cursor-pointer">Simpan</button>
+    </div>
+  </div>
+</form>
     </div>
   </div>
 
