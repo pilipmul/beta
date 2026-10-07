@@ -278,14 +278,6 @@ function initNavbarAccess() {
             allowed = (val === "Y" || val === "TRUE" || val === "1");
         }
 
-        if (!allowed && mod.key === 'hse') {
-            const altKey = userData.hse || userData.tenant || userData.log || userData.item;
-            if (altKey !== undefined && altKey !== null) {
-                const val = String(altKey).trim().toUpperCase();
-                allowed = (val === "Y" || val === "TRUE" || val === "1");
-            }
-        }
-
         el.classList.toggle("hidden", !allowed);
     });
 }
