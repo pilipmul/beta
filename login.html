@@ -249,7 +249,7 @@
                     LOG: data.log,
                     ITEM: data.item,
                     TENANT: data.tenant,
-                    HSE: data.hse || data.tenant || data.log || data.item,
+                    HSE: data.hse,
                     ASSETS: data.assets,
                     ACCESS: data.acces
                 };
@@ -286,7 +286,7 @@
                     checkAccessVal(data.log),
                     checkAccessVal(data.item),
                     checkAccessVal(data.tenant),
-                    checkAccessVal(data.hse || data.tenant || data.log || data.item),
+                    checkAccessVal(data.hse),
                     checkAccessVal(data.acces),
                     checkAccessVal(data.assets)
                 ];

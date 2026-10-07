@@ -451,7 +451,7 @@
           inventory: isAdmin ? "Y" : getAccessString(uData.log),
           item: isAdmin ? "Y" : getAccessString(uData.item),
           tenant: isAdmin ? "Y" : getAccessString(uData.tenant),
-          hse: isAdmin ? "Y" : getAccessString(uData.hse || uData.tenant || uData.log || uData.item),
+          hse: isAdmin ? "Y" : getAccessString(uData.hse),
           acces: isAdmin ? "Y" : getAccessString(uData.acces),
           assets: isAdmin ? "Y" : getAccessString(uData.assets)
         };
