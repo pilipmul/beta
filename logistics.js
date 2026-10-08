@@ -135,7 +135,7 @@ document.addEventListener('click', (e) => {
   }
 
   const popover = document.getElementById('filterPopover');
-  if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
+  if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[id^="btn-filter-"]')) {
     closeFilterPopover();
   }
 
@@ -349,6 +349,7 @@ async function fetchTableData() {
 
     if (totalRows === 0) {
       tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ditemukan transaksi yang sesuai.</td></tr>`;
+      fetchedData = [];
       updatePaginationUI();
       updateFilterButtonStyles();
       return;
@@ -428,50 +429,98 @@ function renderTable() {
   updateFilterButtonStyles();
 }
 
-async function toggleFilterMenu(columnKey, event) {
+function toggleFilterMenu(columnKey, event) {
   event.stopPropagation();
-  activeFilterColumn = columnKey;
 
   const popover = document.getElementById('filterPopover');
+
+  if (activeFilterColumn === columnKey && !popover.classList.contains('hidden')) {
+    closeFilterPopover();
+    return;
+  }
+
+  activeFilterColumn = columnKey;
+
   const rect = event.currentTarget.getBoundingClientRect();
-  
   let leftPos = Math.max(10, Math.min(rect.left + window.scrollX - 100, window.innerWidth - 230));
 
   popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
   popover.style.left = `${leftPos}px`;
-  document.getElementById('filterSearchInput').value = '';
   
-  if (!dbFilterOptions[columnKey]) {
-    try {
-      const { data, error } = await _supabase.from('inventory').select(columnKey);
-      if (!error && data) {
-        const allVals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
-        dbFilterOptions[columnKey] = Array.from(new Set(allVals)).sort();
-      } else {
-        dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
+  const searchInput = document.getElementById('filterSearchInput');
+  if (searchInput) {
+    searchInput.value = '';
+    searchInput.setAttribute('autocomplete', 'off');
+  }
+
+  popover.classList.remove('hidden');
+
+  let query = _supabase.from('inventory').select(columnKey);
+
+  if (globalSearchQuery !== '') {
+    query = query.or(
+      `user.ilike.%${globalSearchQuery}%,` +
+      `item.ilike.%${globalSearchQuery}%,` +
+      `note.ilike.%${globalSearchQuery}%,` +
+      `trx_code.ilike.%${globalSearchQuery}%,` +
+      `project.ilike.%${globalSearchQuery}%`
+    );
+  }
+
+  for (const key in filterSelections) {
+    if (key === columnKey) continue;
+
+    const selectedSet = filterSelections[key];
+    if (selectedSet && selectedSet.size > 0) {
+      const selectedArray = Array.from(selectedSet);
+      const hasBlank = selectedArray.includes('-');
+      const nonBlankValues = selectedArray.filter(v => v !== '-');
+
+      if (hasBlank && nonBlankValues.length > 0) {
+        query = query.or(`${key}.in.(${nonBlankValues.map(v => `"${v}"`).join(',')}),${key}.is.null,${key}.eq.`);
+      } else if (hasBlank) {
+        query = query.or(`${key}.is.null,${key}.eq.`);
+      } else if (nonBlankValues.length > 0) {
+        query = query.in(key, nonBlankValues);
       }
-    } catch {
-      dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
     }
   }
 
-  const activeSaved = filterSelections[activeFilterColumn];
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
+  query.then(({ data, error }) => {
+    if (!error && data) {
+      const allVals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+      dbFilterOptions[columnKey] = Array.from(new Set(allVals)).sort();
+    } else {
+      const fallbackVals = fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+      dbFilterOptions[columnKey] = Array.from(new Set(fallbackVals)).sort();
+    }
 
-  draftFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allOpts);
+    const activeSaved = filterSelections[activeFilterColumn];
+    const allOpts = dbFilterOptions[activeFilterColumn] || [];
+    draftFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allOpts);
 
-  renderFilterCheckboxes();
-  popover.classList.remove('hidden');
+    renderFilterCheckboxes();
+  }).catch(() => {
+    const fallbackVals = fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+    dbFilterOptions[columnKey] = Array.from(new Set(fallbackVals)).sort();
+
+    const activeSaved = filterSelections[activeFilterColumn];
+    const allOpts = dbFilterOptions[activeFilterColumn] || [];
+    draftFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allOpts);
+
+    renderFilterCheckboxes();
+  });
 }
 
 function closeFilterPopover() {
   document.getElementById('filterPopover').classList.add('hidden');
+  activeFilterColumn = null;
 }
 
 function renderFilterCheckboxes() {
   const container = document.getElementById('filterItemsList');
   const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
-  const uniqueValues = dbFilterOptions[activeFilterColumn] || Array.from(new Set(fetchedData.map(r => (r[activeFilterColumn] !== null && r[activeFilterColumn] !== undefined && r[activeFilterColumn] !== '') ? String(r[activeFilterColumn]) : '-'))).sort();
+  const uniqueValues = dbFilterOptions[activeFilterColumn] || [];
 
   container.innerHTML = '';
   let visibleCount = 0, visibleCheckedCount = 0;
