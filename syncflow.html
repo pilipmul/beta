@@ -41,7 +41,6 @@
                 const rawSession = localStorage.getItem("user") || localStorage.getItem("sot_user") || sessionStorage.getItem("user");
                 if (!rawSession) {
                     window.location.replace("login.html");
-                    document.documentElement.style.display = "none";
                     return;
                 }
 
@@ -62,7 +61,6 @@
 
                 if (!isSuperAdmin && !hasSyncAccess) {
                     window.location.replace("login.html");
-                    document.documentElement.style.display = "none";
                 }
             } catch (err) {
                 console.error("Auth Guard Error:", err);
@@ -337,19 +335,119 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
         
-        #historyPopup { position: fixed; top: 60px; right: 16px; background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; width: 310px; max-height: 420px; overflow-y: auto; padding: 0; display: none; text-align: left; box-shadow: 0 10px 25px rgba(0,0,0,0.3); z-index: 9000; }
-        .history-header { position: sticky; top: 0; background: var(--bg-card); padding: 10px 14px; z-index: 10; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-between; min-height: 45px; }
-        #historySearchInput { display: none; width: 85%; height: 30px; border: 1px solid var(--border-color); border-radius: 16px; padding: 0 10px; font-size: 0.85rem; text-align: left; background: var(--bg-input-readonly); color: var(--text-primary); }
-        #searchToggleBtn { cursor: pointer; display: flex; align-items: center; }
-        
-        #historyList { padding: 4px 12px 12px 12px; }
+        /* Popup Riwayat Transaksi UI Improvements */
+        #historyPopup { 
+            position: fixed; 
+            top: 60px; 
+            right: 16px; 
+            background-color: var(--bg-card); 
+            border: 1px solid var(--border-color); 
+            border-radius: 16px; 
+            width: 320px; 
+            max-height: 440px; 
+            overflow-y: auto; 
+            padding: 0; 
+            display: none; 
+            text-align: left; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+            z-index: 9000; 
+        }
+
+        .history-header { 
+            position: sticky; 
+            top: 0; 
+            background: var(--bg-card); 
+            padding: 12px 14px; 
+            z-index: 10; 
+            border-bottom: 1px solid var(--border-light); 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 8px;
+            min-height: 50px; 
+        }
+
+        #historySearchInput { 
+            display: none; 
+            flex: 1; 
+            height: 32px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 16px; 
+            padding: 0 10px; 
+            font-size: 0.85rem; 
+            text-align: left; 
+            background: var(--bg-input-readonly); 
+            color: var(--text-primary); 
+        }
+
+        #searchToggleBtn { 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
+
+        #historyList { padding: 4px 8px 12px 8px; }
+
+        .history-item { 
+            padding: 10px 8px; 
+            border-bottom: 1px solid var(--border-light); 
+            cursor: pointer; 
+            transition: background 0.2s; 
+        }
+
+        .history-item:hover { background: var(--bg-hover); }
+
+        .history-item-row {
+            display: grid;
+            grid-template-columns: 1fr 45px 1.2fr;
+            gap: 8px;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .user-name {
+            font-weight: 700;
+            white-space: normal;
+            word-break: break-word;
+            color: var(--text-primary);
+        }
+
+        .badge-status {
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-align: center;
+            padding: 2px 0;
+            border-radius: 4px;
+        }
+
+        .badge-status.in { color: #34A853; }
+        .badge-status.out { color: #EA4335; }
+
+        .item-name {
+            font-weight: 600;
+            text-align: right;
+            white-space: normal;
+            word-break: break-word;
+            color: var(--text-primary);
+        }
+
+        .history-detail { 
+            display: none; 
+            padding: 8px 10px; 
+            background: var(--bg-input-readonly); 
+            font-size: 0.8rem; 
+            color: var(--text-detail); 
+            border-radius: 8px; 
+            margin-top: 8px; 
+            text-align: left; 
+            line-height: 1.4; 
+            border: 1px solid var(--border-light); 
+        }
+
         #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--loader-bg); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; }
         .loader { border: 6px solid var(--border-light); border-top: 6px solid #1A73E8; border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; }
-        
-        .history-item { padding: 8px; border-bottom: 1px solid var(--border-light); cursor: pointer; transition: background 0.2s; }
-        .history-item:hover { background: var(--bg-hover); }
-        .history-detail { display: none; padding: 8px; background: var(--bg-input-readonly); font-size: 0.8rem; color: var(--text-detail); border-radius: 8px; margin-top: 5px; text-align: left; line-height: 1.4; border: 1px solid var(--border-light); }
-        
+
         #adminPass, #descPopupInput { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color) !important; text-align: left; }
         #adminPass:focus, #descPopupInput:focus { border-color: #1A73E8 !important; }
     </style>
@@ -512,11 +610,7 @@
             if (dropdown) dropdown.style.display = "none";
 
             if (btnGA) {
-                if (gaMode) {
-                    btnGA.className = "ga-mode-btn on";
-                } else {
-                    btnGA.className = "ga-mode-btn off";
-                }
+                btnGA.className = gaMode ? "ga-mode-btn on" : "ga-mode-btn off";
             }
 
             const btnIn = document.getElementById("btnIn"); 
@@ -567,6 +661,8 @@
             try { 
                 const { data: dbUsers } = await supabaseClient.from('users').select('nama');
                 let userList = dbUsers ? dbUsers.map(u => u.nama).filter(Boolean) : [];
+                if (activeUser && activeUser.nama) userList.push(activeUser.nama);
+                nameData = [...new Set(userList)];
 
                 const { data: dbItems } = await supabaseClient.from('item').select('item, balance');
                 if (dbItems) {
@@ -584,10 +680,6 @@
                     .limit(50);
 
                 if (!errTrx && trxData && trxData.length > 0) {
-                    const usersFromInv = trxData.map(t => t.user).filter(Boolean);
-                    if (activeUser && activeUser.nama) usersFromInv.push(activeUser.nama);
-                    nameData = [...new Set([...userList, ...usersFromInv])];
-
                     lastTransactions = trxData.map(t => {
                         const valIn = parseFloat(t['in']);
                         const valOut = parseFloat(t['out']);
@@ -605,7 +697,6 @@
                         ];
                     });
                 } else {
-                    nameData = [...new Set(userList)];
                     lastTransactions = [];
                 }
 
@@ -742,7 +833,16 @@
             } 
         }
 
-        function checkPassword() { if (document.getElementById("adminPass").value === "azza") { document.getElementById("passPopup").style.display = "none"; document.getElementById("adminPass").value = ""; if (passAction === "in") executeFinalSubmit(currentMode, currentName, currentItems); else if (passAction === "ga") updateGAUI(true); } else showToast("❌ Salah!"); }
+        function checkPassword() { 
+            if (document.getElementById("adminPass").value === "azza") { 
+                document.getElementById("passPopup").style.display = "none"; 
+                document.getElementById("adminPass").value = ""; 
+                if (passAction === "ga") updateGAUI(true); 
+            } else {
+                showToast("❌ Salah!"); 
+            }
+        }
+
         function showToast(m) { const t = document.getElementById("popupToast"); t.textContent = m; t.style.display = "block"; setTimeout(() => t.style.display="none", 2500); }
         function showSuccessPopup(m, its) { document.getElementById("successMode").textContent = m.toUpperCase(); document.getElementById("successItems").innerHTML = its.map(i => `• ${i.item}: <span style="color:#EA4335;">${i.qty}</span>`).join('<br>'); document.getElementById("successPopup").style.display = "flex"; }
         function closeSuccessPopup() { document.getElementById("successPopup").style.display = "none"; }
@@ -762,21 +862,23 @@
                 return;
             }
 
-            historyContainer.innerHTML = data.map((t, index) => `
-                <div class="history-item" onclick="const det = document.getElementById('det-${index}'); if(det) det.style.display = det.style.display === 'block' ? 'none' : 'block';">
-                    <div style="font-size:0.85rem; display: flex; justify-content: space-between; align-items: center;">
-                        <span><b>${t[0]}</b> <span style="color:${t[1]==='in'?'#34A853':'#EA4335'}">${t[1].toUpperCase()}</span></span>
-                        <b>${t[2]}</b>
-                    </div>
-                    <div id="det-${index}" class="history-detail">
-                        <div style="margin-top: 1px; padding-top: 1px;">
-                            <b> Qty: ${t[3]}<br>
-                            <b> Date: ${t[4]}<br>
-                            <b> Notes: ${t[5] || '-'}
+            historyContainer.innerHTML = data.map((t, index) => {
+                const modeClass = (t[1] || '').toLowerCase() === 'in' ? 'in' : 'out';
+                return `
+                    <div class="history-item" onclick="const det = document.getElementById('det-${index}'); if(det) det.style.display = det.style.display === 'block' ? 'none' : 'block';">
+                        <div class="history-item-row">
+                            <div class="user-name">${t[0]}</div>
+                            <div class="badge-status ${modeClass}">${(t[1] || '').toUpperCase()}</div>
+                            <div class="item-name">${t[2]}</div>
+                        </div>
+                        <div id="det-${index}" class="history-detail">
+                            <div><b>Qty:</b> ${t[3]}</div>
+                            <div><b>Date:</b> ${t[4]}</div>
+                            <div><b>Notes:</b> ${t[5] || '-'}</div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function handleAddRow(e) {
@@ -795,15 +897,6 @@
 
                 const autoList = clone.querySelector(".autocomplete-list");
                 if (autoList) autoList.style.display = "none";
-
-                const tx = clone.querySelector("textarea.desc"); 
-                if (tx) {
-                    tx.onmousedown = (e) => startLongPress(e, tx); 
-                    tx.onmouseup = cancelLongPress; 
-                    tx.onmouseleave = cancelLongPress; 
-                    tx.ontouchstart = (e) => startLongPress(e, tx); 
-                    tx.ontouchend = cancelLongPress; 
-                }
 
                 container.appendChild(clone); 
                 initAutocomplete(); 
