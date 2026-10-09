@@ -8,27 +8,12 @@ let currentPage = 1;
 let totalRows = 0;
 let rawDataMap = new Map();
 let fetchedData = [];
-let dbFilterOptions = {};
 
-let activeFilterColumn = null;
-let draftFilterSelections = new Set();
+// INSTANCE TABLE FILTER MANAGER
+let tableFilter;
 
 let globalSearchQuery = sessionStorage.getItem('tenant_globalSearchQuery') || '';
 let sortConfig = JSON.parse(sessionStorage.getItem('tenant_sortConfig')) || { column: null, direction: null };
-
-let filterSelections = {};
-try {
-  const savedFilters = JSON.parse(sessionStorage.getItem('tenant_filterSelections'));
-  if (savedFilters && typeof savedFilters === 'object') {
-    Object.keys(savedFilters).forEach(key => {
-      if (Array.isArray(savedFilters[key])) {
-        filterSelections[key] = new Set(savedFilters[key]);
-      }
-    });
-  }
-} catch {
-  filterSelections = {};
-}
 
 // Daftar akun yang memiliki hak akses CRUD (Create, Update, Delete)
 const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
@@ -51,17 +36,48 @@ function isSuperAdmin() {
   }
 }
 
+function initTableFilter() {
+  tableFilter = new TableFilterManager({
+    tableName: 'tenant',
+    supabaseClient: _supabase,
+    columns: ['no', 'lokasi', 'nama_toko', 'luas', 'tipe', 'penyewa', 'komoditi', 'status', 'cp', 'validasi', 'update'],
+    dateColumns: ['update'],
+    globalSearchQuery: globalSearchQuery,
+    onFilterChange: () => {
+      currentPage = 1;
+      saveStateToSession();
+      fetchTableData();
+    }
+  });
+
+  // Restore saved filter selections
+  try {
+    const savedFilters = JSON.parse(sessionStorage.getItem('tenant_filterSelections'));
+    if (savedFilters && typeof savedFilters === 'object') {
+      Object.keys(savedFilters).forEach(key => {
+        if (Array.isArray(savedFilters[key])) {
+          tableFilter.filterSelections[key] = new Set(savedFilters[key]);
+        }
+      });
+    }
+  } catch {
+    tableFilter.filterSelections = {};
+  }
+}
+
 function saveStateToSession() {
   sessionStorage.setItem('tenant_globalSearchQuery', globalSearchQuery);
   sessionStorage.setItem('tenant_sortConfig', JSON.stringify(sortConfig));
 
-  const serializableFilters = {};
-  Object.keys(filterSelections).forEach(key => {
-    if (filterSelections[key] && filterSelections[key].size > 0) {
-      serializableFilters[key] = Array.from(filterSelections[key]);
-    }
-  });
-  sessionStorage.setItem('tenant_filterSelections', JSON.stringify(serializableFilters));
+  if (tableFilter) {
+    const serializableFilters = {};
+    Object.keys(tableFilter.filterSelections).forEach(key => {
+      if (tableFilter.filterSelections[key] && tableFilter.filterSelections[key].size > 0) {
+        serializableFilters[key] = Array.from(tableFilter.filterSelections[key]);
+      }
+    });
+    sessionStorage.setItem('tenant_filterSelections', JSON.stringify(serializableFilters));
+  }
 }
 
 function toggleHamburgerMenu(e) {
@@ -105,6 +121,8 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initTableFilter();
+
   const hamburgerMenuOptions = [];
   if (isSuperAdmin()) {
     hamburgerMenuOptions.push({
@@ -168,6 +186,7 @@ document.addEventListener('click', (e) => {
 function triggerGlobalSearch() {
   const val = document.getElementById('globalSearchInput').value.trim();
   globalSearchQuery = val;
+  if (tableFilter) tableFilter.globalSearchQuery = globalSearchQuery;
   currentPage = 1;
   document.getElementById('btnClearSearch').classList.toggle('hidden', val === '');
   saveStateToSession();
@@ -178,6 +197,7 @@ function clearGlobalSearch() {
   document.getElementById('globalSearchInput').value = '';
   document.getElementById('btnClearSearch').classList.add('hidden');
   globalSearchQuery = '';
+  if (tableFilter) tableFilter.globalSearchQuery = '';
   currentPage = 1;
   saveStateToSession();
   fetchTableData();
@@ -190,7 +210,7 @@ function updateFilterButtonStyles() {
     const btn = document.getElementById(`btn-filter-${col}`);
     if (!btn) return;
 
-    const isActive = filterSelections[col] && filterSelections[col].size > 0;
+    const isActive = tableFilter && tableFilter.filterSelections[col] && tableFilter.filterSelections[col].size > 0;
 
     if (isActive) {
       btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer transition-transform duration-150 scale-140 inline-block";
@@ -203,34 +223,10 @@ function updateFilterButtonStyles() {
 }
 
 function applySupabaseFilters(query) {
-  if (globalSearchQuery !== '') {
-    query = query.or(
-      `lokasi.ilike.%${globalSearchQuery}%,` +
-      `nama_toko.ilike.%${globalSearchQuery}%,` +
-      `tipe.ilike.%${globalSearchQuery}%,` +
-      `penyewa.ilike.%${globalSearchQuery}%,` +
-      `status.ilike.%${globalSearchQuery}%,` +
-      `komoditi.ilike.%${globalSearchQuery}%,` +
-      `cp.ilike.%${globalSearchQuery}%,` +
-      `validasi.ilike.%${globalSearchQuery}%`
-    );
-  }
-
-  for (const colKey in filterSelections) {
-    const selectedSet = filterSelections[colKey];
-    if (selectedSet && selectedSet.size > 0) {
-      const selectedArray = Array.from(selectedSet);
-      const hasBlank = selectedArray.includes('-');
-      const nonBlankValues = selectedArray.filter(v => v !== '-');
-
-      if (hasBlank && nonBlankValues.length > 0) {
-        query = query.or(`${colKey}.in.(${nonBlankValues.map(v => `"${v}"`).join(',')}),${colKey}.is.null,${colKey}.eq.`);
-      } else if (hasBlank) {
-        query = query.or(`${colKey}.is.null,${colKey}.eq.`);
-      } else if (nonBlankValues.length > 0) {
-        query = query.in(colKey, nonBlankValues);
-      }
-    }
+  if (tableFilter) {
+    return tableFilter.applyToSupabaseQuery(query, [
+      'lokasi', 'nama_toko', 'tipe', 'penyewa', 'status', 'komoditi', 'cp', 'validasi'
+    ]);
   }
   return query;
 }
@@ -340,133 +336,41 @@ function renderTable() {
   updateFilterButtonStyles();
 }
 
-async function toggleFilterMenu(columnKey, event) {
-  event.stopPropagation();
-  activeFilterColumn = columnKey;
-
-  const popover = document.getElementById('filterPopover');
-  const rect = event.currentTarget.getBoundingClientRect();
-  
-  let leftPos = Math.max(10, Math.min(rect.left + window.scrollX - 100, window.innerWidth - 230));
-
-  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
-  popover.style.left = `${leftPos}px`;
-  document.getElementById('filterSearchInput').value = '';
-  
-  if (!dbFilterOptions[columnKey]) {
-    try {
-      const { data, error } = await _supabase.from('tenant').select(columnKey);
-      if (!error && data) {
-        const allVals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
-        dbFilterOptions[columnKey] = Array.from(new Set(allVals)).sort();
-      } else {
-        dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
-      }
-    } catch {
-      dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
-    }
+// INTEGRASI DELEGASI FILTER TERUSAN KE TABLE FILTER MANAGER
+function toggleFilterMenu(columnKey, event) {
+  if (tableFilter) {
+    tableFilter.toggleMenu(columnKey, event, fetchedData);
   }
-
-  const activeSaved = filterSelections[activeFilterColumn];
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
-
-  draftFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allOpts);
-
-  renderFilterCheckboxes();
-  popover.classList.remove('hidden');
 }
 
 function closeFilterPopover() {
-  document.getElementById('filterPopover').classList.add('hidden');
+  if (tableFilter) tableFilter.closePopover();
 }
 
 function renderFilterCheckboxes() {
-  const container = document.getElementById('filterItemsList');
-  const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
-  const uniqueValues = dbFilterOptions[activeFilterColumn] || Array.from(new Set(fetchedData.map(r => (r[activeFilterColumn] !== null && r[activeFilterColumn] !== undefined && r[activeFilterColumn] !== '') ? String(r[activeFilterColumn]) : '-'))).sort();
-
-  container.innerHTML = '';
-  let visibleCount = 0, visibleCheckedCount = 0;
-
-  uniqueValues.forEach(val => {
-    if (searchVal && !val.toLowerCase().includes(searchVal)) return;
-
-    visibleCount++;
-    const isChecked = draftFilterSelections.has(val);
-    if (isChecked) visibleCheckedCount++;
-
-    const label = document.createElement('label');
-    label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = val;
-    checkbox.checked = isChecked;
-    checkbox.className = 'filter-cb';
-    
-    checkbox.onchange = (e) => {
-      if (e.target.checked) draftFilterSelections.add(val);
-      else draftFilterSelections.delete(val);
-      updateSelectAllState();
-    };
-
-    label.appendChild(checkbox);
-    const span = document.createElement('span');
-    span.className = 'truncate';
-    span.innerText = val;
-    label.appendChild(span);
-
-    container.appendChild(label);
-  });
-
-  const selectAllCb = document.getElementById('selectAllCheckbox');
-  if (selectAllCb) selectAllCb.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
-}
-
-function updateSelectAllState() {
-  const cbs = document.querySelectorAll('#filterItemsList .filter-cb');
-  const allChecked = cbs.length > 0 && Array.from(cbs).every(cb => cb.checked);
-  const selectAllCb = document.getElementById('selectAllCheckbox');
-  if (selectAllCb) selectAllCb.checked = allChecked;
+  if (tableFilter) tableFilter.renderCheckboxes();
 }
 
 function toggleSelectAllFilters(checked) {
-  document.querySelectorAll('#filterItemsList .filter-cb').forEach(cb => {
-    cb.checked = checked;
-    if (checked) draftFilterSelections.add(cb.value);
-    else draftFilterSelections.delete(cb.value);
-  });
+  if (tableFilter) tableFilter.toggleSelectAll(checked);
 }
 
 function clearFilterColumn() {
-  delete filterSelections[activeFilterColumn];
-  draftFilterSelections = new Set(dbFilterOptions[activeFilterColumn] || []);
-  document.getElementById('filterSearchInput').value = '';
-  renderFilterCheckboxes();
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
+  if (tableFilter) tableFilter.clearColumn();
 }
 
 function applyFilter() {
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
-  if (draftFilterSelections.size === 0 || draftFilterSelections.size === allOpts.length) {
-    delete filterSelections[activeFilterColumn];
-  } else {
-    filterSelections[activeFilterColumn] = new Set(draftFilterSelections);
-  }
-  closeFilterPopover();
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
+  if (tableFilter) tableFilter.applyFilter();
 }
 
 function applySort(direction) {
-  sortConfig = { column: activeFilterColumn, direction };
-  closeFilterPopover();
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
+  if (tableFilter) {
+    sortConfig = { column: tableFilter.activeFilterColumn, direction };
+    closeFilterPopover();
+    currentPage = 1;
+    saveStateToSession();
+    fetchTableData();
+  }
 }
 
 function updatePaginationUI() {
@@ -623,7 +527,7 @@ async function saveData(e) {
     }
 
     closeModal();
-    dbFilterOptions = {};
+    if (tableFilter) tableFilter.dbFilterOptions = {};
     await fetchTableData();
 
   } catch (err) {
@@ -647,7 +551,7 @@ async function deleteDataInModal() {
     if (error) throw error;
 
     closeModal();
-    dbFilterOptions = {};
+    if (tableFilter) tableFilter.dbFilterOptions = {};
     await fetchTableData();
 
   } catch (err) {
