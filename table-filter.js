@@ -10,6 +10,7 @@ class TableFilterManager {
     this.supabaseClient = options.supabaseClient;
     this.allColumns = options.columns || [];
     this.dateColumns = new Set(options.dateColumns || ['date', 'created_at', 'updated_at']);
+    this.numericColumns = new Set(options.numericColumns || ['no', 'in', 'out', 'balance']);
     this.onFilterChange = options.onFilterChange;
     
     this.globalSearchQuery = options.globalSearchQuery || '';
@@ -33,6 +34,41 @@ class TableFilterManager {
     }
   }
 
+  _applySingleFilter(query, colKey, selectedSet) {
+    if (!selectedSet || selectedSet.size === 0) return query;
+
+    const selectedArray = Array.from(selectedSet);
+    const hasBlank = selectedArray.includes('-');
+    const nonBlankValues = selectedArray.filter(v => v !== '-');
+    const isNumeric = this.numericColumns.has(colKey);
+
+    // Case 1: Hanya filter data kosong (-)
+    if (hasBlank && nonBlankValues.length === 0) {
+      if (isNumeric) {
+        return query.is(colKey, null);
+      } else {
+        return query.or(`${colKey}.is.null,${colKey}.eq.`);
+      }
+    }
+
+    // Case 2: Filter data kosong (-) DAN ada nilai terisi yang dicentang
+    if (hasBlank && nonBlankValues.length > 0) {
+      const formattedNonBlank = nonBlankValues.map(v => `${v}`).join(',');
+      if (isNumeric) {
+        return query.or(`${colKey}.in.(${formattedNonBlank}),${colKey}.is.null`);
+      } else {
+        return query.or(`${colKey}.in.(${formattedNonBlank}),${colKey}.is.null,${colKey}.eq.`);
+      }
+    }
+
+    // Case 3: Hanya nilai terisi yang dicentang
+    if (!hasBlank && nonBlankValues.length > 0) {
+      return query.in(colKey, nonBlankValues);
+    }
+
+    return query;
+  }
+
   applyToSupabaseQuery(query, searchColumns = []) {
     if (this.globalSearchQuery && searchColumns.length > 0) {
       const orConditions = searchColumns.map(col => `${col}.ilike.%${this.globalSearchQuery}%`).join(',');
@@ -40,20 +76,7 @@ class TableFilterManager {
     }
 
     for (const colKey in this.filterSelections) {
-      const selectedSet = this.filterSelections[colKey];
-      if (selectedSet && selectedSet.size > 0) {
-        const selectedArray = Array.from(selectedSet);
-        const hasBlank = selectedArray.includes('-');
-        const nonBlankValues = selectedArray.filter(v => v !== '-');
-
-        if (hasBlank && nonBlankValues.length > 0) {
-          query = query.or(`${colKey}.in.(${nonBlankValues.map(v => `"${v}"`).join(',')}),${colKey}.is.null,${colKey}.eq.`);
-        } else if (hasBlank) {
-          query = query.or(`${colKey}.is.null,${colKey}.eq.`);
-        } else if (nonBlankValues.length > 0) {
-          query = query.in(colKey, nonBlankValues);
-        }
-      }
+      query = this._applySingleFilter(query, colKey, this.filterSelections[colKey]);
     }
     return query;
   }
@@ -88,20 +111,7 @@ class TableFilterManager {
 
     for (const key in this.filterSelections) {
       if (key === columnKey) continue;
-      const selectedSet = this.filterSelections[key];
-      if (selectedSet && selectedSet.size > 0) {
-        const selectedArray = Array.from(selectedSet);
-        const hasBlank = selectedArray.includes('-');
-        const nonBlank = selectedArray.filter(v => v !== '-');
-
-        if (hasBlank && nonBlank.length > 0) {
-          query = query.or(`${key}.in.(${nonBlank.map(v => `"${v}"`).join(',')}),${key}.is.null,${key}.eq.`);
-        } else if (hasBlank) {
-          query = query.or(`${key}.is.null,${key}.eq.`);
-        } else if (nonBlank.length > 0) {
-          query = query.in(key, nonBlank);
-        }
-      }
+      query = this._applySingleFilter(query, key, this.filterSelections[key]);
     }
 
     query.then(({ data, error }) => {
@@ -170,7 +180,7 @@ class TableFilterManager {
       label.appendChild(checkbox);
       const span = document.createElement('span');
       span.className = 'truncate';
-      span.innerText = val;
+      span.innerText = val === '-' ? '(Blank)' : val;
       label.appendChild(span);
 
       this.containerEl.appendChild(label);
@@ -244,14 +254,12 @@ class TableFilterManager {
       const yearDiv = document.createElement('div');
       yearDiv.className = 'space-y-1 mb-1 year-group';
 
-      // Year Header
       const yearHeader = document.createElement('div');
       yearHeader.className = 'flex items-center gap-1.5 p-1 rounded hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] text-xs font-bold cursor-pointer';
 
       const yearToggle = document.createElement('span');
       yearToggle.className = 'text-[9px] text-[#5f6368] transition-transform inline-block w-3 text-center';
       
-      // Expand year if a search is active so matching months are visible
       const isYearExpanded = !!searchVal;
       yearToggle.innerText = isYearExpanded ? '▼' : '▶';
 
@@ -267,7 +275,6 @@ class TableFilterManager {
       yearHeader.appendChild(yearLabel);
       yearDiv.appendChild(yearHeader);
 
-      // Months Container
       const monthsContainer = document.createElement('div');
       monthsContainer.className = `ml-3 pl-2.5 space-y-1 border-l border-[#dadce0] dark:border-[#3c4043] relative ${isYearExpanded ? '' : 'hidden'}`;
 
@@ -285,14 +292,11 @@ class TableFilterManager {
         const monthDiv = document.createElement('div');
         monthDiv.className = 'space-y-0.5 relative month-group';
 
-        // Month Header
         const monthHeader = document.createElement('div');
         monthHeader.className = 'flex items-center gap-1.5 p-0.5 rounded hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] text-[11px] font-medium cursor-pointer';
 
         const monthToggle = document.createElement('span');
         monthToggle.className = 'text-[9px] text-[#5f6368] transition-transform inline-block w-3 text-center';
-        
-        // Month child dates remain COLLAPSED by default
         monthToggle.innerText = '▶';
 
         const monthCb = document.createElement('input');
@@ -307,7 +311,6 @@ class TableFilterManager {
         monthHeader.appendChild(monthLabel);
         monthDiv.appendChild(monthHeader);
 
-        // Dates Container (always hidden by default)
         const datesContainer = document.createElement('div');
         datesContainer.className = 'ml-3 pl-2.5 space-y-0.5 border-l border-dashed border-[#dadce0] dark:border-[#3c4043] relative hidden';
 
@@ -342,7 +345,6 @@ class TableFilterManager {
           datesContainer.appendChild(dateLabel);
         });
 
-        // Month Checkbox Handler
         monthCb.onchange = () => {
           dates.forEach(d => {
             if (monthCb.checked) this.draftFilterSelections.add(d);
@@ -356,7 +358,6 @@ class TableFilterManager {
         monthsContainer.appendChild(monthDiv);
       });
 
-      // Year Checkbox Handler
       yearCb.onchange = () => {
         allYearDates.forEach(d => {
           if (yearCb.checked) this.draftFilterSelections.add(d);
@@ -390,7 +391,7 @@ class TableFilterManager {
 
       label.appendChild(checkbox);
       const span = document.createElement('span');
-      span.innerText = val === '-' ? '(Kosong)' : val;
+      span.innerText = val === '-' ? '(Blank)' : val;
       label.appendChild(span);
       this.containerEl.appendChild(label);
     });
@@ -399,7 +400,6 @@ class TableFilterManager {
   }
 
   _syncDateTreeStates() {
-    // 1. Sync Month Checkboxes with Indeterminate State Support
     this.containerEl.querySelectorAll('div.month-group').forEach(groupEl => {
       const dates = JSON.parse(groupEl.dataset.dates || '[]');
       if (dates.length === 0) return;
@@ -421,7 +421,6 @@ class TableFilterManager {
       }
     });
 
-    // 2. Sync Year Checkboxes with Indeterminate State Support
     this.containerEl.querySelectorAll('div.year-group').forEach(yearDiv => {
       const dates = JSON.parse(yearDiv.dataset.dates || '[]');
       if (dates.length === 0) return;
@@ -443,13 +442,11 @@ class TableFilterManager {
       }
     });
 
-    // 3. Sync Leaf Date Checkboxes
     const allLeafCbs = this.containerEl.querySelectorAll('.date-leaf-cb');
     allLeafCbs.forEach(cb => {
       cb.checked = this.draftFilterSelections.has(cb.value);
     });
 
-    // 4. Sync Global Select All Checkbox
     const visibleChecked = Array.from(allLeafCbs).filter(cb => cb.checked).length;
     if (this.selectAllCbEl) {
       this.selectAllCbEl.checked = allLeafCbs.length > 0 && visibleChecked === allLeafCbs.length;
