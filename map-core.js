@@ -494,7 +494,8 @@ function clampBoundaries() {
   const naturalW = img.naturalWidth || 800;
   const naturalH = img.naturalHeight || 600;
 
-  const isRotated = (rotation === 90 || rotation === 270);
+  const normalizedRot = ((rotation % 360) + 360) % 360;
+  const isRotated = (normalizedRot === 90 || normalizedRot === 270);
   const effWidth = isRotated ? naturalH : naturalW;
   const effHeight = isRotated ? naturalW : naturalH;
 
@@ -514,7 +515,7 @@ function zoomIn() { zoomAtPoint(1.25); }
 function zoomOut() { zoomAtPoint(0.8); }
 
 function rotateMap() {
-  rotation = (rotation + 90) % 360;
+  rotation += 90;
   resetZoomToFit();
 }
 
@@ -536,7 +537,8 @@ function resetZoomToFit() {
     return;
   }
 
-  const isRotated = (rotation === 90 || rotation === 270);
+  const normalizedRot = ((rotation % 360) + 360) % 360;
+  const isRotated = (normalizedRot === 90 || normalizedRot === 270);
   const effWidth = isRotated ? naturalH : naturalW;
   const effHeight = isRotated ? naturalW : naturalH;
 
@@ -569,12 +571,14 @@ function updateMapTransform() {
   let offsetX = 0;
   let offsetY = 0;
 
-  if (rotation === 90) {
+  const normalizedRot = ((rotation % 360) + 360) % 360;
+
+  if (normalizedRot === 90) {
     offsetX = h * scale;
-  } else if (rotation === 180) {
+  } else if (normalizedRot === 180) {
     offsetX = w * scale;
     offsetY = h * scale;
-  } else if (rotation === 270) {
+  } else if (normalizedRot === 270) {
     offsetY = w * scale;
   }
 
