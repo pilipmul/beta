@@ -496,13 +496,14 @@ function editLogbook(id) {
 async function handleDeleteFromModal() {
   const id = document.getElementById('logbookId').value;
   if (!id) return;
-  
+
   if (confirm("Apakah Anda yakin ingin menghapus data logbook ini secara permanen?")) {
     closeFormModal();
     await deleteLogbook(id);
   }
 }
 
+// PERBAIKAN PADA FUNGSI UPLOAD GOOGLE DRIVE UNTUK MENANGANI ERROR PARSING JSON & HTML RESPONSES
 async function uploadToGoogleDrive(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -519,11 +520,24 @@ async function uploadToGoogleDrive(file) {
           method: 'POST',
           body: JSON.stringify(payload)
         });
-        const resData = await response.json();
+
+        const rawText = await response.text();
+        let resData;
+
+        try {
+          resData = JSON.parse(rawText);
+        } catch (parseErr) {
+          if (rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
+            throw new Error("Server Google Apps Script mengembalikan halaman HTML/Error. Pastikan Web App diset ke 'Anyone' (Siapa Saja).");
+          } else {
+            throw new Error(`Respon server bukan JSON valid: "${rawText}"`);
+          }
+        }
+
         if (resData.status === 'success') {
           resolve(resData.url);
         } else {
-          reject(resData.message || "Gagal mengunggah gambar ke Drive.");
+          reject(new Error(resData.message || "Gagal mengunggah gambar ke Drive."));
         }
       } catch (err) {
         reject(err);
