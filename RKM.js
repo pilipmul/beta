@@ -45,7 +45,7 @@ function initTableFilter() {
   tableFilter = new TableFilterManager({
     tableName: TABLE_NAME,
     supabaseClient: _supabase,
-    columns: ['Tanggal', 'Sumber', 'Case', 'PIC', 'Update', 'Target', 'Status'],
+    columns: ['Tanggal', 'Type', 'Sumber', 'Case', 'PIC', 'Update', 'Target', 'Status'],
     dateColumns: ['Tanggal', 'tanggal'],
     globalSearchQuery: globalSearchQuery,
     onFilterChange: () => {
@@ -268,6 +268,7 @@ function processAndRenderData() {
     const q = globalSearchQuery.toLowerCase();
     result = result.filter(item => {
       const tanggal = String(item.Tanggal || item.tanggal || '').toLowerCase();
+      const type = String(item.Type || item.type || '').toLowerCase();
       const sumber = String(item.Sumber || item.sumber || '').toLowerCase();
       const caseTxt = String(item.Case || item.case || '').toLowerCase();
       const pic = String(item.PIC || item.pic || '').toLowerCase();
@@ -275,7 +276,7 @@ function processAndRenderData() {
       const target = String(item.Target || item.target || '').toLowerCase();
       const status = String(item.Status || item.status || '').toLowerCase();
 
-      return tanggal.includes(q) || sumber.includes(q) || caseTxt.includes(q) || 
+      return tanggal.includes(q) || type.includes(q) || sumber.includes(q) || caseTxt.includes(q) || 
              pic.includes(q) || update.includes(q) || target.includes(q) || status.includes(q);
     });
   }
@@ -322,7 +323,7 @@ function processAndRenderData() {
 
 async function fetchTableData() {
   const tbody = document.getElementById("rkmTableBody");
-  tbody.innerHTML = '<tr><td colspan="7" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">Memuat data RKM...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">Memuat data RKM...</td></tr>';
 
   try {
     const { data, error } = await _supabase.from(TABLE_NAME).select('*');
@@ -335,7 +336,7 @@ async function fetchTableData() {
     processAndRenderData();
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-red-500 py-8">Gagal memuat data: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-red-500 py-8">Gagal memuat data: ${err.message}</td></tr>`;
   }
 }
 
@@ -344,7 +345,7 @@ function renderTablePage() {
   tbody.innerHTML = "";
 
   if (filteredData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-6">Tidak ada data yang sesuai pencarian/filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-6">Tidak ada data yang sesuai pencarian/filter.</td></tr>`;
     updatePaginationUI();
     updateFilterButtonStyles();
     return;
@@ -368,6 +369,7 @@ function renderTablePage() {
 function createRowElement(item) {
   const id = item.id;
   const tanggal = escapeHtml(item.Tanggal || item.tanggal || "-");
+  const type = escapeHtml(item.Type || item.type || "-");
   const sumber = escapeHtml(item.Sumber || item.sumber || "-");
   const caseText = item.Case || item.case || "-";
   const picText = item.PIC || item.pic || "";
@@ -399,6 +401,7 @@ function createRowElement(item) {
 
   tr.innerHTML = `
     <td class="cell-tanggal p-2.5 whitespace-nowrap font-medium">${tanggal}</td>
+    <td class="cell-type p-2.5 whitespace-nowrap font-medium">${type}</td>
     <td class="cell-sumber p-2.5 truncate" title="${sumber}">${sumber}</td>
     <td class="cell-case p-2.5 truncate" title="${formattedCase}">${formattedCase}</td>
     <td class="cell-pic p-2.5">${picBadges}</td>
@@ -471,7 +474,7 @@ function applySort(direction) {
 }
 
 function updateFilterButtonStyles() {
-  const allColumns = ['Tanggal', 'Sumber', 'Case', 'PIC', 'Update', 'Target', 'Status'];
+  const allColumns = ['Tanggal', 'Type', 'Sumber', 'Case', 'PIC', 'Update', 'Target', 'Status'];
 
   allColumns.forEach(col => {
     const btn = document.getElementById(`btn-filter-${col}`);
@@ -553,6 +556,7 @@ function openModal(id = null) {
   const form = document.getElementById("rkmForm");
   form.reset();
   document.getElementById("inpId").value = "";
+  document.getElementById("inpType").value = "RKM";
   document.getElementById("inpStatus").value = "Open";
 
   selectedPicsArray = [];
@@ -567,6 +571,7 @@ function openModal(id = null) {
     if (item) {
       document.getElementById("inpId").value = item.id;
       document.getElementById("inpTanggal").value = item.Tanggal || item.tanggal || "";
+      document.getElementById("inpType").value = item.Type || item.type || "RKM";
       document.getElementById("inpSumber").value = item.Sumber || item.sumber || "";
       document.getElementById("inpCase").value = item.Case || item.case || "";
       document.getElementById("inpTarget").value = item.Target || item.target || "";
@@ -613,6 +618,7 @@ async function submitForm() {
   
   const payload = {
     Tanggal: document.getElementById("inpTanggal").value,
+    Type: document.getElementById("inpType").value,
     Sumber: document.getElementById("inpSumber").value,
     Case: document.getElementById("inpCase").value,
     PIC: selectedPicsArray.join(", "),
@@ -696,9 +702,10 @@ async function exportToPDF() {
       format: 'a4'
     });
 
-    const headers = [["Tanggal", "Sumber", "Case", "PIC", "Update", "Target", "Status"]];
+    const headers = [["Tanggal", "Type", "Sumber", "Case", "PIC", "Update", "Target", "Status"]];
     const bodyData = data.map(item => [
       item.Tanggal || item.tanggal || "-",
+      item.Type || item.type || "-",
       item.Sumber || item.sumber || "-",
       item.Case || item.case || "-",
       item.PIC || item.pic || "-",
@@ -739,13 +746,14 @@ async function exportToPDF() {
         halign: 'left'
       },
       columnStyles: {
-        0: { cellWidth: 20 },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 44 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 44 },
-        5: { cellWidth: 18 },
-        6: { cellWidth: 14, halign: 'center' }
+        0: { cellWidth: 18 },
+        1: { cellWidth: 16 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 18 },
+        5: { cellWidth: 40 },
+        6: { cellWidth: 16 },
+        7: { cellWidth: 14, halign: 'center' }
       },
       didDrawPage: function (data) {
         const pageCount = doc.internal.getNumberOfPages();

@@ -169,35 +169,38 @@
         <div class="max-w-7xl mx-auto space-y-4">
           <div class="bg-white dark:bg-[#1e1e1e] rounded-xl sm:rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative" id="tableWrapper">
             <div class="overflow-x-auto custom-scroll">
-              <table class="w-full text-left border-collapse text-xs table-fixed min-w-[800px]" id="rkmTable">
+              <table class="w-full text-left border-collapse text-xs table-fixed min-w-[850px]" id="rkmTable">
                 <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
                   <tr>
-                    <th scope="col" class="p-2.5 w-[11%] relative">
+                    <th scope="col" class="p-2.5 w-[10%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Tanggal</span><button id="btn-filter-Tanggal" onclick="toggleFilterMenu('Tanggal', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[13%] relative">
+                    <th scope="col" class="p-2.5 w-[9%] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Type</span><button id="btn-filter-Type" onclick="toggleFilterMenu('Type', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[12%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Sumber</span><button id="btn-filter-Sumber" onclick="toggleFilterMenu('Sumber', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[24%] relative">
+                    <th scope="col" class="p-2.5 w-[22%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Case</span><button id="btn-filter-Case" onclick="toggleFilterMenu('Case', event)"></button></div>
                     </th>
                     <th scope="col" class="p-2.5 w-[10%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">PIC</span><button id="btn-filter-PIC" onclick="toggleFilterMenu('PIC', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[22%] relative">
+                    <th scope="col" class="p-2.5 w-[20%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Update</span><button id="btn-filter-Update" onclick="toggleFilterMenu('Update', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[10%] relative">
+                    <th scope="col" class="p-2.5 w-[9%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Target</span><button id="btn-filter-Target" onclick="toggleFilterMenu('Target', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[10%] text-center relative">
+                    <th scope="col" class="p-2.5 w-[8%] text-center relative">
                       <div class="flex items-center justify-center gap-0.5"><span class="truncate">Status</span><button id="btn-filter-Status" onclick="toggleFilterMenu('Status', event)"></button></div>
                     </th>
                   </tr>
                 </thead>
                 <tbody id="rkmTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
                   <tr>
-                    <td colspan="7" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">Memuat data RKM...</td>
+                    <td colspan="8" class="text-center text-[#5f6368] dark:text-[#9aa0a6] py-8">Memuat data RKM...</td>
                   </tr>
                 </tbody>
               </table>
@@ -297,7 +300,14 @@
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tanggal</label>
             <input type="date" id="inpTanggal" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
           </div>
-          <div class="sm:col-span-2">
+          <div>
+            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Type</label>
+            <select id="inpType" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+              <option value="RKM">RKM</option>
+              <option value="Complain">Complain</option>
+            </select>
+          </div>
+          <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Sumber</label>
             <input type="text" id="inpSumber" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
           </div>
