@@ -148,6 +148,45 @@
       -webkit-backdrop-filter: blur(8px);
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
     }
+
+    th { position: relative; padding-right: 32px !important; }
+    th.no-filter { padding-right: 24px !important; }
+    
+    .filter-icon-btn {
+      position: absolute; right: 8px; top: 50%;
+      transform: translateY(-50%);
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px; cursor: pointer; transition: all 0.15s;
+      color: #9aa0a6;
+    }
+    .filter-icon-btn:hover { background-color: rgba(60, 64, 67, 0.4); color: #8ab4f8; }
+    .filter-icon { width: 12px; height: 12px; fill: currentColor; }
+    
+    /* INDIKATOR BIRU MENYALA SAAT FILTER AKTIF */
+    .filter-active .filter-icon-btn { color: #1a73e8 !important; }
+    .dark .filter-active .filter-icon-btn { color: #8ab4f8 !important; }
+    .filter-active .filter-icon { display: none; }
+    .filter-active .filter-icon-btn::after {
+      content: ""; width: 14px; height: 14px; background-color: #1a73e8;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+    }
+    .dark .filter-active .filter-icon-btn::after {
+      background-color: #8ab4f8;
+    }
+    
+    .filter-menu {
+      position: fixed; 
+      z-index: 9999; 
+      width: 240px; 
+      padding: 12px; 
+      border-radius: 16px; 
+      text-transform: none; 
+      font-weight: normal; 
+      font-size: 12px;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen h-[100dvh] font-['Roboto',sans-serif] flex overflow-hidden transition-colors duration-200">
@@ -163,7 +202,7 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
-        <!-- Total Asset: Tampil di Desktop (Sebelah Kiri Search), Hilang di Mobile -->
+        <!-- Total Asset -->
         <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap hidden sm:inline-block">
           Total Asset: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
         </p>
@@ -201,54 +240,78 @@
 
           <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl sm:rounded-2xl shadow-sm overflow-hidden transition-colors">
             
-            <!-- TABLE CONTAINER (MIN WIDTH RESPONSIVE) -->
+            <!-- TABLE CONTAINER -->
             <div class="relative w-full overflow-x-auto custom-scroll">
               <table class="w-full text-left border-collapse text-xs min-w-[850px]">
                 <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
                   <tr>
                     <!-- 1. NO -->
-                    <th scope="col" class="p-2.5 w-[5%] relative text-center">
-                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">No</span><button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[5%] text-center">
+                      NO
+                      <div class="filter-icon-btn" data-col="no" onclick="tableFilter.toggleMenu('no', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 2. ASET -->
-                    <th scope="col" class="p-2.5 w-[18%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Aset</span><button id="btn-filter-aset" onclick="toggleFilterMenu('aset', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[18%]">
+                      ASET
+                      <div class="filter-icon-btn" data-col="aset" onclick="tableFilter.toggleMenu('aset', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 3. SITE -->
-                    <th scope="col" class="p-2.5 w-[7%] text-center relative">
-                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">Site</span><button id="btn-filter-site" onclick="toggleFilterMenu('site', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[7%] text-center">
+                      SITE
+                      <div class="filter-icon-btn" data-col="site" onclick="tableFilter.toggleMenu('site', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 4. LOKASI -->
-                    <th scope="col" class="p-2.5 w-[15%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Lokasi</span><button id="btn-filter-lokasi" onclick="toggleFilterMenu('lokasi', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[15%]">
+                      LOKASI
+                      <div class="filter-icon-btn" data-col="lokasi" onclick="tableFilter.toggleMenu('lokasi', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 5. PIC -->
-                    <th scope="col" class="p-2.5 w-[12%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">PIC</span><button id="btn-filter-pic" onclick="toggleFilterMenu('pic', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[12%]">
+                      PIC
+                      <div class="filter-icon-btn" data-col="pic" onclick="tableFilter.toggleMenu('pic', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 6. KONDISI -->
-                    <th scope="col" class="p-2.5 w-[11%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Kondisi</span><button id="btn-filter-kondisi" onclick="toggleFilterMenu('kondisi', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[11%]">
+                      KONDISI
+                      <div class="filter-icon-btn" data-col="kondisi" onclick="tableFilter.toggleMenu('kondisi', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 7. ID -->
-                    <th scope="col" class="p-2.5 w-[8%] text-center relative">
-                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">ID</span><button id="btn-filter-id" onclick="toggleFilterMenu('id', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[8%] text-center">
+                      ID
+                      <div class="filter-icon-btn" data-col="id" onclick="tableFilter.toggleMenu('id', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 8. NOTE -->
-                    <th scope="col" class="p-2.5 w-[16%] relative">
-                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Note</span><button id="btn-filter-note" onclick="toggleFilterMenu('note', event)"></button></div>
+                    <th scope="col" class="p-2.5 w-[16%]">
+                      NOTE
+                      <div class="filter-icon-btn" data-col="note" onclick="tableFilter.toggleMenu('note', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
                     </th>
 
                     <!-- 9. FOTO -->
-                    <th scope="col" class="p-2.5 w-[8%] text-center relative">
-                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">Foto</span></div>
+                    <th scope="col" class="p-2.5 w-[8%] text-center no-filter">
+                      FOTO
                     </th>
                   </tr>
                 </thead>
@@ -261,37 +324,27 @@
             </div>
 
             <!-- Filter Popover -->
-            <div id="filterPopover" class="fixed hidden z-[10005] w-56 sm:w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
-              <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
-                <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
-                  <span>↑</span>
-                  <span>A-Z</span>
-                </button>
-                <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] rounded-xl transition font-medium text-xs cursor-pointer">
-                  <span>↓</span>
-                  <span>Z-A</span>
-                </button>
+            <div id="filterPopover" class="filter-menu hidden bg-white dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] shadow-2xl">
+              <div class="flex gap-2 mb-3">
+                <button type="button" class="flex-1 py-1.5 px-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#3c4043] dark:text-[#bdc1c6] border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="execSort('asc')">↑ A-Z</button>
+                <button type="button" class="flex-1 py-1.5 px-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#3c4043] dark:text-[#bdc1c6] border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="execSort('desc')">↓ Z-A</button>
               </div>
 
-              <div class="space-y-2 normal-case">
-                <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
-                       class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
-                
-                <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
-                  <label class="flex items-center gap-1.5 cursor-pointer">
-                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" />
-                    Pilih Semua
-                  </label>
-                  <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] hover:text-[#1557b0] dark:hover:text-[#a6c8ff] font-medium cursor-pointer">Reset</button>
-                </div>
+              <input type="text" id="filterSearchInput" class="w-full px-2.5 py-1.5 mb-2.5 border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs bg-[#f8f9fa] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] placeholder-[#9aa0a6] outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="Cari item...">
 
-                <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
-                </div>
+              <div class="flex items-center justify-between text-xs pb-2 font-semibold text-[#5f6368] dark:text-[#bdc1c6]">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" id="selectAllCheckbox" onclick="tableFilter.toggleSelectAll(this.checked)" class="rounded text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0">
+                  <span>Pilih Semua</span>
+                </label>
+                <span class="text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer hover:underline" onclick="tableFilter.clearColumn()">Reset</span>
+              </div>
 
-                <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
-                  <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
-                  <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
-                </div>
+              <div class="checkbox-list max-h-36 overflow-y-auto border border-[#dadce0] dark:border-[#3c4043] p-1.5 rounded-xl bg-[#f8f9fa] dark:bg-[#1e1e1e] mb-3 custom-scroll" id="filterItemsList"></div>
+
+              <div class="flex gap-2">
+                <button type="button" class="flex-1 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="tableFilter.closePopover()">Batal</button>
+                <button type="button" class="flex-1 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="tableFilter.applyFilter()">Terapkan</button>
               </div>
             </div>
 
@@ -350,7 +403,6 @@
         <input type="hidden" id="inputLink" />
         
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <!-- INPUT ID ASSET -->
           <div>
             <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">ID Asset</label>
             <input type="text" id="inputId" 
@@ -358,7 +410,6 @@
                    placeholder="ID..." />
           </div>
 
-          <!-- INPUT NAMA ASET -->
           <div class="sm:col-span-2">
             <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Aset</label>
             <input type="text" id="inputAset" required
@@ -491,6 +542,7 @@
   </div>
 
   <script src="header-template.js"></script>
+  <script src="table-filter.js"></script>
   <script src="assets.js"></script>
 </body>
 </html>

@@ -210,11 +210,14 @@ async function preloadSuggestions() {
   try {
     const [usersRes, itemsRes] = await Promise.all([
       _supabase.from('users').select('nama').order('nama', { ascending: true }),
-      _supabase.from('item').select('item').order('item', { ascending: true })
+      _supabase.from('item').select('*').order('item', { ascending: true })
     ]);
 
     if (usersRes.data) dbUsersList = Array.from(new Set(usersRes.data.map(u => u.nama).filter(Boolean)));
-    if (itemsRes.data) dbItemsList = Array.from(new Set(itemsRes.data.map(i => i.item).filter(Boolean)));
+    if (itemsRes.data) {
+      // Menyimpan data objek item lengkap beserta informasi stoknya
+      dbItemsList = itemsRes.data.filter(i => i && i.item);
+    }
   } catch (err) {
     console.error('Gagal mengambil data referensi saran:', err);
   }
@@ -261,19 +264,31 @@ function handleItemSuggest() {
     return;
   }
 
-  const filtered = dbItemsList.filter(item => item.toLowerCase().includes(inputVal));
+  const filtered = dbItemsList.filter(data => {
+    const name = typeof data === 'object' ? data.item : data;
+    return name && name.toLowerCase().includes(inputVal);
+  });
+
   if (filtered.length === 0) {
     listEl.classList.add('hidden');
     return;
   }
 
   listEl.innerHTML = '';
-  filtered.forEach(item => {
+  filtered.forEach(data => {
+    const itemName = typeof data === 'object' ? data.item : data;
+    const itemStock = typeof data === 'object' ? (data.stock ?? data.stok ?? data.qty ?? data.balance ?? '-') : '-';
+
     const itemDiv = document.createElement('div');
-    itemDiv.className = 'px-3 py-1.5 hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] text-[#202124] dark:text-[#e8eaed] cursor-pointer transition';
-    itemDiv.innerText = item;
+    itemDiv.className = 'px-3 py-1.5 hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] text-[#202124] dark:text-[#e8eaed] cursor-pointer transition flex items-center justify-between gap-2';
+    
+    itemDiv.innerHTML = `
+      <span class="truncate font-medium text-xs">${escapeHtml(itemName)}</span>
+      <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#f1f3f4] dark:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] font-normal whitespace-nowrap">${escapeHtml(String(itemStock))}</span>
+    `;
+
     itemDiv.onclick = () => {
-      document.getElementById('inputItem').value = item;
+      document.getElementById('inputItem').value = itemName;
       listEl.classList.add('hidden');
     };
     listEl.appendChild(itemDiv);
@@ -548,6 +563,18 @@ async function saveData(e) {
   const no = document.getElementById('editNo').value;
   const user = document.getElementById('inputUser').value.trim();
   const item = document.getElementById('inputItem').value.trim();
+
+  // Restriction: Check if the entered item exists in dbItemsList
+  const isValidItem = dbItemsList.some(d => {
+    const itemName = typeof d === 'object' ? d.item : d;
+    return itemName && itemName.toLowerCase() === item.toLowerCase();
+  });
+
+  if (!isValidItem) {
+    alert('Item tidak terdaftar! Silakan pilih item dari daftar yang tersedia.');
+    return;
+  }
+
   const inVal = document.getElementById('inputIn').value ? parseInt(document.getElementById('inputIn').value, 10) : null;
   const outVal = document.getElementById('inputOut').value ? parseInt(document.getElementById('inputOut').value, 10) : null;
   const date = document.getElementById('inputDate').value || null;

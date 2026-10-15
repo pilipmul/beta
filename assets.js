@@ -11,30 +11,12 @@ let rawDataMap = new Map();
 let fetchedData = [];
 
 let dbUsersList = [];
-let dbFilterOptions = {}; 
 let selectedExportSites = [];
 
-let activeFilterColumn = null;
-let draftFilterSelections = new Set(); 
+// Instance TableFilterManager
+let tableFilter = null;
+let currentSort = { column: 'no', ascending: true };
 let selectedPhotoFile = null;
-
-// AMBIL STATE TERSIMPAN DARI SESSIONSTORAGE
-let globalSearchQuery = sessionStorage.getItem('assets_globalSearchQuery') || '';
-let sortConfig = JSON.parse(sessionStorage.getItem('assets_sortConfig')) || { column: null, direction: null };
-
-let filterSelections = {};
-try {
-  const savedFilters = JSON.parse(sessionStorage.getItem('assets_filterSelections'));
-  if (savedFilters && typeof savedFilters === 'object') {
-    Object.keys(savedFilters).forEach(key => {
-      if (Array.isArray(savedFilters[key])) {
-        filterSelections[key] = new Set(savedFilters[key]);
-      }
-    });
-  }
-} catch {
-  filterSelections = {};
-}
 
 function isSuperAdmin() {
   try {
@@ -45,20 +27,6 @@ function isSuperAdmin() {
   } catch {
     return false;
   }
-}
-
-// SIMPAN STATE FILTER, SORTING, DAN SEARCH KE SESSIONSTORAGE
-function saveStateToSession() {
-  sessionStorage.setItem('assets_globalSearchQuery', globalSearchQuery);
-  sessionStorage.setItem('assets_sortConfig', JSON.stringify(sortConfig));
-
-  const serializableFilters = {};
-  Object.keys(filterSelections).forEach(key => {
-    if (filterSelections[key] && filterSelections[key].size > 0) {
-      serializableFilters[key] = Array.from(filterSelections[key]);
-    }
-  });
-  sessionStorage.setItem('assets_filterSelections', JSON.stringify(serializableFilters));
 }
 
 function toggleHamburgerMenu(e) {
@@ -123,13 +91,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderHamburgerMenuContent();
 
-  // RESTORE PENCARIAN GLOBAL JIKA TERSEDIA DI SESSION
-  if (globalSearchQuery) {
-    const searchInput = document.getElementById('globalSearchInput');
-    const btnClear = document.getElementById('btnClearSearch');
-    if (searchInput) searchInput.value = globalSearchQuery;
-    if (btnClear) btnClear.classList.remove('hidden');
-  }
+  // Inisialisasi TableFilterManager
+  tableFilter = new TableFilterManager({
+    tableName: 'assets',
+    supabaseClient: _supabase,
+    columns: ['no', 'aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note'],
+    numericColumns: ['no'],
+    dateColumns: [],
+    popoverId: 'filterPopover',
+    containerId: 'filterItemsList',
+    searchInputId: 'filterSearchInput',
+    selectAllId: 'selectAllCheckbox',
+    onFilterChange: () => {
+      currentPage = 1;
+      fetchTableData();
+    }
+  });
 
   fetchTableData();
   preloadSuggestions();
@@ -148,6 +125,33 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .subscribe();
 });
+
+document.addEventListener('click', (e) => {
+  const popover = document.getElementById('filterPopover');
+  if (popover && !popover.contains(e.target) && !e.target.closest('.filter-icon-btn')) {
+    tableFilter.closePopover();
+  }
+
+  if (!e.target.closest('#inputPic') && !e.target.closest('#picSuggestList')) {
+    const suggestList = document.getElementById('picSuggestList');
+    if (suggestList) suggestList.classList.add('hidden');
+  }
+
+  const dropdown = document.getElementById('customDropdownMenu');
+  const btn = document.getElementById('hamburgerBtn');
+  if (dropdown && !dropdown.classList.contains('hidden')) {
+    if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  }
+});
+
+window.addEventListener('scroll', (e) => {
+  const popover = document.getElementById('filterPopover');
+  if (popover && !popover.contains(e.target) && tableFilter) {
+    tableFilter.closePopover();
+  }
+}, true);
 
 function setupDropzone() {
   const zone = document.getElementById('dropzonePhoto');
@@ -250,7 +254,6 @@ function handleRealtimeUpdate(newRow) {
     ? `<button onclick="openModalForNo(${newRow.no})" title="Edit Asset #${newRow.no}" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${newRow.no}</button>`
     : `<span class="font-mono text-[#5f6368] dark:text-[#9aa0a6]">${newRow.no}</span>`;
 
-  // URUTAN SEL REALTIME: no, aset, site, lokasi, pic, kondisi, id, note, foto (link)
   const cellValues = [
     { selector: '.cell-no', html: noCellContent },
     { selector: '.cell-aset', html: escapeHtml(newRow.aset || '-') },
@@ -275,26 +278,6 @@ function handleRealtimeUpdate(newRow) {
     }
   });
 }
-
-document.addEventListener('click', (e) => {
-  const popover = document.getElementById('filterPopover');
-  if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleFilterMenu"]')) {
-    closeFilterPopover();
-  }
-
-  if (!e.target.closest('#inputPic') && !e.target.closest('#picSuggestList')) {
-    const suggestList = document.getElementById('picSuggestList');
-    if (suggestList) suggestList.classList.add('hidden');
-  }
-
-  const dropdown = document.getElementById('customDropdownMenu');
-  const btn = document.getElementById('hamburgerBtn');
-  if (dropdown && !dropdown.classList.contains('hidden')) {
-    if (!dropdown.contains(e.target) && !btn?.contains(e.target)) {
-      dropdown.classList.add('hidden');
-    }
-  }
-});
 
 async function preloadSuggestions() {
   try {
@@ -374,7 +357,7 @@ async function uploadPhotoFile(file) {
 
 function triggerGlobalSearch() {
   const val = document.getElementById('globalSearchInput').value.trim();
-  globalSearchQuery = val;
+  tableFilter.globalSearchQuery = val;
   currentPage = 1;
 
   const btnClear = document.getElementById('btnClearSearch');
@@ -384,69 +367,41 @@ function triggerGlobalSearch() {
     btnClear.classList.add('hidden');
   }
 
-  saveStateToSession();
   fetchTableData();
 }
 
 function clearGlobalSearch() {
   document.getElementById('globalSearchInput').value = '';
   document.getElementById('btnClearSearch').classList.add('hidden');
-  globalSearchQuery = '';
+  tableFilter.globalSearchQuery = '';
   currentPage = 1;
 
-  saveStateToSession();
   fetchTableData();
 }
 
-function updateFilterButtonStyles() {
-  const allColumns = ['no', 'aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note'];
+function updateFilterUI() {
+  if (!tableFilter) return;
+  document.querySelectorAll('.filter-icon-btn').forEach(btn => {
+    const colKey = btn.getAttribute('data-col');
+    const th = btn.closest('th');
+    if (!th) return;
 
-  allColumns.forEach(col => {
-    const btn = document.getElementById(`btn-filter-${col}`);
-    if (!btn) return;
-
-    const isActive = filterSelections[col] && filterSelections[col].size > 0;
-
-    if (isActive) {
-      btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer transition-transform duration-150 scale-140 inline-block";
-      btn.innerHTML = `<svg class="w-2 h-2" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="currentColor" stroke="none"/></svg>`;
+    if (colKey && tableFilter.filterSelections[colKey] && tableFilter.filterSelections[colKey].size > 0) {
+      th.classList.add('filter-active');
     } else {
-      btn.className = "p-0.5 text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer transition-transform duration-150 scale-100 inline-block";
-      btn.innerHTML = `<svg class="w-2 h-2" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+      th.classList.remove('filter-active');
     }
   });
 }
 
-function applySupabaseFilters(query) {
-  if (globalSearchQuery !== '') {
-    query = query.or(
-      `aset.ilike.%${globalSearchQuery}%,` +
-      `site.ilike.%${globalSearchQuery}%,` +
-      `lokasi.ilike.%${globalSearchQuery}%,` +
-      `pic.ilike.%${globalSearchQuery}%,` +
-      `kondisi.ilike.%${globalSearchQuery}%,` +
-      `id.ilike.%${globalSearchQuery}%,` +
-      `note.ilike.%${globalSearchQuery}%`
-    );
-  }
-
-  for (const colKey in filterSelections) {
-    const selectedSet = filterSelections[colKey];
-    if (selectedSet && selectedSet.size > 0) {
-      const selectedArray = Array.from(selectedSet);
-      const hasBlank = selectedArray.includes('-');
-      const nonBlankValues = selectedArray.filter(v => v !== '-');
-
-      if (hasBlank && nonBlankValues.length > 0) {
-        query = query.or(`${colKey}.in.(${nonBlankValues.map(v => `"${v}"`).join(',')}),${colKey}.is.null,${colKey}.eq.`);
-      } else if (hasBlank) {
-        query = query.or(`${colKey}.is.null,${colKey}.eq.`);
-      } else if (nonBlankValues.length > 0) {
-        query = query.in(colKey, nonBlankValues);
-      }
-    }
-  }
-  return query;
+function execSort(dir) {
+  if (!tableFilter || !tableFilter.activeFilterColumn) return;
+  currentSort = {
+    column: tableFilter.activeFilterColumn,
+    ascending: dir === 'asc'
+  };
+  tableFilter.closePopover();
+  fetchTableData();
 }
 
 async function fetchTableData() {
@@ -455,7 +410,7 @@ async function fetchTableData() {
 
   try {
     let countQuery = _supabase.from('assets').select('*', { count: 'exact', head: true });
-    countQuery = applySupabaseFilters(countQuery);
+    countQuery = tableFilter.applyToSupabaseQuery(countQuery, ['aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note']);
 
     const { count, error: countErr } = await countQuery;
     if (countErr) throw countErr;
@@ -468,7 +423,7 @@ async function fetchTableData() {
     if (totalRows === 0) {
       tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ditemukan aset yang sesuai.</td></tr>`;
       updatePaginationUI();
-      updateFilterButtonStyles();
+      updateFilterUI();
       return;
     }
 
@@ -479,10 +434,10 @@ async function fetchTableData() {
     const toIndex = Math.min(currentPage * PAGE_SIZE - 1, totalRows - 1);
 
     let dataQuery = _supabase.from('assets').select('*');
-    dataQuery = applySupabaseFilters(dataQuery);
+    dataQuery = tableFilter.applyToSupabaseQuery(dataQuery, ['aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note']);
 
-    if (sortConfig.column && sortConfig.direction) {
-      dataQuery = dataQuery.order(sortConfig.column, { ascending: sortConfig.direction === 'asc' });
+    if (currentSort.column) {
+      dataQuery = dataQuery.order(currentSort.column, { ascending: currentSort.ascending });
     } else {
       dataQuery = dataQuery.order('no', { ascending: true });
     }
@@ -497,6 +452,7 @@ async function fetchTableData() {
     fetchedData.forEach(row => rawDataMap.set(row.no, row));
 
     renderTable();
+    updateFilterUI();
 
   } catch (err) {
     alert('Gagal mengambil data: ' + err.message);
@@ -510,7 +466,6 @@ function renderTable() {
   if (fetchedData.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data yang sesuai filter.</td></tr>`;
     updatePaginationUI();
-    updateFilterButtonStyles();
     return;
   }
 
@@ -532,7 +487,6 @@ function renderTable() {
       ? `<button onclick="openModalForNo(${row.no})" title="Edit Asset #${row.no}" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${row.no}</button>`
       : `<span class="font-mono text-[#5f6368] dark:text-[#9aa0a6]">${row.no}</span>`;
 
-    // URUTAN ROW TABEL: no, aset, site, lokasi, pic, kondisi, id, note, foto (link)
     tr.innerHTML = `
       <td class="cell-no p-2 text-center">${noCellContent}</td>
       <td class="cell-aset p-2 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.aset || '-')}</td>
@@ -548,171 +502,6 @@ function renderTable() {
   });
 
   updatePaginationUI();
-  updateFilterButtonStyles();
-}
-
-async function toggleFilterMenu(columnKey, event) {
-  event.stopPropagation();
-  activeFilterColumn = columnKey;
-
-  const popover = document.getElementById('filterPopover');
-  const rect = event.currentTarget.getBoundingClientRect();
-  
-  let leftPos = Math.max(10, Math.min(rect.left + window.scrollX - 100, window.innerWidth - 230));
-
-  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
-  popover.style.left = `${leftPos}px`;
-
-  document.getElementById('filterSearchInput').value = '';
-  
-  if (!dbFilterOptions[columnKey]) {
-    try {
-      const { data, error } = await _supabase
-        .from('assets')
-        .select(columnKey);
-      if (!error && data) {
-        const allVals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
-        dbFilterOptions[columnKey] = Array.from(new Set(allVals)).sort();
-      } else {
-        dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
-      }
-    } catch {
-      dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
-    }
-  }
-
-  const activeSaved = filterSelections[activeFilterColumn];
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
-
-  if (activeSaved && activeSaved.size > 0) {
-    draftFilterSelections = new Set(activeSaved);
-  } else {
-    draftFilterSelections = new Set(allOpts);
-  }
-
-  renderFilterCheckboxes();
-  popover.classList.remove('hidden');
-}
-
-function closeFilterPopover() {
-  document.getElementById('filterPopover').classList.add('hidden');
-}
-
-function renderFilterCheckboxes() {
-  const container = document.getElementById('filterItemsList');
-  const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
-
-  const uniqueValues = dbFilterOptions[activeFilterColumn] || Array.from(new Set(fetchedData.map(r => (r[activeFilterColumn] !== null && r[activeFilterColumn] !== undefined && r[activeFilterColumn] !== '') ? String(r[activeFilterColumn]) : '-'))).sort();
-
-  container.innerHTML = '';
-
-  let visibleCount = 0;
-  let visibleCheckedCount = 0;
-
-  uniqueValues.forEach(val => {
-    if (searchVal && !val.toLowerCase().includes(searchVal)) return;
-
-    visibleCount++;
-    const isChecked = draftFilterSelections.has(val);
-    if (isChecked) visibleCheckedCount++;
-
-    const label = document.createElement('label');
-    label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = val;
-    checkbox.checked = isChecked;
-    
-    checkbox.onchange = (e) => {
-      if (e.target.checked) {
-        draftFilterSelections.add(val);
-      } else {
-        draftFilterSelections.delete(val);
-      }
-      updateSelectAllState();
-    };
-
-    label.appendChild(checkbox);
-
-    const span = document.createElement('span');
-    span.className = 'truncate';
-    span.title = val;
-    span.innerText = val;
-    label.appendChild(span);
-
-    container.appendChild(label);
-  });
-
-  const selectAllCb = document.getElementById('selectAllCheckbox');
-  if (selectAllCb) {
-    selectAllCb.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
-  }
-}
-
-function updateSelectAllState() {
-  const container = document.getElementById('filterItemsList');
-  const cbs = container.querySelectorAll('input[type="checkbox"]');
-  let allChecked = cbs.length > 0;
-
-  cbs.forEach(cb => {
-    if (!cb.checked) allChecked = false;
-  });
-
-  const selectAllCb = document.getElementById('selectAllCheckbox');
-  if (selectAllCb) selectAllCb.checked = allChecked;
-}
-
-function toggleSelectAllFilters(checked) {
-  const container = document.getElementById('filterItemsList');
-  const cbs = container.querySelectorAll('input[type="checkbox"]');
-
-  cbs.forEach(cb => {
-    cb.checked = checked;
-    if (checked) {
-      draftFilterSelections.add(cb.value);
-    } else {
-      draftFilterSelections.delete(cb.value);
-    }
-  });
-}
-
-function clearFilterColumn() {
-  delete filterSelections[activeFilterColumn];
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
-  draftFilterSelections = new Set(allOpts);
-  
-  document.getElementById('filterSearchInput').value = '';
-  renderFilterCheckboxes();
-  
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
-}
-
-function applyFilter() {
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
-
-  if (draftFilterSelections.size === 0 || draftFilterSelections.size === allOpts.length) {
-    delete filterSelections[activeFilterColumn];
-  } else {
-    filterSelections[activeFilterColumn] = new Set(draftFilterSelections);
-  }
-
-  closeFilterPopover();
-  
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
-}
-
-function applySort(direction) {
-  sortConfig = { column: activeFilterColumn, direction };
-  closeFilterPopover();
-  
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
 }
 
 function updatePaginationUI() {
@@ -780,7 +569,7 @@ function openModal(mode, data = null) {
   form.reset();
   removeSelectedFile();
   document.getElementById('editNo').value = '';
-  document.getElementById('inputId').value = ''; // Reset ID
+  document.getElementById('inputId').value = '';
   const uploadStatus = document.getElementById('uploadStatusText');
   if (uploadStatus) uploadStatus.innerText = '';
 
@@ -792,7 +581,7 @@ function openModal(mode, data = null) {
     btnDelete.classList.remove('hidden');
 
     document.getElementById('editNo').value = data.no;
-    document.getElementById('inputId').value = data.id || ''; // Populate ID Asset
+    document.getElementById('inputId').value = data.id || '';
     document.getElementById('inputAset').value = data.aset || '';
     document.getElementById('inputSite').value = data.site || '';
     document.getElementById('inputLokasi').value = data.lokasi || '';
@@ -840,7 +629,7 @@ async function saveData(e) {
   const statusEl = document.getElementById('uploadStatusText');
 
   const no = document.getElementById('editNo').value;
-  const idVal = document.getElementById('inputId').value.trim() || null; // Ambil nilai ID
+  const idVal = document.getElementById('inputId').value.trim() || null;
   const aset = document.getElementById('inputAset').value.trim();
   const site = document.getElementById('inputSite').value.trim() || null;
   const lokasi = document.getElementById('inputLokasi').value.trim() || null;
@@ -858,7 +647,7 @@ async function saveData(e) {
     if (statusEl) statusEl.innerText = 'Menyimpan data...';
 
     const payload = {
-      id: idVal, // Simpan kolom id ke database
+      id: idVal,
       aset,
       site,
       lokasi,
@@ -885,7 +674,7 @@ async function saveData(e) {
     }
 
     closeModal();
-    dbFilterOptions = {}; 
+    if (tableFilter) tableFilter.dbFilterOptions = {}; 
     await fetchTableData();
 
   } catch (err) {
@@ -911,7 +700,7 @@ async function deleteDataInModal() {
     if (error) throw error;
 
     closeModal();
-    dbFilterOptions = {}; 
+    if (tableFilter) tableFilter.dbFilterOptions = {}; 
     await fetchTableData();
 
   } catch (err) {
@@ -1016,8 +805,9 @@ async function processExportCSV() {
     let query = _supabase
       .from('assets')
       .select('*')
-      .in('site', selectedExportSites)
-      .order('no', { ascending: true });
+      .in('site', selectedExportSites);
+
+    query = tableFilter.applyToSupabaseQuery(query, ['aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note']);
 
     const { data, error } = await query;
 

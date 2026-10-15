@@ -1,23 +1,14 @@
 /**
- * Modul Analisa Data - Tampilan Tanpa Double Container & Filter Identik Casual View
- * Tanpa Garis Vertikal Antar Kolom (Clean Table Layout)
+ * Modul Analisa Data - Integrated with TableFilterManager
  */
 
 let fullAnalisaTableData = [];
-let columnFilterState = {};
-let activeAnalisaFilterColumn = null;
-let draftAnalisaFilterSelections = new Set();
-let dbAnalisaColumnOptions = {};
+let analisaFilterManager = null;
 
 // Constant SVG Icons
 const SVG_PROJECT = `<svg class="w-3.5 h-3.5 inline-block align-middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`;
-
-// Sigma + Panah Bawah (Total In / Barang Masuk)
 const SVG_SUM_IN = `<svg class="w-4 h-4 inline-block align-middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4H7l5 6.5L7 17h9"/><path d="M19 13v6m0 0l-2-2m2 2l2-2"/></svg>`;
-
-// Sigma + Panah Atas (Total Out / Barang Keluar)
 const SVG_SUM_OUT = `<svg class="w-4 h-4 inline-block align-middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4H7l5 6.5L7 17h9"/><path d="M19 20v-6m0 0l-2 2m2-2l2 2"/></svg>`;
-
 const SVG_BUFFER = `<svg class="w-3.5 h-3.5 inline-block align-middle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`;
 
 function getAnalisaViewHtml() {
@@ -38,7 +29,7 @@ function getAnalisaViewHtml() {
               <tr>
                 <th scope="col" class="p-2.5 text-center w-8">No</th>
                 
-                <!-- 1. Project (Icon Briefcase) -->
+                <!-- 1. Project -->
                 <th scope="col" class="p-2.5 text-center relative" title="Project / Unit Kerja">
                   <div class="flex items-center justify-center gap-1 cursor-help">
                     <span class="inline-flex items-center justify-center">${SVG_PROJECT}</span>
@@ -70,7 +61,7 @@ function getAnalisaViewHtml() {
                   </div>
                 </th>
 
-                <!-- 5. Total In (Icon Sigma + Panah Bawah) -->
+                <!-- 5. Total In -->
                 <th scope="col" class="p-2.5 text-right relative" title="Total Qty In (Barang Masuk)">
                   <div class="flex items-center justify-end gap-1 cursor-help">
                     <span class="inline-flex items-center justify-center text-emerald-600 dark:text-emerald-400">${SVG_SUM_IN}</span>
@@ -78,7 +69,7 @@ function getAnalisaViewHtml() {
                   </div>
                 </th>
 
-                <!-- 6. Total Out (Icon Sigma + Panah Atas) -->
+                <!-- 6. Total Out -->
                 <th scope="col" class="p-2.5 text-right relative" title="Total Qty Out (Barang Keluar)">
                   <div class="flex items-center justify-end gap-1 cursor-help">
                     <span class="inline-flex items-center justify-center text-red-600 dark:text-red-400">${SVG_SUM_OUT}</span>
@@ -86,7 +77,7 @@ function getAnalisaViewHtml() {
                   </div>
                 </th>
 
-                <!-- 7. Buffer (Icon Layers) -->
+                <!-- 7. Buffer -->
                 <th scope="col" class="p-2.5 text-right relative" title="Buffer / Safety Stock">
                   <div class="flex items-center justify-end gap-1 cursor-help">
                     <span class="inline-flex items-center justify-center">${SVG_BUFFER}</span>
@@ -143,7 +134,7 @@ function getAnalisaViewHtml() {
           </table>
         </div>
 
-        <!-- Filter Popover Identik dengan Casual View -->
+        <!-- Popover Filter -->
         <div id="analisaFilterPopover" class="fixed hidden z-[10005] w-56 sm:w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
           <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
             <button onclick="applyAnalisaSort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
@@ -155,23 +146,23 @@ function getAnalisaViewHtml() {
           </div>
 
           <div class="space-y-2 normal-case">
-            <input type="text" id="analisaFilterSearchInput" oninput="renderAnalisaFilterCheckboxes()" placeholder="Cari item..." 
+            <input type="text" id="analisaFilterSearchInput" placeholder="Cari item..." 
                    class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
             
             <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
               <label class="flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" id="analisaSelectAllCheckbox" onchange="toggleSelectAllAnalisaFilters(this.checked)" />
+                <input type="checkbox" id="analisaSelectAllCheckbox" onchange="if(analisaFilterManager) analisaFilterManager.toggleSelectAll(this.checked)" />
                 Pilih Semua
               </label>
-              <button onclick="clearAnalisaFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
+              <button onclick="if(analisaFilterManager) analisaFilterManager.clearColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
             </div>
 
             <div id="analisaFilterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
             </div>
 
             <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
-              <button onclick="closeAnalisaFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
-              <button onclick="applyAnalisaFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+              <button onclick="if(analisaFilterManager) analisaFilterManager.closePopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+              <button onclick="if(analisaFilterManager) analisaFilterManager.applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
             </div>
           </div>
         </div>
@@ -193,6 +184,26 @@ async function runSpecificAnalysis() {
   if (content) content.classList.add('hidden');
 
   try {
+    // Pengecekan kelas TableFilterManager secara aman
+    const FilterClass = window.TableFilterManager || (typeof TableFilterManager !== 'undefined' ? TableFilterManager : null);
+
+    if (!analisaFilterManager && FilterClass) {
+      analisaFilterManager = new FilterClass({
+        tableName: 'inventory',
+        supabaseClient: _supabase,
+        columns: ['project', 'item', 'qty', 'frekKeluar', 'totalIn', 'totalOut', 'buffer', 'doh', 'statusMovement', 'lastIn', 'lastOut', 'rerataKeluarBulan'],
+        numericColumns: ['qty', 'frekKeluar', 'totalIn', 'totalOut', 'buffer', 'doh', 'rerataKeluarBulan'],
+        dateColumns: [],
+        popoverId: 'analisaFilterPopover',
+        containerId: 'analisaFilterItemsList',
+        searchInputId: 'analisaFilterSearchInput',
+        selectAllId: 'analisaSelectAllCheckbox',
+        onFilterChange: () => {
+          applyAndRenderAnalisaTable();
+        }
+      });
+    }
+
     const [historyRes, itemMasterRes] = await Promise.all([
       _supabase.from('inventory').select('in, out, date, item, project, no').order('no', { ascending: true }).limit(10000),
       _supabase.from('item').select('item, balance')
@@ -299,6 +310,9 @@ async function runSpecificAnalysis() {
 
     fullAnalisaTableData.sort((a, b) => b.frekKeluar - a.frekKeluar || b.totalOut - a.totalOut);
 
+    // Sinkronkan ke window agar bisa diakses oleh table-filter.js
+    window.fullData = fullAnalisaTableData;
+
     applyAndRenderAnalisaTable();
 
     if (loading) loading.classList.add('hidden');
@@ -315,7 +329,7 @@ function updateAnalisaFilterButtonStyles() {
     const btn = document.getElementById(`btn-filter-analisa-${col}`);
     if (!btn) return;
 
-    const isActive = columnFilterState[col] && columnFilterState[col].size > 0;
+    const isActive = analisaFilterManager && analisaFilterManager.filterSelections && analisaFilterManager.filterSelections[col] && analisaFilterManager.filterSelections[col].size > 0;
 
     if (isActive) {
       btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer transition-transform duration-150 scale-140 inline-block";
@@ -328,119 +342,19 @@ function updateAnalisaFilterButtonStyles() {
 }
 
 function toggleAnalisaFilterMenu(columnKey, event) {
-  event.stopPropagation();
-  activeAnalisaFilterColumn = columnKey;
-
-  const popover = document.getElementById('analisaFilterPopover');
-  const rect = event.currentTarget.getBoundingClientRect();
-  
-  let leftPos = Math.max(10, Math.min(rect.left + window.scrollX - 100, window.innerWidth - 250));
-
-  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
-  popover.style.left = `${leftPos}px`;
-  document.getElementById('analisaFilterSearchInput').value = '';
-
-  const allVals = Array.from(new Set(fullAnalisaTableData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
-  dbAnalisaColumnOptions[columnKey] = allVals;
-
-  const activeSaved = columnFilterState[activeAnalisaFilterColumn];
-  draftAnalisaFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allVals);
-
-  renderAnalisaFilterCheckboxes();
-  popover.classList.remove('hidden');
-}
-
-function closeAnalisaFilterPopover() {
-  const popover = document.getElementById('analisaFilterPopover');
-  if (popover) popover.classList.add('hidden');
-}
-
-function renderAnalisaFilterCheckboxes() {
-  const container = document.getElementById('analisaFilterItemsList');
-  if (!container) return;
-
-  const searchVal = document.getElementById('analisaFilterSearchInput').value.trim().toLowerCase();
-  const uniqueValues = dbAnalisaColumnOptions[activeAnalisaFilterColumn] || [];
-
-  container.innerHTML = '';
-  let visibleCount = 0, visibleCheckedCount = 0;
-
-  uniqueValues.forEach(val => {
-    if (searchVal && !val.toLowerCase().includes(searchVal)) return;
-
-    visibleCount++;
-    const isChecked = draftAnalisaFilterSelections.has(val);
-    if (isChecked) visibleCheckedCount++;
-
-    const label = document.createElement('label');
-    label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = val;
-    checkbox.checked = isChecked;
-    checkbox.className = 'analisa-filter-cb';
-    
-    checkbox.onchange = (e) => {
-      if (e.target.checked) draftAnalisaFilterSelections.add(val);
-      else draftAnalisaFilterSelections.delete(val);
-      updateAnalisaSelectAllState();
-    };
-
-    label.appendChild(checkbox);
-    const span = document.createElement('span');
-    span.className = 'truncate';
-    span.innerText = val;
-    label.appendChild(span);
-
-    container.appendChild(label);
-  });
-
-  const selectAllCb = document.getElementById('analisaSelectAllCheckbox');
-  if (selectAllCb) selectAllCb.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
-}
-
-function updateAnalisaSelectAllState() {
-  const cbs = document.querySelectorAll('#analisaFilterItemsList .analisa-filter-cb');
-  const allChecked = cbs.length > 0 && Array.from(cbs).every(cb => cb.checked);
-  const selectAllCb = document.getElementById('analisaSelectAllCheckbox');
-  if (selectAllCb) selectAllCb.checked = allChecked;
-}
-
-function toggleSelectAllAnalisaFilters(checked) {
-  document.querySelectorAll('#analisaFilterItemsList .analisa-filter-cb').forEach(cb => {
-    cb.checked = checked;
-    if (checked) draftAnalisaFilterSelections.add(cb.value);
-    else draftAnalisaFilterSelections.delete(cb.value);
-  });
-}
-
-function clearAnalisaFilterColumn() {
-  delete columnFilterState[activeAnalisaFilterColumn];
-  draftAnalisaFilterSelections = new Set(dbAnalisaColumnOptions[activeAnalisaFilterColumn] || []);
-  document.getElementById('analisaFilterSearchInput').value = '';
-  renderAnalisaFilterCheckboxes();
-  applyAndRenderAnalisaTable();
-}
-
-function applyAnalisaFilter() {
-  const allOpts = dbAnalisaColumnOptions[activeAnalisaFilterColumn] || [];
-  if (draftAnalisaFilterSelections.size === 0 || draftAnalisaFilterSelections.size === allOpts.length) {
-    delete columnFilterState[activeAnalisaFilterColumn];
-  } else {
-    columnFilterState[activeAnalisaFilterColumn] = new Set(draftAnalisaFilterSelections);
+  if (analisaFilterManager) {
+    analisaFilterManager.globalSearchQuery = window.globalSearchQuery || '';
+    analisaFilterManager.toggleMenu(columnKey, event, fullAnalisaTableData);
   }
-  closeAnalisaFilterPopover();
-  applyAndRenderAnalisaTable();
 }
 
 function applyAnalisaSort(direction) {
-  const colKey = activeAnalisaFilterColumn;
+  if (!analisaFilterManager || !analisaFilterManager.activeFilterColumn) return;
   
-  // Fungsi pembantu untuk mengekstrak tanggal YYYY-MM-DD dari teks Last In / Last Out
+  const colKey = analisaFilterManager.activeFilterColumn;
+  
   const extractDate = (val) => {
     if (!val || val === '-') return '';
-    // Mencari pola tanggal YYYY-MM-DD di dalam kurung atau teks
     const match = String(val).match(/\d{4}-\d{2}-\d{2}/);
     return match ? match[0] : '';
   };
@@ -449,7 +363,6 @@ function applyAnalisaSort(direction) {
     let valA = a[colKey] ?? '';
     let valB = b[colKey] ?? '';
 
-    // Logika khusus pengurutan berdasarkan tanggal untuk Last In dan Last Out
     if (colKey === 'lastIn' || colKey === 'lastOut') {
       const dateA = extractDate(valA);
       const dateB = extractDate(valB);
@@ -459,27 +372,24 @@ function applyAnalisaSort(direction) {
           ? dateA.localeCompare(dateB) 
           : dateB.localeCompare(dateA);
       }
-      // Jika salah satu tidak memiliki tanggal, tempatkan di bagian bawah
       if (!dateA && dateB) return 1;
       if (dateA && !dateB) return -1;
     }
 
-    // Logika sorting standar untuk angka
     if (typeof valA === 'number' && typeof valB === 'number') {
       return direction === 'asc' ? valA - valB : valB - valA;
     }
 
-    // Logika sorting standar untuk teks/string lainnya
     return direction === 'asc' 
       ? String(valA).localeCompare(String(valB))
       : String(valB).localeCompare(String(valA));
   });
 
-  closeAnalisaFilterPopover();
+  analisaFilterManager.closePopover();
   applyAndRenderAnalisaTable();
 }
 
-function applyAndRenderAnalisaTable() {
+function getFilteredAnalisaData() {
   let filteredData = [...fullAnalisaTableData];
 
   if (window.globalSearchQuery && window.globalSearchQuery !== '') {
@@ -490,13 +400,23 @@ function applyAndRenderAnalisaTable() {
     );
   }
 
-  Object.keys(columnFilterState).forEach(colKey => {
-    const allowedSet = columnFilterState[colKey];
-    if (allowedSet && allowedSet.size > 0) {
-      filteredData = filteredData.filter(item => allowedSet.has(String(item[colKey])));
-    }
-  });
+  if (analisaFilterManager) {
+    Object.keys(analisaFilterManager.filterSelections).forEach(colKey => {
+      const allowedSet = analisaFilterManager.filterSelections[colKey];
+      if (allowedSet && allowedSet.size > 0) {
+        filteredData = filteredData.filter(item => {
+          const val = (item[colKey] !== null && item[colKey] !== undefined && item[colKey] !== '') ? String(item[colKey]) : '-';
+          return allowedSet.has(val);
+        });
+      }
+    });
+  }
 
+  return filteredData;
+}
+
+function applyAndRenderAnalisaTable() {
+  const filteredData = getFilteredAnalisaData();
   renderAnalisaTable(filteredData);
   updateAnalisaFilterButtonStyles();
 }
@@ -541,22 +461,7 @@ function renderAnalisaTable(list) {
 
 function exportAnalisaCSV() {
   try {
-    let exportData = [...fullAnalisaTableData];
-
-    if (window.globalSearchQuery && window.globalSearchQuery !== '') {
-      const q = window.globalSearchQuery.toLowerCase();
-      exportData = exportData.filter(item => 
-        String(item.item || '').toLowerCase().includes(q) ||
-        String(item.project || '').toLowerCase().includes(q)
-      );
-    }
-
-    Object.keys(columnFilterState).forEach(colKey => {
-      const allowedSet = columnFilterState[colKey];
-      if (allowedSet && allowedSet.size > 0) {
-        exportData = exportData.filter(item => allowedSet.has(String(item[colKey])));
-      }
-    });
+    const exportData = getFilteredAnalisaData();
 
     if (!exportData || exportData.length === 0) {
       alert('Tidak ada data analisa untuk diexport.');
@@ -617,18 +522,14 @@ function escapeHtml(str) {
 document.addEventListener('click', function(e) {
   const popover = document.getElementById('analisaFilterPopover');
   if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[onclick*="toggleAnalisaFilterMenu"]')) {
-    closeAnalisaFilterPopover();
+    if (analisaFilterManager) analisaFilterManager.closePopover();
   }
 });
 
+// Window Exports
 window.getAnalisaViewHtml = getAnalisaViewHtml;
 window.runSpecificAnalysis = runSpecificAnalysis;
 window.toggleAnalisaFilterMenu = toggleAnalisaFilterMenu;
-window.closeAnalisaFilterPopover = closeAnalisaFilterPopover;
-window.renderAnalisaFilterCheckboxes = renderAnalisaFilterCheckboxes;
-window.toggleSelectAllAnalisaFilters = toggleSelectAllAnalisaFilters;
-window.clearAnalisaFilterColumn = clearAnalisaFilterColumn;
-window.applyAnalisaFilter = applyAnalisaFilter;
 window.applyAnalisaSort = applyAnalisaSort;
 window.applyAndRenderAnalisaTable = applyAndRenderAnalisaTable;
 window.exportAnalisaCSV = exportAnalisaCSV;

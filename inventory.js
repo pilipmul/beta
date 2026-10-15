@@ -1,5 +1,6 @@
 /**
  * Logika Utama Modul Inventory (Mode Casual & Switching Tampilan)
+ * Terintegrasi murni dengan TableFilterManager (table-filter.js)
  */
 
 const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
@@ -11,10 +12,8 @@ let currentPage = 1;
 let totalRows = 0;
 let rawDataMap = new Map();
 let fetchedData = [];
-let dbFilterOptions = {};
 
-let activeFilterColumn = null;
-let draftFilterSelections = new Set();
+let casualFilterManager = null;
 let currentViewMode = 'casual'; // 'casual' atau 'analisa'
 
 let globalSearchQuery = sessionStorage.getItem('inventory_globalSearchQuery') || '';
@@ -49,10 +48,11 @@ function saveStateToSession() {
   sessionStorage.setItem('inventory_globalSearchQuery', globalSearchQuery);
   sessionStorage.setItem('inventory_sortConfig', JSON.stringify(sortConfig));
 
+  const activeFilters = casualFilterManager ? casualFilterManager.filterSelections : filterSelections;
   const serializableFilters = {};
-  Object.keys(filterSelections).forEach(key => {
-    if (filterSelections[key] && filterSelections[key].size > 0) {
-      serializableFilters[key] = Array.from(filterSelections[key]);
+  Object.keys(activeFilters).forEach(key => {
+    if (activeFilters[key] && activeFilters[key].size > 0) {
+      serializableFilters[key] = Array.from(activeFilters[key]);
     }
   });
   sessionStorage.setItem('inventory_filterSelections', JSON.stringify(serializableFilters));
@@ -129,6 +129,7 @@ function renderCurrentView() {
 
   if (currentViewMode === 'casual') {
     container.innerHTML = getCasualViewHtml();
+    initCasualFilterManager();
     fetchTableData();
   } else if (currentViewMode === 'analisa') {
     if (typeof getAnalisaViewHtml === 'function') {
@@ -136,6 +137,31 @@ function renderCurrentView() {
       if (typeof runSpecificAnalysis === 'function') {
         runSpecificAnalysis();
       }
+    }
+  }
+}
+
+function initCasualFilterManager() {
+  if (!casualFilterManager && typeof TableFilterManager !== 'undefined') {
+    casualFilterManager = new TableFilterManager({
+      tableName: 'item',
+      supabaseClient: _supabase,
+      columns: ['no', 'item', 'code', 'satuan', 'coa', 'balance', 'project'],
+      numericColumns: ['no', 'balance'],
+      dateColumns: [],
+      popoverId: 'filterPopover',
+      containerId: 'filterItemsList',
+      searchInputId: 'filterSearchInput',
+      selectAllId: 'selectAllCheckbox',
+      onFilterChange: () => {
+        currentPage = 1;
+        saveStateToSession();
+        fetchTableData();
+      }
+    });
+
+    if (Object.keys(filterSelections).length > 0) {
+      casualFilterManager.filterSelections = filterSelections;
     }
   }
 }
@@ -190,15 +216,15 @@ function getCasualViewHtml() {
         </div>
 
         <div class="space-y-2 normal-case">
-          <input type="text" id="filterSearchInput" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+          <input type="text" id="filterSearchInput" placeholder="Cari item..." 
                  class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
           
           <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
             <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" />
+              <input type="checkbox" id="selectAllCheckbox" onchange="if(casualFilterManager) casualFilterManager.toggleSelectAll(this.checked)" />
               Pilih Semua
             </label>
-            <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
+            <button onclick="if(casualFilterManager) casualFilterManager.clearColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
           </div>
 
           <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
@@ -206,7 +232,7 @@ function getCasualViewHtml() {
 
           <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
             <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
-            <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+            <button onclick="if(casualFilterManager) casualFilterManager.applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
           </div>
         </div>
       </div>
@@ -348,7 +374,8 @@ function updateFilterButtonStyles() {
     const btn = document.getElementById(`btn-filter-${col}`);
     if (!btn) return;
 
-    const isActive = filterSelections[col] && filterSelections[col].size > 0;
+    const activeFilters = casualFilterManager ? casualFilterManager.filterSelections : filterSelections;
+    const isActive = activeFilters[col] && activeFilters[col].size > 0;
 
     if (isActive) {
       btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer transition-transform duration-150 scale-140 inline-block";
@@ -371,8 +398,10 @@ function applySupabaseFilters(query) {
     );
   }
 
-  for (const colKey in filterSelections) {
-    const selectedSet = filterSelections[colKey];
+  const activeFilters = casualFilterManager ? casualFilterManager.filterSelections : filterSelections;
+
+  for (const colKey in activeFilters) {
+    const selectedSet = activeFilters[colKey];
     if (selectedSet && selectedSet.size > 0) {
       const selectedArray = Array.from(selectedSet);
       const hasBlank = selectedArray.includes('-');
@@ -436,6 +465,8 @@ async function fetchTableData() {
     rawDataMap.clear();
     fetchedData.forEach(row => rawDataMap.set(row.no, row));
 
+    window.fullData = fetchedData;
+
     renderTable();
 
   } catch (err) {
@@ -482,131 +513,26 @@ function renderTable() {
   updateFilterButtonStyles();
 }
 
-async function toggleFilterMenu(columnKey, event) {
-  event.stopPropagation();
-  activeFilterColumn = columnKey;
-
-  const popover = document.getElementById('filterPopover');
-  const rect = event.currentTarget.getBoundingClientRect();
-  
-  let leftPos = Math.max(10, Math.min(rect.left + window.scrollX - 100, window.innerWidth - 230));
-
-  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
-  popover.style.left = `${leftPos}px`;
-  document.getElementById('filterSearchInput').value = '';
-  
-  if (!dbFilterOptions[columnKey]) {
-    try {
-      const { data, error } = await _supabase.from('item').select(columnKey);
-      if (!error && data) {
-        const allVals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
-        dbFilterOptions[columnKey] = Array.from(new Set(allVals)).sort();
-      } else {
-        dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
-      }
-    } catch {
-      dbFilterOptions[columnKey] = Array.from(new Set(fetchedData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-'))).sort();
-    }
+function toggleFilterMenu(columnKey, event) {
+  if (casualFilterManager) {
+    casualFilterManager.globalSearchQuery = globalSearchQuery || '';
+    casualFilterManager.toggleMenu(columnKey, event, fetchedData);
   }
-
-  const activeSaved = filterSelections[activeFilterColumn];
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
-
-  draftFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allOpts);
-
-  renderFilterCheckboxes();
-  popover.classList.remove('hidden');
 }
 
 function closeFilterPopover() {
-  const popover = document.getElementById('filterPopover');
-  if (popover) popover.classList.add('hidden');
-}
-
-function renderFilterCheckboxes() {
-  const container = document.getElementById('filterItemsList');
-  if (!container) return;
-  const searchVal = document.getElementById('filterSearchInput').value.trim().toLowerCase();
-  const uniqueValues = dbFilterOptions[activeFilterColumn] || Array.from(new Set(fetchedData.map(r => (r[activeFilterColumn] !== null && r[activeFilterColumn] !== undefined && r[activeFilterColumn] !== '') ? String(r[activeFilterColumn]) : '-'))).sort();
-
-  container.innerHTML = '';
-  let visibleCount = 0, visibleCheckedCount = 0;
-
-  uniqueValues.forEach(val => {
-    if (searchVal && !val.toLowerCase().includes(searchVal)) return;
-
-    visibleCount++;
-    const isChecked = draftFilterSelections.has(val);
-    if (isChecked) visibleCheckedCount++;
-
-    const label = document.createElement('label');
-    label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
-    
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.value = val;
-    checkbox.checked = isChecked;
-    checkbox.className = 'filter-cb';
-    
-    checkbox.onchange = (e) => {
-      if (e.target.checked) draftFilterSelections.add(val);
-      else draftFilterSelections.delete(val);
-      updateSelectAllState();
-    };
-
-    label.appendChild(checkbox);
-    const span = document.createElement('span');
-    span.className = 'truncate';
-    span.innerText = val;
-    label.appendChild(span);
-
-    container.appendChild(label);
-  });
-
-  const selectAllCb = document.getElementById('selectAllCheckbox');
-  if (selectAllCb) selectAllCb.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
-}
-
-function updateSelectAllState() {
-  const cbs = document.querySelectorAll('#filterItemsList .filter-cb');
-  const allChecked = cbs.length > 0 && Array.from(cbs).every(cb => cb.checked);
-  const selectAllCb = document.getElementById('selectAllCheckbox');
-  if (selectAllCb) selectAllCb.checked = allChecked;
-}
-
-function toggleSelectAllFilters(checked) {
-  document.querySelectorAll('#filterItemsList .filter-cb').forEach(cb => {
-    cb.checked = checked;
-    if (checked) draftFilterSelections.add(cb.value);
-    else draftFilterSelections.delete(cb.value);
-  });
-}
-
-function clearFilterColumn() {
-  delete filterSelections[activeFilterColumn];
-  draftFilterSelections = new Set(dbFilterOptions[activeFilterColumn] || []);
-  document.getElementById('filterSearchInput').value = '';
-  renderFilterCheckboxes();
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
-}
-
-function applyFilter() {
-  const allOpts = dbFilterOptions[activeFilterColumn] || [];
-  if (draftFilterSelections.size === 0 || draftFilterSelections.size === allOpts.length) {
-    delete filterSelections[activeFilterColumn];
+  if (casualFilterManager) {
+    casualFilterManager.closePopover();
   } else {
-    filterSelections[activeFilterColumn] = new Set(draftFilterSelections);
+    const popover = document.getElementById('filterPopover');
+    if (popover) popover.classList.add('hidden');
   }
-  closeFilterPopover();
-  currentPage = 1;
-  saveStateToSession();
-  fetchTableData();
 }
 
 function applySort(direction) {
-  sortConfig = { column: activeFilterColumn, direction };
+  const colKey = casualFilterManager ? casualFilterManager.activeFilterColumn : null;
+  if (!colKey) return;
+  sortConfig = { column: colKey, direction };
   closeFilterPopover();
   currentPage = 1;
   saveStateToSession();
@@ -749,7 +675,7 @@ async function saveData(e) {
     }
 
     closeModal();
-    dbFilterOptions = {};
+    if (casualFilterManager) casualFilterManager.dbColumnOptions = {};
     await fetchTableData();
 
   } catch (err) {
@@ -772,7 +698,7 @@ async function deleteDataInModal() {
     if (error) throw error;
 
     closeModal();
-    dbFilterOptions = {};
+    if (casualFilterManager) casualFilterManager.dbColumnOptions = {};
     await fetchTableData();
 
   } catch (err) {

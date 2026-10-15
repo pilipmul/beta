@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eskalasi Budget - SOT</title>
     
-    <!-- Auth Guard LocalStorage Fleksibel (Domain & Format Agnostic) -->
+    <!-- Auth Guard LocalStorage Fleksibel -->
     <script>
         (function checkAuth() {
             const userSessionString = localStorage.getItem("user");
             
-            // 1. Jika tidak ada sesi -> redirect ke login.html
             if (!userSessionString) {
                 window.location.replace("login.html");
                 return;
@@ -25,20 +24,17 @@
                     return;
                 }
 
-                // 2. Super Admin (Dede Hidayat) lolos tanpa syarat
                 const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
                 if (username === "dede hidayat") {
                     return;
                 }
 
-                // 3. Fungsi penilai nilai akses
                 function checkVal(val) {
                     if (!val) return false;
                     const str = String(val).trim().toUpperCase();
                     return str === "Y" || str === "TRUE" || str === "1";
                 }
 
-                // 4. Cek akses eskalasi (baik userData.eskalasi maupun userData.akses.ESKALASI)
                 const hasAccess = checkVal(userData.eskalasi) || 
                                   checkVal(userData.ESKALASI) || 
                                   (userData.akses && (checkVal(userData.akses.ESKALASI) || checkVal(userData.akses.eskalasi)));
@@ -70,6 +66,9 @@
     <!-- CSS Modal Eskalasi -->
     <link rel="stylesheet" href="eskin.css">
 
+    <!-- IMPORT TEMPLATE TABLE-FILTER (FILE TERPISAH, TANPA DIUBAH) -->
+    <script src="table-filter.js"></script>
+
     <style>
         html, body { 
             font-family: 'Roboto', sans-serif; 
@@ -78,7 +77,6 @@
             overflow: hidden;
         }
 
-        /* FLOATING SCROLLBAR ABSOLUTE OVERLAY */
         .floating-scroll-area {
             position: absolute;
             inset: 0;
@@ -87,7 +85,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        /* Custom Scrollbar */
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
@@ -99,7 +96,6 @@
             .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
         }
 
-        /* SIDEBAR HOLLOW OVERLAY */
         #global-header {
             position: fixed;
             top: 0;
@@ -129,19 +125,22 @@
         .filter-icon-btn:hover { background-color: rgba(60, 64, 67, 0.4); color: #8ab4f8; }
         .filter-icon { width: 12px; height: 12px; fill: currentColor; }
         
-        .filter-active .filter-icon-btn { color: #facc15 !important; }
+        /* INDIKATOR BIRU MENYALA SAAT FILTER AKTIF */
+        .filter-active .filter-icon-btn { color: #1a73e8 !important; }
+        .dark .filter-active .filter-icon-btn { color: #8ab4f8 !important; }
         .filter-active .filter-icon { display: none; }
         .filter-active .filter-icon-btn::after {
-            content: ""; width: 14px; height: 14px; background-color: #facc15;
+            content: ""; width: 14px; height: 14px; background-color: #1a73e8;
             -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
             mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
         }
+        .dark .filter-active .filter-icon-btn::after {
+            background-color: #8ab4f8;
+        }
         
-        /* LAYOUT BASE POPUP FILTER FIXED */
         .filter-menu {
             position: fixed; 
             z-index: 9999; 
-            display: none; 
             width: 240px; 
             padding: 12px; 
             border-radius: 16px; 
@@ -153,7 +152,6 @@
 
         .checkbox-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
 
-        /* OVERRIDE INPUT TABEL MODAL AGAR ADAPTIF */
         #itemRows input {
             background-color: #f1f3f4;
             color: #202124;
@@ -168,9 +166,7 @@
             color: #e8eaed;
             border-color: #3c4043;
         }
-        #itemRows input:focus {
-            border-color: #1a73e8;
-        }
+        #itemRows input:focus { border-color: #1a73e8; }
         .dark #itemRows input:focus {
             border-color: #8ab4f8;
             background-color: #1e1e1e;
@@ -179,13 +175,11 @@
 </head>
 <body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen h-[100dvh] font-['Roboto',sans-serif] flex overflow-hidden transition-colors duration-200">
 
-    <!-- CONTAINER ELEMEN SIDEBAR OVERLAY HOLLOW -->
     <div id="global-header"></div>
 
-    <!-- MAIN CONTENT CONTAINER -->
     <div id="main-content" class="flex-1 w-full h-full flex flex-col overflow-hidden">
         
-        <!-- Topbar Halaman -->
+        <!-- Topbar -->
         <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
             <div class="flex items-center gap-1.5 shrink-0">
                 <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Eskalasi Budget</h2>
@@ -232,25 +226,25 @@
                                         <th scope="col" class="p-2.5 w-[8%] text-center no-filter">NO</th>
                                         <th scope="col" class="p-2.5 w-[22%]">
                                             KODE ESKALASI 
-                                            <div class="filter-icon-btn" data-col="1" onclick="toggleFilterMenu(event, this)">
+                                            <div class="filter-icon-btn" data-col="kode" onclick="tableFilter.toggleMenu('kode', event, rawDataFallback)">
                                                 <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                             </div>
                                         </th>
                                         <th scope="col" class="p-2.5 w-[40%]">
                                             SUBJECT 
-                                            <div class="filter-icon-btn" data-col="2" onclick="toggleFilterMenu(event, this)">
+                                            <div class="filter-icon-btn" data-col="subject" onclick="tableFilter.toggleMenu('subject', event, rawDataFallback)">
                                                 <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                             </div>
                                         </th>
                                         <th scope="col" class="p-2.5 w-[15%]">
                                             BULAN 
-                                            <div class="filter-icon-btn" data-col="3" onclick="toggleFilterMenu(event, this)">
+                                            <div class="filter-icon-btn" data-col="bulan" onclick="tableFilter.toggleMenu('bulan', event, rawDataFallback)">
                                                 <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                             </div>
                                         </th>
                                         <th scope="col" class="p-2.5 w-[15%]">
                                             NILAI 
-                                            <div class="filter-icon-btn" data-col="4" onclick="toggleFilterMenu(event, this)">
+                                            <div class="filter-icon-btn" data-col="nilai" onclick="tableFilter.toggleMenu('nilai', event, rawDataFallback)">
                                                 <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                                             </div>
                                         </th>
@@ -259,28 +253,28 @@
                                 <tbody class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium" id="tableBody"></tbody>
                             </table>
 
-                            <!-- POPUP FILTER MENU (ADAPTIF TEMA) -->
-                            <div id="filterMenu" class="filter-menu bg-white dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] shadow-2xl">
+                            <!-- POPUP FILTER POPOVER -->
+                            <div id="filterPopover" class="filter-menu hidden bg-white dark:bg-[#252525] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] shadow-2xl">
                                 <div class="flex gap-2 mb-3">
-                                    <button class="flex-1 py-1.5 px-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#3c4043] dark:text-[#bdc1c6] border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="execSort('asc')">↑ A-Z</button>
-                                    <button class="flex-1 py-1.5 px-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#3c4043] dark:text-[#bdc1c6] border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="execSort('desc')">↓ Z-A</button>
+                                    <button type="button" class="flex-1 py-1.5 px-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#3c4043] dark:text-[#bdc1c6] border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="execSort('asc')">↑ A-Z</button>
+                                    <button type="button" class="flex-1 py-1.5 px-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#3c4043] dark:text-[#bdc1c6] border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="execSort('desc')">↓ Z-A</button>
                                 </div>
 
-                                <input type="text" id="menuSearch" class="w-full px-2.5 py-1.5 mb-2.5 border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs bg-[#f8f9fa] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] placeholder-[#9aa0a6] outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="Cari item..." onkeyup="searchInMenu()">
+                                <input type="text" id="filterSearchInput" class="w-full px-2.5 py-1.5 mb-2.5 border border-[#dadce0] dark:border-[#3c4043] rounded-xl text-xs bg-[#f8f9fa] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] placeholder-[#9aa0a6] outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="Cari item...">
 
                                 <div class="flex items-center justify-between text-xs pb-2 font-semibold text-[#5f6368] dark:text-[#bdc1c6]">
                                     <label class="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)" class="rounded text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0">
+                                        <input type="checkbox" id="selectAllCheckbox" onclick="tableFilter.toggleSelectAll(this.checked)" class="rounded text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0">
                                         <span>Pilih Semua</span>
                                     </label>
-                                    <span class="text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer hover:underline" onclick="resetFilterMenu()">Reset</span>
+                                    <span class="text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer hover:underline" onclick="tableFilter.clearColumn()">Reset</span>
                                 </div>
 
-                                <div class="checkbox-list max-h-36 overflow-y-auto border border-[#dadce0] dark:border-[#3c4043] p-1.5 rounded-xl bg-[#f8f9fa] dark:bg-[#1e1e1e] mb-3 border-collapse custom-scroll" id="checkboxList"></div>
+                                <div class="checkbox-list max-h-36 overflow-y-auto border border-[#dadce0] dark:border-[#3c4043] p-1.5 rounded-xl bg-[#f8f9fa] dark:bg-[#1e1e1e] mb-3 custom-scroll" id="filterItemsList"></div>
 
                                 <div class="flex gap-2">
-                                    <button class="flex-1 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="closeFilterMenu()">Batal</button>
-                                    <button class="flex-1 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="applyCheckboxFilter()">Terapkan</button>
+                                    <button type="button" class="flex-1 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="tableFilter.closePopover()">Batal</button>
+                                    <button type="button" class="flex-1 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl text-xs font-semibold transition cursor-pointer" onclick="tableFilter.applyFilter()">Terapkan</button>
                                 </div>
                             </div>
 
@@ -300,7 +294,7 @@
         </div>
     </div>
 
-    <!-- POPUP MODAL FORM ESKALASI BARU (100% ADAPTIF LIGHT & DARK MODE) -->
+    <!-- POPUP MODAL FORM ESKALASI BARU -->
     <div id="modalEskalasiBaru" class="modal-overlay">
         <div class="bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] w-full max-w-4xl max-h-[90dvh] overflow-y-auto custom-scroll flex flex-col">
             <div class="p-4 sm:p-5 border-b border-[#f1f3f4] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#252525] flex justify-between items-center sticky top-0 z-10 shrink-0">
@@ -390,14 +384,12 @@
     <!-- SCRIPT TEMPLATE HEADER TERPUSAT -->
     <script src="header-template.js"></script>
 
-    <!-- LOGIKA HAMBURGER, FILTER & DATA -->
+    <!-- LOGIKA INTEGRASI TABLEFILTERMANAGER & SUPABASE -->
     <script>
-        let fullData = []; 
-        let filteredData = []; 
-        let activeColIndex = -1;
-        let currentAppliedFilters = {};
+        let tableFilter;
+        let rawDataFallback = [];
+        let currentSort = { column: 'no', ascending: false };
 
-        // HAMBURGER DROPDOWN HANDLER
         function toggleHamburgerMenu(e) {
             if (e) e.stopPropagation();
             const dropdown = document.getElementById('customDropdownMenu');
@@ -408,10 +400,6 @@
                 renderHamburgerMenuContent();
             }
             dropdown.classList.toggle('hidden');
-        }
-
-        function toggleConnDropdown(e) {
-            toggleHamburgerMenu(e);
         }
 
         function renderHamburgerMenuContent() {
@@ -436,31 +424,18 @@
                 .replace(/'/g, '&#039;');
         }
 
-        // FUNGSI SEARCH GLOBAL
         function triggerGlobalSearch() {
             const input = document.getElementById('globalSearchInput');
-            const query = input ? input.value.trim().toLowerCase() : '';
+            const query = input ? input.value.trim() : '';
             const btnClear = document.getElementById('btnClearSearch');
 
-            if (query !== '') {
-                if (btnClear) btnClear.classList.remove('hidden');
-            } else {
-                if (btnClear) btnClear.classList.add('hidden');
+            if (btnClear) {
+                if (query !== '') btnClear.classList.remove('hidden');
+                else btnClear.classList.add('hidden');
             }
 
-            filteredData = fullData.filter(row => {
-                const matchesSearch = query === '' || row.some(cell => String(cell).toLowerCase().includes(query));
-                let matchesFilters = true;
-                for (let colIdx in currentAppliedFilters) {
-                    if (!currentAppliedFilters[colIdx].includes(String(row[colIdx]))) {
-                        matchesFilters = false;
-                        break;
-                    }
-                }
-                return matchesSearch && matchesFilters;
-            });
-
-            renderTable(filteredData);
+            tableFilter.globalSearchQuery = query;
+            loadData();
         }
 
         function clearGlobalSearch() {
@@ -469,47 +444,43 @@
             triggerGlobalSearch();
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof renderHeader === 'function') {
-                renderHeader({
-                    subtitle: "Eskalasi Budget",
-                    hamburgerItems: [
-                        {
-                            label: "Eskalasi Baru",
-                            icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-                            onClick: "openModalEskalasi()"
-                        }
-                    ]
-                });
-            }
-            renderHamburgerMenuContent();
-        });
-
         function updateConnectionStatus(isConnected) {
             const container = document.getElementById("dbStatusIndicator");
-            if (isConnected) {
-                container.innerText = "Status: Connected to Supabase";
-                container.className = "text-emerald-600 dark:text-emerald-400 font-medium";
-            } else {
-                container.innerText = "Status: Disconnected";
-                container.className = "text-rose-600 dark:text-rose-400 font-medium";
+            if (container) {
+                if (isConnected) {
+                    container.innerText = "Status: Connected to Supabase";
+                    container.className = "text-emerald-600 dark:text-emerald-400 font-medium";
+                } else {
+                    container.innerText = "Status: Disconnected";
+                    container.className = "text-rose-600 dark:text-rose-400 font-medium";
+                }
             }
         }
 
-        function parseMonthYear(valStr) {
-            if (!valStr || valStr === '-') return new Date(0);
-            const parts = valStr.split('-');
-            if (parts.length !== 2) return new Date(0);
-            const monthNames = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-            const monthIdx = monthNames.findIndex(m => m.toLowerCase() === parts[0].toLowerCase().substring(0, 3));
-            if (monthIdx === -1) return new Date(0);
-            let year = parseInt(parts[1], 10);
-            year = year < 100 ? 2000 + year : year;
-            return new Date(year, monthIdx, 1);
+        // UPDATE STATUS TAMPILAN IKON FILTER BIRU
+        function updateFilterUI() {
+            if (!tableFilter) return;
+            document.querySelectorAll('.filter-icon-btn').forEach(btn => {
+                const colKey = btn.getAttribute('data-col');
+                const th = btn.closest('th');
+                if (!th) return;
+
+                if (colKey && tableFilter.filterSelections[colKey] && tableFilter.filterSelections[colKey].size > 0) {
+                    th.classList.add('filter-active');
+                } else {
+                    th.classList.remove('filter-active');
+                }
+            });
         }
 
-        function parseCleanNumber(valX) {
-            return parseFloat(valX.replace(/[^\d.-]/g, '')) || 0;
+        function execSort(dir) {
+            if (!tableFilter || !tableFilter.activeFilterColumn) return;
+            currentSort = {
+                column: tableFilter.activeFilterColumn,
+                ascending: dir === 'asc'
+            };
+            tableFilter.closePopover();
+            loadData();
         }
 
         async function loadData() {
@@ -517,15 +488,25 @@
                 document.getElementById("loading").style.display = "block";
                 document.getElementById("eskalasiTable").classList.add("hidden");
 
-                const { data, error } = await supabaseClient
+                let query = supabaseClient
                     .from('eskalasi')
-                    .select('no, kode, subject, bulan, nilai')
-                    .order('no', { ascending: false });
+                    .select('no, kode, subject, bulan, nilai');
 
+                if (currentSort.column) {
+                    query = query.order(currentSort.column, { ascending: currentSort.ascending });
+                } else {
+                    query = query.order('no', { ascending: false });
+                }
+
+                query = tableFilter.applyToSupabaseQuery(query, ['kode', 'subject', 'bulan']);
+
+                const { data, error } = await query;
                 if (error) throw error;
                 updateConnectionStatus(true);
 
-                fullData = data.map(item => [
+                rawDataFallback = data || [];
+
+                const formattedData = rawDataFallback.map(item => [
                     String(item.no ?? ''),
                     String(item.kode ?? ''),
                     String(item.subject ?? ''),
@@ -533,10 +514,10 @@
                     item.nilai ? 'Rp ' + Number(item.nilai).toLocaleString('id-ID') : '-'
                 ]);
 
-                filteredData = [...fullData];
                 document.getElementById("loading").style.display = "none";
                 document.getElementById("eskalasiTable").classList.remove("hidden");
-                renderTable(filteredData);
+                renderTable(formattedData);
+                updateFilterUI();
             } catch (e) {
                 console.error(e);
                 updateConnectionStatus(false);
@@ -571,112 +552,44 @@
             });
         }
 
-        const menu = document.getElementById('filterMenu');
-        const searchBox = document.getElementById('menuSearch');
-        const masterCheckbox = document.getElementById('masterCheckbox');
-
-        // POSISI POPUP VIEWPORT BASED
-        function toggleFilterMenu(e, element) {
-            activeColIndex = parseInt(element.getAttribute('data-col'));
-            const btnRect = element.getBoundingClientRect();
-            
-            menu.style.display = 'block';
-            
-            menu.style.top = (btnRect.bottom + 6) + 'px';
-            
-            let leftPos = Math.max(10, Math.min(btnRect.left - 100, window.innerWidth - 250));
-            menu.style.left = leftPos + 'px';
-            searchBox.value = '';
-            
-            const dataFilteredByOthers = fullData.filter(r => {
-                for (let colIdx in currentAppliedFilters) {
-                    if (parseInt(colIdx) === activeColIndex) continue; 
-                    if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
-                }
-                return true;
-            });
-
-            const availableVals = [...new Set(dataFilteredByOthers.map(r => String(r[activeColIndex])))].sort();
-            const currentlyChecked = currentAppliedFilters[activeColIndex] || availableVals;
-
-            const list = document.getElementById('checkboxList');
-            list.innerHTML = '';
-            availableVals.forEach(v => {
-                const isChecked = currentlyChecked.includes(v);
-                const escVal = escapeHtml(v);
-                list.innerHTML += `
-                    <label class="flex items-center gap-2 text-xs py-1 text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] px-1 rounded cursor-pointer">
-                        <input type="checkbox" ${isChecked ? 'checked' : ''} value="${escVal}" onclick="updateMasterCheckbox()" class="rounded text-[#1a73e8] dark:text-[#8ab4f8] focus:ring-0"> 
-                        <span class="truncate" title="${escVal}">${escVal}</span>
-                    </label>`;
-            });
-            updateMasterCheckbox();
-            e.stopPropagation();
-        }
-
-        function searchInMenu() {
-            const filter = searchBox.value.toLowerCase();
-            document.querySelectorAll('#checkboxList label').forEach(item => {
-                item.style.display = item.innerText.toLowerCase().includes(filter) ? "flex" : "none";
-            });
-        }
-
-        function toggleAllCheckboxes(state) {
-            document.querySelectorAll('#checkboxList input[type="checkbox"]').forEach(cb => {
-                if (cb.parentElement.style.display !== 'none') cb.checked = state;
-            });
-        }
-
-        function updateMasterCheckbox() {
-            const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
-            masterCheckbox.checked = cbs.length > 0 && cbs.every(cb => cb.checked);
-        }
-
-        function resetFilterMenu() {
-            toggleAllCheckboxes(true);
-            masterCheckbox.checked = true;
-            searchBox.value = '';
-            searchInMenu();
-        }
-
-        function closeFilterMenu() { menu.style.display = 'none'; }
-
-        function execSort(dir) {
-            filteredData.sort((a, b) => {
-                let valA = a[activeColIndex], valB = b[activeColIndex];
-                if (activeColIndex === 0 || activeColIndex === 4) { 
-                    valA = parseCleanNumber(valA); valB = parseCleanNumber(valB); 
-                } else if (activeColIndex === 3) {
-                    valA = parseMonthYear(valA); valB = parseMonthYear(valB);
-                }
-                return dir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
-            });
-            renderTable(filteredData);
-            closeFilterMenu();
-        }
-
-        function applyCheckboxFilter() {
-            const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
-            const checkedVals = cbs.filter(i => i.checked).map(i => i.value);
-            const isAllChecked = cbs.every(cb => cb.checked);
-            const targetTh = document.querySelector(`.filter-icon-btn[data-col="${activeColIndex}"]`).closest('th');
-            
-            if (!isAllChecked) {
-                targetTh.classList.add('filter-active');
-                currentAppliedFilters[activeColIndex] = checkedVals;
-            } else {
-                targetTh.classList.remove('filter-active');
-                delete currentAppliedFilters[activeColIndex];
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderHeader === 'function') {
+                renderHeader({
+                    subtitle: "Eskalasi Budget",
+                    hamburgerItems: [
+                        {
+                            label: "Eskalasi Baru",
+                            icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+                            onClick: "openModalEskalasi()"
+                        }
+                    ]
+                });
             }
+            renderHamburgerMenuContent();
 
-            triggerGlobalSearch();
-            closeFilterMenu();
-        }
+            tableFilter = new TableFilterManager({
+                tableName: 'eskalasi',
+                supabaseClient: supabaseClient,
+                columns: ['kode', 'subject', 'bulan', 'nilai'],
+                numericColumns: ['no', 'nilai'],
+                dateColumns: [],
+                popoverId: 'filterPopover',
+                containerId: 'filterItemsList',
+                searchInputId: 'filterSearchInput',
+                selectAllId: 'selectAllCheckbox',
+                onFilterChange: () => {
+                    loadData();
+                }
+            });
 
-        // AUTO CLOSE HANDLERS
+            loadData();
+        });
+
+        // AUTO CLOSE HANDLER
         document.addEventListener('click', (e) => {
-            if (menu && !menu.contains(e.target) && !e.target.closest('.filter-icon-btn')) {
-                closeFilterMenu();
+            const popover = document.getElementById('filterPopover');
+            if (popover && !popover.contains(e.target) && !e.target.closest('.filter-icon-btn')) {
+                tableFilter.closePopover();
             }
             const dropdown = document.getElementById('customDropdownMenu');
             const btn = document.getElementById('hamburgerBtn');
@@ -687,11 +600,12 @@
             }
         });
 
-        window.addEventListener('scroll', closeFilterMenu, true);
-
-        if (menu) menu.onclick = (e) => e.stopPropagation();
-
-        window.onload = loadData;
+        window.addEventListener('scroll', (e) => {
+            const popover = document.getElementById('filterPopover');
+            if (popover && !popover.contains(e.target) && tableFilter) {
+                tableFilter.closePopover();
+            }
+        }, true);
     </script>
 
     <!-- MODULE ESKALASI SCRIPT -->
