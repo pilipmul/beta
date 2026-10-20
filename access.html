@@ -447,9 +447,9 @@
         if (targetUser) targetUser[fieldName] = updatedValue;
 
         dbFilterOptions = {};
-        showToast("Tersimpan", `Akses modul ${displayFieldName} untuk ${nama} berhasil diperbarui.`, "success");
+        showToast("Saved", `${nama} access updated.`, "success");
       } catch (err) {
-        showToast("Gagal Update", err.message || "Gagal memperbarui ke Supabase.", "error");
+        showToast("Update Failed", err.message || "Failed to update database.", "error");
       }
     }
 
