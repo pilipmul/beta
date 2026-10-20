@@ -23,6 +23,20 @@ let currentUserSession = {
 let globalSearchQuery = sessionStorage.getItem('event_globalSearchQuery') || '';
 let sortConfig = JSON.parse(sessionStorage.getItem('event_sortConfig')) || { column: null, direction: null };
 
+// Helper memformat tanggal menjadi dd-mmm-yy (contoh: 05-Mar-26)
+function formatDateDDMMMYY(dateString) {
+  if (!dateString || dateString === '-') return '-';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const month = monthNames[date.getMonth()];
+  const year = String(date.getFullYear()).slice(-2);
+
+  return `${day}-${month}-${year}`;
+}
+
 // Inisialisasi TableFilterManager untuk Modul Event
 const tableFilter = new TableFilterManager({
   tableName: 'event',
@@ -119,6 +133,19 @@ function toggleConnDropdown(e) {
   if (dropdown) dropdown.classList.toggle('hidden');
 }
 
+// Handler Toggle Custom Popover Divisi
+function toggleDivisionMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('divisionMenu');
+  if (menu) menu.classList.toggle('hidden');
+}
+
+function selectDivisionOption(div) {
+  const menu = document.getElementById('divisionMenu');
+  if (menu) menu.classList.add('hidden');
+  switchDivision(div);
+}
+
 function switchDivision(div) {
   const userData = getUserData();
   const userPosition = userData?.position || '';
@@ -134,27 +161,17 @@ function switchDivision(div) {
   currentUserSession.division = div;
   sessionStorage.setItem('event_activeDivision', div);
 
-  // Update tampilan tombol switcher divisi
-  ['cleaning', 'engineering', 'security'].forEach(d => {
-    const btn = document.getElementById('btnDiv' + d.charAt(0).toUpperCase() + d.slice(1));
-    if (btn) {
-      if (d === div) {
-        btn.className = "px-2 py-1 rounded-md transition-all bg-white dark:bg-[#404040] shadow-sm text-[#1a73e8] dark:text-[#8ab4f8] font-semibold cursor-pointer";
-      } else {
-        btn.className = "px-2 py-1 rounded-md transition-all text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] cursor-pointer";
-      }
-
-      // Kunci tombol divisi selain miliknya jika tidak memiliki akses penuh
-      if (!fullAccess && d !== userDivision) {
-        btn.disabled = true;
-        btn.classList.add('opacity-40', 'cursor-not-allowed');
-        btn.classList.remove('cursor-pointer');
-      } else {
-        btn.disabled = false;
-        btn.classList.remove('opacity-40', 'cursor-not-allowed');
-      }
+  // Sync Ikon Utama Tombol Divisi Terpilih ( cleaner: ikon sapu tebal )
+  const iconContainer = document.getElementById('divisionIcon');
+  if (iconContainer) {
+    if (div === 'cleaning') {
+      iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 3l-6 6"/><path d="M13.5 6.5l4 4"/><path d="M5 21l8-8-4-4-8 8a1 1 0 0 0 0 1.41L2.59 21A1 1 0 0 0 5 21z"/><path d="M7 15l2 2"/></svg>`;
+    } else if (div === 'engineering') {
+      iconContainer.innerHTML = `<svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+    } else if (div === 'security') {
+      iconContainer.innerHTML = `<svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`;
     }
-  });
+  }
 
   setupDynamicFormCategory();
   currentPage = 1;
@@ -260,6 +277,12 @@ document.addEventListener('click', (e) => {
     dropdown.classList.add('hidden');
   }
 
+  const divMenu = document.getElementById('divisionMenu');
+  const divBtn = document.getElementById('btnDivisionDropdown');
+  if (divMenu && !divMenu.classList.contains('hidden') && !divMenu.contains(e.target) && !divBtn.contains(e.target)) {
+    divMenu.classList.add('hidden');
+  }
+
   const popover = document.getElementById('filterPopover');
   if (popover && !popover.classList.contains('hidden') && !popover.contains(e.target) && !e.target.closest('button[id^="btn-filter-"]')) {
     tableFilter.closePopover();
@@ -303,7 +326,7 @@ function handleRealtimeUpdate(newRow) {
 
   const cellValues = [
     { selector: '.cell-id', html: `<button onclick="openModalForId(${newRow.id})" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${newRow.id}</button>` },
-    { selector: '.cell-timestamp', html: escapeHtml(newRow.timestamp || '-') },
+    { selector: '.cell-timestamp', html: escapeHtml(formatDateDDMMMYY(newRow.timestamp)) },
     { selector: '.cell-logged_by', html: escapeHtml(newRow.logged_by || '-') },
     { selector: '.cell-location', html: escapeHtml(newRow.location || '-') },
     { selector: '.cell-category', html: `<span class="bg-[#f1f3f4] dark:bg-[#2d2d2d] px-2 py-0.5 rounded font-mono text-[11px]">${escapeHtml(newRow.category || '-')}</span>` },
@@ -444,7 +467,7 @@ function renderTable() {
 
     tr.innerHTML = `
       <td class="cell-id p-2.5 text-center"><button onclick="openModalForId(${row.id})" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${row.id}</button></td>
-      <td class="cell-timestamp p-2.5 font-mono text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${escapeHtml(row.timestamp || '-')}</td>
+      <td class="cell-timestamp p-2.5 font-mono text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${escapeHtml(formatDateDDMMMYY(row.timestamp))}</td>
       <td class="cell-logged_by p-2.5 font-medium truncate">${escapeHtml(row.logged_by || '-')}</td>
       <td class="cell-location p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.location || '-')}</td>
       <td class="cell-category p-2.5"><span class="bg-[#f1f3f4] dark:bg-[#2d2d2d] px-2 py-0.5 rounded font-mono text-[11px]">${escapeHtml(row.category || '-')}</span></td>

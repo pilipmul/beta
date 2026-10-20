@@ -153,25 +153,61 @@
     
     <!-- HEADER RESPONSIVE -->
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
-      <div class="flex items-center gap-2 shrink-0">
+      <!-- Judul Event di Kiri -->
+      <div class="flex items-center shrink-0">
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Event</h2>
-        
-        <!-- Division Badge Switcher -->
-        <div class="flex bg-[#f1f3f4] dark:bg-[#2d2d2d] rounded-lg p-0.5 text-[11px] font-medium ml-2">
-          <button onclick="switchDivision('cleaning')" id="btnDivCleaning" class="px-2 py-1 rounded-md transition-all">Cleaning</button>
-          <button onclick="switchDivision('engineering')" id="btnDivEngineering" class="px-2 py-1 rounded-md transition-all">Engineering</button>
-          <button onclick="switchDivision('security')" id="btnDivSecurity" class="px-2 py-1 rounded-md transition-all">Security</button>
-        </div>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
-        <!-- Total Event -->
+      <!-- Kontrol Dipindahkan ke Pojok Kanan -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <!-- Custom Division Dropdown -->
+        <div class="relative shrink-0">
+          <button type="button" id="btnDivisionDropdown" onclick="toggleDivisionMenu(event)" title="Pilih Divisi"
+                  class="w-7 h-7 sm:w-8 sm:h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-lg flex items-center justify-center text-[#1a73e8] dark:text-[#8ab4f8] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] transition-all cursor-pointer">
+            <span id="divisionIcon">
+              <!-- Icon Sapu Tebal -->
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M19 3l-6 6"/>
+                <path d="M13.5 6.5l4 4"/>
+                <path d="M5 21l8-8-4-4-8 8a1 1 0 0 0 0 1.41L2.59 21A1 1 0 0 0 5 21z"/>
+                <path d="M7 15l2 2"/>
+              </svg>
+            </span>
+          </button>
+
+          <!-- Popup Menu Divisi Custom -->
+          <div id="divisionMenu" class="hidden absolute right-0 sm:left-0 top-full mt-1 w-36 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-xl shadow-xl py-1 z-[99999] text-xs">
+            <button type="button" onclick="selectDivisionOption('cleaning')" class="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
+              <svg class="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M19 3l-6 6"/>
+                <path d="M13.5 6.5l4 4"/>
+                <path d="M5 21l8-8-4-4-8 8a1 1 0 0 0 0 1.41L2.59 21A1 1 0 0 0 5 21z"/>
+                <path d="M7 15l2 2"/>
+              </svg>
+              <span class="font-medium">Cleaner</span>
+            </button>
+            <button type="button" onclick="selectDivisionOption('engineering')" class="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
+              <svg class="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span class="font-medium">Engineering</span>
+            </button>
+            <button type="button" onclick="selectDivisionOption('security')" class="w-full px-3 py-2 text-left flex items-center gap-2 hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
+              <svg class="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+              <span class="font-medium">Security</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Total Event Counter -->
         <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap hidden sm:inline-block">
           Total Event: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
         </p>
 
         <!-- Search Bar -->
-        <div class="relative flex items-center w-full max-w-[150px] xs:max-w-[180px] sm:max-w-64">
+        <div class="relative flex items-center w-32 xs:w-40 sm:w-56">
           <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
@@ -181,7 +217,7 @@
           <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
         </div>
 
-        <!-- Hamburger Button -->
+        <!-- Hamburger Button (Opsi 3 Garis) -->
         <div class="relative flex items-center shrink-0">
           <button type="button" id="hamburgerBtn" class="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
             <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -210,7 +246,7 @@
                     <th scope="col" class="p-2.5 w-[70px] text-center relative">
                       <div class="flex items-center justify-center gap-0.5"><span class="truncate">ID</span><button id="btn-filter-id" onclick="toggleFilterMenu('id', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[140px] relative">
+                    <th scope="col" class="p-2.5 w-[90px] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">Waktu</span><button id="btn-filter-timestamp" onclick="toggleFilterMenu('timestamp', event)"></button></div>
                     </th>
                     <th scope="col" class="p-2.5 w-[130px] relative">
@@ -384,7 +420,7 @@
                  class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
         </div>
 
-        <!-- MULTI-OPTION DOKUMENTASI (Kamera, File Upload, Drag&Drop, URL) -->
+        <!-- MULTI-OPTION DOKUMENTASI -->
         <div>
           <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1.5">Lampiran Foto Bukti</label>
           
