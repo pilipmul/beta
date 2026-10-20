@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <script>
+    (function() {
+      try {
+        const session = localStorage.getItem("user");
+        if (!session) {
+          window.location.replace("https://sotpbc.vercel.app/login.html");
+          return;
+        }
+
+        const userData = JSON.parse(session);
+        if (!userData) {
+          window.location.replace("https://sotpbc.vercel.app/login.html");
+          return;
+        }
+
+        if (userData.akses) {
+          const aks = userData.akses;
+          const punyaAkses = (aks.log === "Y" || aks.event === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
+          
+          if (!punyaAkses) {
+            alert("Anda tidak memiliki hak akses ke modul Event.");
+            window.location.replace("https://sotpbc.vercel.app/login.html");
+          }
+        }
+      } catch (err) {
+        console.error("Autentikasi gagal:", err);
+        window.location.replace("https://sotpbc.vercel.app/login.html");
+      }
+    })();
+  </script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event - SOT</title>
+  
+  <link rel="stylesheet" href="global-header.css">
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    html, body {
+      font-family: 'Roboto', sans-serif;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    input[type="checkbox"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 0.875rem;
+      height: 0.875rem;
+      border-radius: 9999px !important;
+      border: 1px solid #dadce0;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease-in-out;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    input[type="checkbox"]:checked {
+      background-color: #1a73e8;
+      border-color: #1a73e8;
+    }
+
+    input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      width: 3.5px;
+      height: 7px;
+      border: solid white;
+      border-width: 0 1.5px 1.5px 0;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    input[type="checkbox"]:indeterminate {
+      background-color: #1a73e8;
+      border-color: #1a73e8;
+    }
+
+    input[type="checkbox"]:indeterminate::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 6px;
+      height: 2px;
+      background-color: white;
+      transform: translate(-50%, -50%);
+      border: none;
+      border-radius: 1px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      input[type="checkbox"] { border-color: #5f6368; }
+      input[type="checkbox"]:checked { background-color: #8ab4f8; border-color: #8ab4f8; }
+      input[type="checkbox"]:checked::after { border-color: #121212; }
+      
+      input[type="checkbox"]:indeterminate { background-color: #8ab4f8; border-color: #8ab4f8; }
+      input[type="checkbox"]:indeterminate::after { background-color: #121212; }
+    }
+
+    .floating-scroll-area {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent !important; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.25); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.5); }
+    .custom-scroll::-webkit-scrollbar-corner { background: transparent; }
+
+    @media (prefers-color-scheme: dark) {
+      .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); }
+      .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+    }
+
+    #global-header {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    #global-header > * { pointer-events: auto; }
+    #global-header aside, #global-header .sidebar {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#121212] text-[#202124] dark:text-[#e8eaed] h-screen h-[100dvh] font-['Roboto',sans-serif] flex overflow-hidden transition-colors duration-200">
+
+  <div id="global-header"></div>
+
+  <div id="main-content" class="flex-1 w-full h-full flex flex-col overflow-hidden">
+    
+    <!-- HEADER RESPONSIVE -->
+    <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
+        <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Event</h2>
+        
+        <!-- Division Badge Switcher -->
+        <div class="flex bg-[#f1f3f4] dark:bg-[#2d2d2d] rounded-lg p-0.5 text-[11px] font-medium ml-2">
+          <button onclick="switchDivision('cleaning')" id="btnDivCleaning" class="px-2 py-1 rounded-md transition-all">Cleaning</button>
+          <button onclick="switchDivision('engineering')" id="btnDivEngineering" class="px-2 py-1 rounded-md transition-all">Engineering</button>
+          <button onclick="switchDivision('security')" id="btnDivSecurity" class="px-2 py-1 rounded-md transition-all">Security</button>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
+        <!-- Total Event -->
+        <p class="text-[11px] text-[#5f6368] dark:text-[#9aa0a6] font-medium whitespace-nowrap hidden sm:inline-block">
+          Total Event: <span id="totalDataCount" class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">0</span>
+        </p>
+
+        <!-- Search Bar -->
+        <div class="relative flex items-center w-full max-w-[150px] xs:max-w-[180px] sm:max-w-64">
+          <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" id="globalSearchInput" autocomplete="off" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
+                 placeholder="Cari event..." 
+                 class="w-full h-7 sm:h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
+          <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
+        </div>
+
+        <!-- Hamburger Button -->
+        <div class="relative flex items-center shrink-0">
+          <button type="button" id="hamburgerBtn" class="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-48 sm:w-52 bg-white dark:bg-[#252525] rounded-xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+            <div id="custom-hamburger-content"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 w-full relative overflow-hidden">
+      <main class="floating-scroll-area custom-scroll p-2 sm:p-4">
+        <div class="max-w-7xl mx-auto space-y-4">
+
+          <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl sm:rounded-2xl shadow-sm overflow-hidden transition-colors">
+            
+            <!-- TABLE CONTAINER -->
+            <div class="relative w-full overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs min-w-[950px]">
+                <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
+                  <tr>
+                    <th scope="col" class="p-2.5 w-[70px] text-center relative">
+                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">ID</span><button id="btn-filter-id" onclick="toggleFilterMenu('id', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[140px] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Waktu</span><button id="btn-filter-timestamp" onclick="toggleFilterMenu('timestamp', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[130px] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">User</span><button id="btn-filter-logged_by" onclick="toggleFilterMenu('logged_by', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[130px] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Lokasi</span><button id="btn-filter-location" onclick="toggleFilterMenu('location', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[130px] relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Kategori</span><button id="btn-filter-category" onclick="toggleFilterMenu('category', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[90px] text-center relative">
+                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">Prioritas</span><button id="btn-filter-priority" onclick="toggleFilterMenu('priority', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 relative">
+                      <div class="flex items-center justify-between gap-0.5"><span class="truncate">Detail & Tindakan</span><button id="btn-filter-subject" onclick="toggleFilterMenu('subject', event)"></button></div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[80px] text-center relative">
+                      <span class="truncate">Bukti</span>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[100px] text-center relative">
+                      <div class="flex items-center justify-center gap-0.5"><span class="truncate">Status</span><button id="btn-filter-status" onclick="toggleFilterMenu('status', event)"></button></div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="eventTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
+                  <tr>
+                    <td colspan="9" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Filter Popover -->
+            <div id="filterPopover" class="fixed hidden z-[10005] w-56 sm:w-60 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl p-3 text-xs lowercase">
+              <div class="grid grid-cols-2 gap-2 mb-3 border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3 normal-case">
+                <button onclick="applySort('asc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↑</span> A-Z
+                </button>
+                <button onclick="applySort('desc')" class="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#2c384e] text-[#202124] dark:text-[#e8eaed] rounded-xl transition font-medium text-xs cursor-pointer">
+                  <span>↓</span> Z-A
+                </button>
+              </div>
+
+              <div class="space-y-2 normal-case">
+                <input type="text" id="filterSearchInput" autocomplete="off" oninput="renderFilterCheckboxes()" placeholder="Cari item..." 
+                       class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none text-xs" />
+                <div class="flex justify-between items-center text-[11px] text-[#5f6368] dark:text-[#9aa0a6] px-1">
+                  <label class="flex items-center gap-1.5 cursor-pointer">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllFilters(this.checked)" />
+                    Pilih Semua
+                  </label>
+                  <button onclick="clearFilterColumn()" class="text-[#1a73e8] dark:text-[#8ab4f8] font-medium cursor-pointer">Reset</button>
+                </div>
+
+                <div id="filterItemsList" class="max-h-36 overflow-y-auto space-y-1 pr-1 border border-[#f1f3f4] dark:border-[#3c4043] rounded-xl p-1.5 bg-[#f8f9fa] dark:bg-[#1e1e1e] custom-scroll">
+                </div>
+
+                <div class="flex gap-2 pt-2 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+                  <button onclick="closeFilterPopover()" class="w-1/2 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">Batal</button>
+                  <button onclick="applyFilter()" class="w-1/2 py-1.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-sm cursor-pointer">Terapkan</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAGINATION BAR -->
+            <div class="flex flex-col sm:flex-row justify-between items-center p-2.5 sm:p-3 bg-[#f8f9fa] dark:bg-[#252525] border-t border-[#dadce0] dark:border-[#3c4043] text-xs gap-2 sm:gap-3">
+              <span id="pageInfo" class="text-[#5f6368] dark:text-[#9aa0a6] text-[11px] sm:text-xs">Menampilkan 0 data</span>
+              
+              <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-1 text-[#5f6368] dark:text-[#9aa0a6]">
+                  <span>Hal:</span>
+                  <input type="number" id="jumpPageInput" min="1" 
+                         onkeydown="if(event.key==='Enter') jumpToPage()"
+                         class="w-10 sm:w-12 bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-1 py-0.5 text-center text-[#202124] dark:text-[#e8eaed] focus:outline-none focus:border-[#1a73e8]" />
+                  <span id="totalPagesText">/ 1</span>
+                  <button onclick="jumpToPage()" 
+                          class="px-2 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-lg font-medium transition cursor-pointer">
+                    Go
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <button id="btnHome" onclick="goToHome()" title="Halaman Pertama"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    |&lt;
+                  </button>
+                  <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    &lt;
+                  </button>
+                  <button id="btnNext" onclick="changePage(1)" title="Berikutnya"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    &gt;
+                  </button>
+                  <button id="btnEnd" onclick="goToEnd()" title="Halaman Terakhir"
+                          class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
+                    &gt;|
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- MODAL FORM EVENT -->
+  <div id="modal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-2 sm:p-4 z-[10005]">
+    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl sm:rounded-3xl p-4 sm:p-6 w-full max-w-lg shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto custom-scroll">
+      <h3 id="modalTitle" class="text-base sm:text-lg font-bold text-[#202124] dark:text-[#f1f3f4]">Form Event Entry</h3>
+      
+      <form id="eventForm" onsubmit="saveData(event)" class="space-y-3.5 text-xs" autocomplete="off">
+        <input type="hidden" id="editId" />
+        <input type="hidden" id="inputLink" />
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Lokasi / Zone</label>
+            <input type="text" id="inputLocation" required placeholder="misal: Lobby Lt. 1" 
+                   class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+          </div>
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Kategori</label>
+            <select id="inputCategory" required 
+                    class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition">
+              <option value="">-- Pilih Kategori --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Prioritas</label>
+            <select id="inputPriority" required 
+                    class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition">
+              <option value="Low">Low / Rutin</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High / Kritis</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Status</label>
+            <select id="inputStatus" required 
+                    class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition">
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Subjek / Ringkasan</label>
+          <input type="text" id="inputSubject" required placeholder="Ringkasan singkat masalah" 
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Detail / Penjelasan</label>
+          <textarea id="inputDetails" rows="3" required placeholder="Penjelasan lengkap mengenai kejadian..." 
+                    class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Tindakan yang Diambil</label>
+          <input type="text" id="inputActionTaken" placeholder="Tindakan perbaikan atau mitigasi (Opsional)" 
+                 class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-3 py-2 text-[#202124] dark:text-[#e8eaed] focus:outline-none transition" />
+        </div>
+
+        <!-- MULTI-OPTION DOKUMENTASI (Kamera, File Upload, Drag&Drop, URL) -->
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1.5">Lampiran Foto Bukti</label>
+          
+          <!-- Mode Selector Tabs -->
+          <div class="flex border-b border-[#dadce0] dark:border-[#3c4043] mb-2 text-[11px] font-medium">
+            <button type="button" id="tabUpload" onclick="switchDocMode('upload')" class="px-3 py-1.5 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold">
+              📁 Upload / Drag & Drop
+            </button>
+            <button type="button" id="tabCamera" onclick="switchDocMode('camera')" class="px-3 py-1.5 border-b-2 border-transparent text-[#5f6368] hover:text-[#202124] dark:text-[#9aa0a6]">
+              📷 Kamera Langsung
+            </button>
+            <button type="button" id="tabUrl" onclick="switchDocMode('url')" class="px-3 py-1.5 border-b-2 border-transparent text-[#5f6368] hover:text-[#202124] dark:text-[#9aa0a6]">
+              🔗 Link URL
+            </button>
+          </div>
+
+          <!-- Section 1: File Upload + Drag and Drop -->
+          <div id="docSectionUpload" class="space-y-2">
+            <div id="dropzonePhoto" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] hover:border-[#1a73e8] rounded-xl p-4 text-center cursor-pointer transition bg-[#f8f9fa] dark:bg-[#252525]">
+              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+                Seret & lepaskan file gambar di sini, atau <span class="text-[#1a73e8] font-semibold underline">pilih dari folder</span>
+              </p>
+              <input type="file" id="fileInputPhoto" accept="image/*" class="hidden" onchange="handleFileSelected(this.files)" />
+            </div>
+          </div>
+
+          <!-- Section 2: Kamera Live Video Capture -->
+          <div id="docSectionCamera" class="hidden space-y-2">
+            <div class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center border border-[#3c4043]">
+              <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+              <canvas id="cameraCanvas" class="hidden"></canvas>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <button type="button" onclick="toggleCameraFacing()" class="px-3 py-1.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] rounded-lg text-xs font-medium text-[#5f6368] dark:text-[#9aa0a6]">
+                🔄 Putar Kamera
+              </button>
+              <button type="button" onclick="capturePhotoFromCamera()" class="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition">
+                📸 Ambil Foto
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 3: Manual Link URL -->
+          <div id="docSectionUrl" class="hidden space-y-2">
+            <div class="flex gap-2">
+              <input type="url" id="inputUrlLink" placeholder="https://..." class="flex-1 bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent rounded-xl px-3 py-2 text-xs outline-none focus:border-[#1a73e8]" />
+              <button type="button" onclick="applyUrlLink()" class="px-3 py-2 bg-[#1a73e8] text-white rounded-xl text-xs font-medium">Tempel</button>
+            </div>
+          </div>
+
+          <!-- Attachment Preview Bar -->
+          <div id="previewContainerPhoto" class="hidden flex items-center justify-between bg-[#f8f9fa] dark:bg-[#2d2d2d] p-2 mt-2 rounded-lg border border-[#1a73e8]/30">
+            <div class="flex items-center gap-2 overflow-hidden">
+              <img id="imgPreviewPhoto" class="w-10 h-10 object-cover rounded border border-[#dadce0] dark:border-[#3c4043]" src="" alt="preview">
+              <span id="fileNamePhoto" class="text-xs truncate max-w-[180px] font-medium text-[#202124] dark:text-[#e8eaed]">File Selected</span>
+            </div>
+            <button type="button" onclick="removeSelectedFile()" class="text-xs text-red-500 font-semibold hover:underline shrink-0">Hapus</button>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+          <div>
+            <button type="button" id="btnDeleteInModal" onclick="deleteDataInModal()" 
+                    class="px-3.5 py-2 bg-[#fce8e6] dark:bg-[#481c1d] hover:bg-[#fad2cf] dark:hover:bg-[#5c2426] text-[#d93025] dark:text-[#f28b82] rounded-xl font-medium hidden transition cursor-pointer">
+              🗑️ Hapus
+            </button>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal()" class="px-3.5 sm:px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
+              Batal
+            </button>
+            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL PREVIEW FOTO -->
+  <div id="imageModal" class="hidden fixed inset-0 bg-black/80 z-[10006] flex items-center justify-center p-4 backdrop-blur-xs" onclick="closePhotoModal()">
+    <div class="max-w-3xl w-full bg-white dark:bg-[#1e1e1e] rounded-2xl overflow-hidden shadow-2xl border border-[#dadce0] dark:border-[#3c4043]" onclick="event.stopPropagation()">
+      <div class="px-4 py-2.5 bg-[#f8f9fa] dark:bg-[#252525] border-b border-[#dadce0] dark:border-[#3c4043] flex items-center justify-between text-xs font-bold">
+        <span id="modalPhotoTitle" class="text-[#202124] dark:text-[#e8eaed]">Preview Foto Event</span>
+        <button onclick="closePhotoModal()" class="text-lg cursor-pointer text-[#5f6368] hover:text-[#202124] dark:text-[#9aa0a6] dark:hover:text-white">&times;</button>
+      </div>
+      <div class="p-2 flex justify-center bg-zinc-900">
+        <img id="modalImage" class="max-h-[70vh] object-contain rounded-lg" src="" alt="photo view">
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EXPORT CSV -->
+  <div id="exportModal" class="fixed inset-0 bg-black/40 dark:bg-black/60 hidden backdrop-blur-sm flex justify-center items-center p-2 sm:p-4 z-[10005]">
+    <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl sm:rounded-3xl p-4 sm:p-6 w-full max-w-md shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto custom-scroll text-xs">
+      <div class="flex justify-between items-center border-b border-[#f1f3f4] dark:border-[#3c4043] pb-3">
+        <h3 class="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f1f3f4] flex items-center gap-2">
+          <span>📥</span> Export CSV Event
+        </h3>
+        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Divisi Terpilih</label>
+          <input type="text" id="exportDivisionText" readonly disabled class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] font-bold capitalize" />
+        </div>
+
+        <div>
+          <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1">Periode Tanggal</label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <span class="text-[10px] text-[#5f6368] dark:text-[#9aa0a6] block mb-0.5">Mulai Tanggal:</span>
+              <input type="date" id="exportStartDate" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none" />
+            </div>
+            <div>
+              <span class="text-[10px] text-[#5f6368] dark:text-[#9aa0a6] block mb-0.5">Selesai Tanggal:</span>
+              <input type="date" id="exportEndDate" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] focus:bg-white dark:focus:bg-[#252525] border border-transparent focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] rounded-xl px-2.5 py-1.5 text-[#202124] dark:text-[#e8eaed] focus:outline-none" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-[#f1f3f4] dark:border-[#3c4043]">
+        <button type="button" onclick="closeExportModal()" class="px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
+          Batal
+        </button>
+        <button type="button" onclick="processExportCSV()" class="px-4 py-2 bg-[#137333] dark:bg-[#81c995] hover:bg-[#0d652d] dark:hover:bg-[#a8dab5] text-white dark:text-[#202124] rounded-xl font-medium flex items-center gap-1.5 shadow transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+           Unduh CSV
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="header-template.js"></script>
+  <script src="table-filter.js"></script>
+  <script src="event.js"></script>
+</body>
+</html>

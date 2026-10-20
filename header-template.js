@@ -38,10 +38,10 @@ function renderHeader() {
           <aside id="sidebar" 
                  onmouseenter="expandSidebarOnHover()" 
                  onmouseleave="collapseSidebarOnHover()" 
-                 class="sidebar-collapsed min-h-screen flex flex-col fixed left-0 top-0 z-50">
+                 class="sidebar-collapsed h-screen h-[100dvh] flex flex-col fixed left-0 top-0 z-50">
             
             <!-- Header Sidebar & Avatar Toggle -->
-            <div class="p-2 border-b border-slate-800 flex items-center gap-2.5 h-14">
+            <div class="p-2 border-b border-slate-800 flex items-center gap-2.5 h-14 shrink-0">
               <button type="button" 
                       onclick="toggleSidebar()" 
                       title="Toggle Navigation"
@@ -55,7 +55,7 @@ function renderHeader() {
             </div>
 
             <!-- Navigasi Menu Sidebar -->
-            <nav class="flex-1 px-1.5 py-3 space-y-2 overflow-y-auto custom-scroll text-xs">
+            <nav class="flex-1 px-1.5 py-3 space-y-2 overflow-y-auto custom-scroll text-xs min-h-0">
               
               <!-- Dashboard -->
               <a href="dashboard.html" class="flex items-center gap-2.5 px-1 py-1.5 text-slate-400 hover:text-white transition no-underline" title="Dashboard">
@@ -72,6 +72,14 @@ function renderHeader() {
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                 </svg>
                 <span class="sidebar-text truncate">Map</span>
+              </a>
+
+              <!-- Event Modul -->
+              <a id="nav-event" href="event.html" class="hidden flex items-center gap-2.5 px-1 py-1.5 text-slate-400 hover:text-white transition no-underline" title="Event">
+                <svg class="w-5 h-5 text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span class="sidebar-text truncate">Event</span>
               </a>
               
               <!-- Eskalasi -->
@@ -163,8 +171,8 @@ function renderHeader() {
               </a>
             </nav>
 
-            <!-- Footer Sidebar -->
-            <div class="p-2 border-t border-slate-800 text-xs">
+            <!-- Footer Sidebar (Tombol Keluar Terkunci di Bawah) -->
+            <div class="p-2 border-t border-slate-800 text-xs shrink-0 bg-[#0f172a]">
               <button type="button" onclick="handleLogout()" class="w-full flex items-center gap-2.5 px-1 py-1.5 text-rose-400 hover:text-rose-300 transition cursor-pointer border-0 bg-transparent" title="Keluar">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
@@ -249,6 +257,7 @@ function initNavbarAccess() {
 
     const modules = [
         { id: "nav-map",          key: "map",       aksKey: "MAP"       },
+        { id: "nav-event",        key: "event",     aksKey: "EVENT"     },
         { id: "nav-eskalasi",     key: "eskalasi",  aksKey: "ESKALASI"  },
         { id: "nav-rkm",          key: "rkm",       aksKey: "RKM"       },
         { id: "nav-dokPerbaikan", key: "perbaikan", aksKey: "PERBAIKAN" },

@@ -153,12 +153,13 @@
           <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl sm:rounded-2xl shadow-sm overflow-hidden transition-colors">
             <!-- TABLE CONTAINER -->
             <div class="relative w-full overflow-x-auto custom-scroll">
-              <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed] min-w-[1150px]">
+              <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed] min-w-[1250px]">
                 <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
                   <tr>
                     <th scope="col" class="p-2.5 relative w-12 text-center"><div class="flex items-center justify-center gap-0.5"><span class="truncate">No</span><button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button></div></th>
                     <th scope="col" class="p-2.5 relative"><div class="flex items-center justify-between gap-0.5"><span class="truncate">Nama Pengguna</span><button id="btn-filter-nama" onclick="toggleFilterMenu('nama', event)"></button></div></th>
                     <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Map</span><button id="btn-filter-map" onclick="toggleFilterMenu('map', event)"></button></div></th>
+                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Event</span><button id="btn-filter-event" onclick="toggleFilterMenu('event', event)"></button></div></th>
                     <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Eskalasi</span><button id="btn-filter-eskalasi" onclick="toggleFilterMenu('eskalasi', event)"></button></div></th>
                     <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">RKM</span><button id="btn-filter-rkm" onclick="toggleFilterMenu('rkm', event)"></button></div></th>
                     <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Dok. Perbaikan</span><button id="btn-filter-perbaikan" onclick="toggleFilterMenu('perbaikan', event)"></button></div></th>
@@ -174,7 +175,7 @@
                 </thead>
                 <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
                   <tr>
-                    <td colspan="14" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
+                    <td colspan="15" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data hak akses pengguna...</td>
                   </tr>
                 </tbody>
               </table>
@@ -250,7 +251,7 @@
       filterSelections = {};
     }
 
-    const ALL_MODULE_COLUMNS = ['map', 'eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'log', 'item', 'tenant', 'hse', 'assets', 'acces'];
+    const ALL_MODULE_COLUMNS = ['map', 'event', 'eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'log', 'item', 'tenant', 'hse', 'assets', 'acces'];
 
     document.addEventListener("DOMContentLoaded", () => {
       if (typeof renderHeader === 'function') renderHeader({ subtitle: "Access Control" });
@@ -293,7 +294,7 @@
 
     async function fetchUsers() {
       const tbody = document.getElementById("userTableBody");
-      tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data pengguna...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-[#5f6368] dark:text-[#9aa0a6]">Memuat data pengguna...</td></tr>`;
 
       if (!supabaseClient) return showToast("Error", "Koneksi Supabase tidak tersedia.", "error");
 
@@ -305,7 +306,7 @@
         dbFilterOptions = {};
         processAndRenderUsers();
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-[#d93025]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-[#d93025]">Gagal memuat data pengguna dari Supabase.</td></tr>`;
         showToast("Gagal Loading", err.message || "Gagal mengambil data.", "error");
       }
     }
@@ -396,7 +397,7 @@
       tbody.innerHTML = "";
 
       if (usersList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="14" class="text-center py-8 text-[#5f6368]">Tidak ada data pengguna ditemukan.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="15" class="text-center py-8 text-[#5f6368]">Tidak ada data pengguna ditemukan.</td></tr>`;
         return;
       }
 
@@ -432,7 +433,7 @@
       const updatedValue = isChecked ? "Y" : null;
 
       const labelMap = {
-        map: 'MAP', item: 'INVENTORY', log: 'LOGISTICS', tenant: 'TENANT', hse: 'HSE', acces: 'ACCESS CONTROL', perbaikan: 'DOK. PERBAIKAN'
+        map: 'MAP', event: 'EVENT', item: 'INVENTORY', log: 'LOGISTICS', tenant: 'TENANT', hse: 'HSE', acces: 'ACCESS CONTROL', perbaikan: 'DOK. PERBAIKAN'
       };
       const displayFieldName = labelMap[fieldName] || fieldName.toUpperCase();
 
@@ -447,7 +448,7 @@
         if (targetUser) targetUser[fieldName] = updatedValue;
 
         dbFilterOptions = {};
-        showToast("Saved", `${nama} access updated.`, "success");
+        showToast("Saved", `${nama} access to ${displayFieldName} updated.`, "success");
       } catch (err) {
         showToast("Update Failed", err.message || "Failed to update database.", "error");
       }
