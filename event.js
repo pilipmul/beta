@@ -12,8 +12,8 @@ let fetchedData = [];
 
 // Kamera & File Handler State
 let currentStream = null;
-let currentFacingMode = "environment"; // Default kamera belakang
-let selectedImageFile = null; // Menampung file gambar fisik asli
+let currentFacingMode = "environment";
+let selectedImageFile = null;
 
 let currentUserSession = {
   nama: "Operational User",
@@ -23,7 +23,6 @@ let currentUserSession = {
 let globalSearchQuery = sessionStorage.getItem('event_globalSearchQuery') || '';
 let sortConfig = JSON.parse(sessionStorage.getItem('event_sortConfig')) || { column: null, direction: null };
 
-// Helper memformat tanggal menjadi dd-mmm-yy (contoh: 05-Mar-26)
 function formatDateDDMMMYY(dateString) {
   if (!dateString || dateString === '-') return '-';
   const date = new Date(dateString);
@@ -37,7 +36,6 @@ function formatDateDDMMMYY(dateString) {
   return `${day}-${month}-${year}`;
 }
 
-// Inisialisasi TableFilterManager untuk Modul Event
 const tableFilter = new TableFilterManager({
   tableName: 'event',
   supabaseClient: _supabase,
@@ -54,7 +52,6 @@ const tableFilter = new TableFilterManager({
   }
 });
 
-// Restore filter tersimpan dari sessionStorage
 try {
   const savedFilters = JSON.parse(sessionStorage.getItem('event_filterSelections'));
   if (savedFilters && typeof savedFilters === 'object') {
@@ -68,9 +65,6 @@ try {
   tableFilter.filterSelections = {};
 }
 
-// --------------------------------------------------------------------------
-// HAK AKSES & POSISI USER LOGIC
-// --------------------------------------------------------------------------
 function getUserData() {
   try {
     const session = localStorage.getItem("user");
@@ -105,11 +99,8 @@ function getDivisionFromPosition(position) {
 
 function hasFullDivisionAccess() {
   if (isSuperAdmin()) return true;
-
   const userData = getUserData();
   const pos = (userData?.position || '').toLowerCase();
-  
-  // Posisi Officer diberikan hak akses penuh ke seluruh divisi
   return pos.includes('officer');
 }
 
@@ -133,7 +124,6 @@ function toggleConnDropdown(e) {
   if (dropdown) dropdown.classList.toggle('hidden');
 }
 
-// Handler Toggle Custom Popover Divisi
 function toggleDivisionMenu(e) {
   if (e) e.stopPropagation();
   const menu = document.getElementById('divisionMenu');
@@ -152,7 +142,6 @@ function switchDivision(div) {
   const userDivision = getDivisionFromPosition(userPosition);
   const fullAccess = hasFullDivisionAccess();
 
-  // Batasi perpindahan divisi jika bukan Officer / Super Admin
   if (!fullAccess && div !== userDivision) {
     alert(`Akses ditolak! Akun Anda (${userPosition}) hanya memiliki izin untuk modul ${userDivision}.`);
     return;
@@ -161,15 +150,14 @@ function switchDivision(div) {
   currentUserSession.division = div;
   sessionStorage.setItem('event_activeDivision', div);
 
-  // Sync Ikon Utama Tombol Divisi Terpilih ( cleaner: ikon sapu tebal )
   const iconContainer = document.getElementById('divisionIcon');
   if (iconContainer) {
     if (div === 'cleaning') {
       iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 3l-6 6"/><path d="M13.5 6.5l4 4"/><path d="M5 21l8-8-4-4-8 8a1 1 0 0 0 0 1.41L2.59 21A1 1 0 0 0 5 21z"/><path d="M7 15l2 2"/></svg>`;
     } else if (div === 'engineering') {
-      iconContainer.innerHTML = `<svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
+      iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
     } else if (div === 'security') {
-      iconContainer.innerHTML = `<svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`;
+      iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`;
     }
   }
 
@@ -203,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
   currentUserSession.nama = getUserSessionName();
 
   const userData = getUserData();
-  // Jika tidak punya akses penuh (bukan Officer/Super Admin), atur divisi default sesuai posisinya
   if (!hasFullDivisionAccess() && userData && userData.position) {
     currentUserSession.division = getDivisionFromPosition(userData.position);
   }
@@ -231,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const customContainer = document.getElementById('custom-hamburger-content');
   if (customContainer && customContainer.innerHTML.trim() === '') {
     customContainer.innerHTML = hamburgerMenuOptions.map(item => `
-      <button onclick="${item.onClick}; toggleConnDropdown();" class="w-full text-left px-3 py-2 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
+      <button onclick="${item.onClick}; toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition">
         ${item.icon}
         <span>${item.label}</span>
       </button>
@@ -248,7 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
   switchDivision(currentUserSession.division);
   setupDropzone();
 
-  // Supabase Realtime Listener
   _supabase
     .channel('public:event')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'event' }, (payload) => {
@@ -298,48 +284,8 @@ function handleRealtimeUpdate(newRow) {
   if (idx !== -1) {
     fetchedData[idx] = newRow;
   }
-
-  const tr = document.querySelector(`tr[data-id="${newRow.id}"]`);
-  if (!tr) return;
-
-  const priorityBadge = newRow.priority === 'High' 
-    ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">HIGH</span>`
-    : newRow.priority === 'Medium'
-    ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">MED</span>`
-    : `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">LOW</span>`;
-
-  const statusBadge = newRow.status === 'Resolved'
-    ? `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Resolved</span>`
-    : newRow.status === 'In Progress'
-    ? `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">In Progress</span>`
-    : `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-rose-50 text-rose-700 border border-rose-200">Open</span>`;
-
-  const photoBtn = newRow.link 
-    ? `<button onclick="openPhotoModal('${escapeHtml(newRow.link)}', 'Log #${newRow.id}')" class="px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 text-[11px] font-medium transition cursor-pointer">Foto</button>`
-    : `<span class="text-[#5f6368] dark:text-[#9aa0a6]">-</span>`;
-
-  const detailsContent = `
-    <div class="font-bold truncate">${escapeHtml(newRow.subject)}</div>
-    <div class="text-[#5f6368] dark:text-[#9aa0a6] text-[11px] line-clamp-2 mt-0.5">${escapeHtml(newRow.details)}</div>
-    ${newRow.action_taken ? `<div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono mt-1">↳ Action: ${escapeHtml(newRow.action_taken)}</div>` : ''}
-  `;
-
-  const cellValues = [
-    { selector: '.cell-id', html: `<button onclick="openModalForId(${newRow.id})" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${newRow.id}</button>` },
-    { selector: '.cell-timestamp', html: escapeHtml(formatDateDDMMMYY(newRow.timestamp)) },
-    { selector: '.cell-logged_by', html: escapeHtml(newRow.logged_by || '-') },
-    { selector: '.cell-location', html: escapeHtml(newRow.location || '-') },
-    { selector: '.cell-category', html: `<span class="bg-[#f1f3f4] dark:bg-[#2d2d2d] px-2 py-0.5 rounded font-mono text-[11px]">${escapeHtml(newRow.category || '-')}</span>` },
-    { selector: '.cell-priority', html: priorityBadge },
-    { selector: '.cell-subject', html: detailsContent },
-    { selector: '.cell-link', html: photoBtn },
-    { selector: '.cell-status', html: statusBadge }
-  ];
-
-  cellValues.forEach(col => {
-    const cell = tr.querySelector(col.selector);
-    if (cell && cell.innerHTML !== String(col.html)) cell.innerHTML = col.html;
-  });
+  
+  renderTable();
 }
 
 function triggerGlobalSearch() {
@@ -370,18 +316,21 @@ function updateFilterButtonStyles() {
     const isActive = tableFilter.filterSelections[col] && tableFilter.filterSelections[col].size > 0;
 
     if (isActive) {
-      btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer transition-transform duration-150 scale-140 inline-block";
-      btn.innerHTML = `<svg class="w-2 h-2" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="currentColor" stroke="none"/></svg>`;
+      btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] transition-transform duration-150 scale-120 inline-block";
+      btn.innerHTML = `<svg class="w-2.5 h-2.5" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="currentColor" stroke="none"/></svg>`;
     } else {
-      btn.className = "p-0.5 text-[#5f6368] dark:text-[#bdc1c6] hover:text-[#202124] dark:hover:text-white cursor-pointer transition-transform duration-150 scale-100 inline-block";
-      btn.innerHTML = `<svg class="w-2 h-2" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+      btn.className = "p-0.5 text-[#5f6368] dark:text-[#bdc1c6] transition-transform duration-150 scale-100 inline-block";
+      btn.innerHTML = `<svg class="w-2.5 h-2.5" viewBox="0 0 10 6"><polygon points="1,1 9,1 5,5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
     }
   });
 }
 
 async function fetchTableData() {
   const tbody = document.getElementById('eventTableBody');
+  const cardContainer = document.getElementById('mobileCardContainer');
+
   tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
+  if (cardContainer) cardContainer.innerHTML = `<div class="p-4 text-center text-[#5f6368] dark:text-[#9aa0a6] text-xs">Memuat data...</div>`;
 
   try {
     let countQuery = _supabase.from('event').select('*', { count: 'exact', head: true }).eq('division_owner', currentUserSession.division);
@@ -395,6 +344,7 @@ async function fetchTableData() {
 
     if (totalRows === 0) {
       tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data entry ditemukan.</td></tr>`;
+      if (cardContainer) cardContainer.innerHTML = `<div class="p-4 text-center text-[#5f6368] dark:text-[#9aa0a6] text-xs">Tidak ada data entry ditemukan.</div>`;
       fetchedData = [];
       updatePaginationUI();
       updateFilterButtonStyles();
@@ -429,41 +379,48 @@ async function fetchTableData() {
 
   } catch (err) {
     console.error("Gagal mengambil data event:", err);
-    tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-500 font-medium">Gagal memuat data event.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
+    const errMessage = `<div class="p-4 text-center text-red-500 text-xs">Gagal memuat data event.<br>${escapeHtml(err.message)}</div>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-red-500 font-medium">Gagal memuat data event.<br><span class="text-xs font-normal">${escapeHtml(err.message)}</span></td></tr>`;
+    if (cardContainer) cardContainer.innerHTML = errMessage;
   }
 }
 
 function renderTable() {
   const tbody = document.getElementById('eventTableBody');
+  const cardContainer = document.getElementById('mobileCardContainer');
+
   tbody.innerHTML = '';
+  if (cardContainer) cardContainer.innerHTML = '';
 
   if (fetchedData.length === 0) {
     tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data entry ditemukan.</td></tr>`;
+    if (cardContainer) cardContainer.innerHTML = `<div class="p-4 text-center text-[#5f6368] dark:text-[#9aa0a6] text-xs">Tidak ada data entry ditemukan.</div>`;
     updatePaginationUI();
     updateFilterButtonStyles();
     return;
   }
 
   fetchedData.forEach(row => {
-    const tr = document.createElement('tr');
-    tr.setAttribute('data-id', row.id);
-    tr.className = 'hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors';
-
     const priorityBadge = row.priority === 'High' 
-      ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">HIGH</span>`
+      ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400">HIGH</span>`
       : row.priority === 'Medium'
-      ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">MED</span>`
+      ? `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">MED</span>`
       : `<span class="px-2 py-0.5 text-[10px] font-bold rounded bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400">LOW</span>`;
 
     const statusBadge = row.status === 'Resolved'
-      ? `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Resolved</span>`
+      ? `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">Resolved</span>`
       : row.status === 'In Progress'
-      ? `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">In Progress</span>`
-      : `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-rose-50 text-rose-700 border border-rose-200">Open</span>`;
+      ? `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800">In Progress</span>`
+      : `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800">Open</span>`;
 
     const photoBtn = row.link 
-      ? `<button onclick="openPhotoModal('${escapeHtml(row.link)}', 'Log #${row.id}')" class="px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 text-[11px] font-medium transition cursor-pointer">Foto</button>`
-      : `<span class="text-[#5f6368] dark:text-[#9aa0a6]">-</span>`;
+      ? `<button onclick="openPhotoModal('${escapeHtml(row.link)}', 'Log #${row.id}')" class="px-2.5 py-1 bg-[#e8f0fe] dark:bg-[#2c384e] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 text-[11px] font-medium active:scale-95 transition">Foto</button>`
+      : `<span class="text-[#5f6368] dark:text-[#9aa0a6] text-xs">-</span>`;
+
+    // DESKTOP ROW
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-id', row.id);
+    tr.className = 'hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors';
 
     tr.innerHTML = `
       <td class="cell-id p-2.5 text-center"><button onclick="openModalForId(${row.id})" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${row.id}</button></td>
@@ -481,6 +438,42 @@ function renderTable() {
       <td class="cell-status p-2.5 text-center">${statusBadge}</td>
     `;
     tbody.appendChild(tr);
+
+    // MOBILE CARD VIEW
+    if (cardContainer) {
+      const card = document.createElement('div');
+      card.className = "pt-2.5 pb-2.5 space-y-1.5 text-xs";
+      card.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <button onclick="openModalForId(${row.id})" class="font-mono font-bold text-[#1a73e8] dark:text-[#8ab4f8]">#${row.id}</button>
+            <span class="text-[11px] font-mono text-[#5f6368] dark:text-[#9aa0a6]">• ${escapeHtml(formatDateDDMMMYY(row.timestamp))}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            ${priorityBadge}
+            ${statusBadge}
+          </div>
+        </div>
+
+        <div>
+          <div class="font-bold text-[#202124] dark:text-[#e8eaed] text-xs">${escapeHtml(row.subject)}</div>
+          <div class="text-[#5f6368] dark:text-[#9aa0a6] text-[11px] line-clamp-2 mt-0.5">${escapeHtml(row.details)}</div>
+        </div>
+
+        ${row.action_taken ? `<div class="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">↳ Action: ${escapeHtml(row.action_taken)}</div>` : ''}
+
+        <div class="flex items-center justify-between pt-1 text-[11px] text-[#5f6368] dark:text-[#9aa0a6]">
+          <div class="flex items-center gap-2 truncate">
+            <span>📍 ${escapeHtml(row.location || '-')}</span>
+            <span>👤 ${escapeHtml(row.logged_by || '-')}</span>
+          </div>
+          <div class="shrink-0 ml-2">
+            ${photoBtn}
+          </div>
+        </div>
+      `;
+      cardContainer.appendChild(card);
+    }
   });
 
   updatePaginationUI();
@@ -524,7 +517,7 @@ function updatePaginationUI() {
   const startRow = totalRows === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const endRow = Math.min(currentPage * PAGE_SIZE, totalRows);
 
-  document.getElementById('pageInfo').innerText = `Menampilkan ${startRow}-${endRow} dari ${totalRows} data`;
+  document.getElementById('pageInfo').innerText = `${startRow}-${endRow} / ${totalRows}`;
   document.getElementById('totalPagesText').innerText = `/ ${totalPages}`;
   document.getElementById('jumpPageInput').value = currentPage;
 
@@ -619,9 +612,6 @@ function closeModal() {
   document.getElementById('modal').classList.add('hidden');
 }
 
-// --------------------------------------------------------------------------
-// GOOGLE DRIVE UPLOAD & CAMERA CAPTURE LOGIC
-// --------------------------------------------------------------------------
 async function uploadToGoogleDrive(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -644,12 +634,8 @@ async function uploadToGoogleDrive(file) {
 
         try {
           resData = JSON.parse(rawText);
-        } catch (parseErr) {
-          if (rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
-            throw new Error("Server Google Apps Script mengembalikan HTML/Error. Pastikan Web App diset 'Anyone'.");
-          } else {
-            throw new Error(`Respon server bukan JSON valid: "${rawText}"`);
-          }
+        } catch {
+          throw new Error("Respon server Google Apps Script tidak valid.");
         }
 
         if (resData.status === 'success') {
@@ -679,19 +665,19 @@ function switchDocMode(mode) {
 
   [secUpload, secCamera, secUrl].forEach(el => el.classList.add('hidden'));
   [tabUpload, tabCamera, tabUrl].forEach(tab => {
-    tab.className = "px-3 py-1.5 border-b-2 border-transparent text-[#5f6368] hover:text-[#202124] dark:text-[#9aa0a6]";
+    tab.className = "px-3 py-2 border-b-2 border-transparent text-[#5f6368] dark:text-[#9aa0a6]";
   });
 
   if (mode === 'upload') {
     secUpload.classList.remove('hidden');
-    tabUpload.className = "px-3 py-1.5 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold";
+    tabUpload.className = "px-3 py-2 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold";
   } else if (mode === 'camera') {
     secCamera.classList.remove('hidden');
-    tabCamera.className = "px-3 py-1.5 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold";
+    tabCamera.className = "px-3 py-2 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold";
     startCameraStream();
   } else if (mode === 'url') {
     secUrl.classList.remove('hidden');
-    tabUrl.className = "px-3 py-1.5 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold";
+    tabUrl.className = "px-3 py-2 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold";
   }
 }
 
@@ -845,11 +831,11 @@ async function saveData(e) {
 
   try {
     if (selectedImageFile) {
-      if (submitBtn) submitBtn.innerText = "Uploading foto ke Drive...";
+      if (submitBtn) submitBtn.innerText = "Uploading foto...";
       photoUrl = await uploadToGoogleDrive(selectedImageFile);
     }
 
-    if (submitBtn) submitBtn.innerText = "Menyimpan data...";
+    if (submitBtn) submitBtn.innerText = "Menyimpan...";
 
     const payload = {
       location: document.getElementById('inputLocation').value.trim(),
