@@ -2,23 +2,28 @@
 // MAP-TENANT.JS - MODUL LOGIKA TENANT & POPUP
 // ==========================================
 
-// State Khusus Modul Tenant
 let tenantsData = [];
 let selectedTenantNo = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchTenantFromSupabase();
 
-  // Realtime Listener Supabase khusus tabel tenant
+  // Realtime Listener Supabase
   supabaseClient
-    .channel('public:tenant')
+    .channel('public:tenant-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'tenant' }, () => {
-      fetchTenantFromSupabase();
+      if (typeof activeBuilding !== 'undefined' && activeBuilding === 'pbc') {
+        fetchTenantFromSupabase();
+      }
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tenant_pbm' }, () => {
+      if (typeof activeBuilding !== 'undefined' && activeBuilding === 'pbm') {
+        fetchTenantFromSupabase();
+      }
     })
     .subscribe();
 });
 
-// Helper XSS Protection
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -29,7 +34,17 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-// Menutup Floating Detail Card
+function normalizeFloorName(floorStr) {
+  if (!floorStr) return 'basement';
+  const f = String(floorStr).trim().toLowerCase();
+  if (f === 'lb' || f.includes('basement') || f === 'b') return 'basement';
+  if (f === 'ld' || f.includes('ground') || f.includes('dasar') || f === 'g') return 'dasar';
+  if (f.includes('1') || f === 'satu') return 'satu';
+  if (f.includes('2') || f === 'dua') return 'dua';
+  if (f.includes('roof') || f === 'r') return 'rooftop';
+  return f;
+}
+
 function closeFloatingCard() {
   const floatingCard = document.getElementById('floating-detail-card');
   if (floatingCard) {
@@ -38,7 +53,6 @@ function closeFloatingCard() {
   }
 }
 
-// Helper Status Class Marker Tenant
 function getStatusClass(status, validasi) {
   const v = String(validasi || '').trim().toLowerCase();
   if (v === 'tutup') return 'status-hilang';
@@ -52,19 +66,25 @@ function getStatusClass(status, validasi) {
   return 'status-hilang';
 }
 
+function getTenantTableName() {
+  return (typeof activeBuilding !== 'undefined' && activeBuilding === 'pbm') ? 'tenant_pbm' : 'tenant';
+}
+
 // ==========================================
 // FETCH DATA TENANT SUPABASE
 // ==========================================
 async function fetchTenantFromSupabase() {
+  const tableName = getTenantTableName();
+
   try {
     const { data, error } = await supabaseClient
-      .from('tenant')
+      .from(tableName)
       .select('no, lokasi, lantai, koordinat, status, validasi, penyewa, nama_toko, update')
       .order('no', { ascending: true });
 
     if (error) throw error;
 
-    tenantsData = data.map(item => {
+    tenantsData = (data || []).map(item => {
       let parsedCoords = null;
       if (item.koordinat) {
         try {
@@ -76,13 +96,15 @@ async function fetchTenantFromSupabase() {
         }
       }
 
+      const rawFloor = (parsedCoords && parsedCoords.floor) ? parsedCoords.floor : item.lantai;
+
       return {
         no: item.no,
         lokasi: item.lokasi || `Tenant ${item.no}`,
         penyewa: item.penyewa || '',
         nama_toko: item.nama_toko || '',
         update: item.update || '-',
-        lantai: (item.lantai || 'basement').toLowerCase().trim(),
+        lantai: normalizeFloorName(rawFloor),
         koordinat: parsedCoords,
         ukuran: (parsedCoords && parsedCoords.size) ? parseFloat(parsedCoords.size) : 38,
         status: item.status || '',
@@ -90,12 +112,16 @@ async function fetchTenantFromSupabase() {
       };
     });
 
-    if (activeCategory === 'tenant') {
-      renderTenantList();
-      renderTenantMarkers();
-    }
   } catch (err) {
-    console.error("Gagal mengambil data tenant:", err);
+    console.warn(`[Info] Tabel '${tableName}' belum dapat diakses:`, err.message);
+    tenantsData = [];
+  }
+
+  if (typeof calculateTenantCounts === 'function') calculateTenantCounts();
+
+  if (typeof activeCategory !== 'undefined' && activeCategory === 'tenant') {
+    renderTenantList();
+    renderTenantMarkers();
   }
 }
 
@@ -109,7 +135,8 @@ async function saveTenantCoordinate(noTenant, xPercent, yPercent) {
     ? JSON.stringify({ 
         x: parseFloat(xPercent.toFixed(2)), 
         y: parseFloat(yPercent.toFixed(2)),
-        size: currentSize 
+        size: currentSize,
+        floor: currentFloor
       })
     : null;
 
@@ -117,12 +144,14 @@ async function saveTenantCoordinate(noTenant, xPercent, yPercent) {
     target.koordinat = coordPayload ? JSON.parse(coordPayload) : null;
   }
   
+  if (typeof calculateTenantCounts === 'function') calculateTenantCounts();
   renderTenantList();
   renderTenantMarkers();
 
   try {
+    const tableName = getTenantTableName();
     const { error } = await supabaseClient
-      .from('tenant')
+      .from(tableName)
       .update({ koordinat: coordPayload })
       .eq('no', noTenant);
 
@@ -137,7 +166,7 @@ async function saveTenantCoordinate(noTenant, xPercent, yPercent) {
 // RENDER SIDEBAR LIST & MARKER
 // ==========================================
 function renderTenantList() {
-  if (activeCategory !== 'tenant') return;
+  if (typeof activeCategory !== 'undefined' && activeCategory !== 'tenant') return;
 
   const container = document.getElementById('sidebar-list-container');
   if (!container) return;
@@ -153,8 +182,8 @@ function renderTenantList() {
                         t.nama_toko.toLowerCase().includes(searchVal) ||
                         String(t.no).includes(searchVal);
 
-    if (activeFilter === 'plotted') return matchSearch && t.koordinat !== null;
-    if (activeFilter === 'unplotted') return matchSearch && t.koordinat === null;
+    if (typeof activeFilter !== 'undefined' && activeFilter === 'plotted') return matchSearch && t.koordinat !== null;
+    if (typeof activeFilter !== 'undefined' && activeFilter === 'unplotted') return matchSearch && t.koordinat === null;
     return matchSearch;
   });
 
@@ -164,7 +193,8 @@ function renderTenantList() {
   if (plottedEl) plottedEl.innerText = floorTenants.filter(t => t.koordinat !== null).length;
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">Tidak ada data tenant.</div>`;
+    const bName = (typeof activeBuilding !== 'undefined') ? activeBuilding.toUpperCase() : 'PBC';
+    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">Belum ada data tenant (${bName}).</div>`;
     return;
   }
 
@@ -216,7 +246,7 @@ function renderTenantMarkers() {
   if (!container) return;
   container.innerHTML = '';
 
-  if (activeCategory !== 'tenant') return;
+  if (typeof activeCategory !== 'undefined' && activeCategory !== 'tenant') return;
 
   const searchInput = document.getElementById('globalSearchInput');
   const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
@@ -259,9 +289,6 @@ function renderTenantMarkers() {
   });
 }
 
-// ==========================================
-// SELEKSI & POPUP DETAIL TENANT
-// ==========================================
 function selectTenant(no) {
   selectedTenantNo = no;
 
@@ -304,8 +331,9 @@ async function showTenantDetailPopup(noTenant) {
   floatingCard.classList.add('translate-x-0', 'opacity-100', 'pointer-events-auto');
 
   try {
+    const tableName = getTenantTableName();
     const { data, error } = await supabaseClient
-      .from('tenant')
+      .from(tableName)
       .select('no, lokasi, lantai, luas, tipe, penyewa, status, komoditi, cp, validasi, nama_toko, update')
       .eq('no', noTenant)
       .single();
@@ -313,9 +341,7 @@ async function showTenantDetailPopup(noTenant) {
     if (error) throw error;
 
     if (!data) {
-      contentContainer.innerHTML = `
-        <div class="p-2 text-xs text-red-500">Data detail tidak ditemukan.</div>
-      `;
+      contentContainer.innerHTML = `<div class="p-2 text-xs text-red-500">Data detail tidak ditemukan.</div>`;
       return;
     }
 
@@ -333,15 +359,14 @@ async function showTenantDetailPopup(noTenant) {
       statusColor = 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30';
     }
 
-    // Logika label Penyewa / Pemilik
     const personLabel = statusLower.includes('terjual') ? 'Pemilik' : 'Penyewa';
+    const bName = (typeof activeBuilding !== 'undefined') ? activeBuilding.toUpperCase() : 'PBC';
 
     contentContainer.innerHTML = `
-      <!-- Header Popup Tenant -->
       <div class="flex items-start justify-between border-b border-slate-200 dark:border-zinc-800 pb-2 mb-3">
         <div class="pr-2 min-w-0 flex-1">
           <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider block">
-            Lantai ${escapeHtml(data.lantai || '-')} • #${data.no}
+            Gedung ${bName} • Lantai ${escapeHtml(data.lantai || '-')} • #${data.no}
           </span>
           <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug mt-0.5" style="white-space: normal !important; word-break: break-word !important; text-overflow: clip !important;">
             ${escapeHtml(data.lokasi || 'Tanpa Nama')}
@@ -352,11 +377,9 @@ async function showTenantDetailPopup(noTenant) {
         </button>
       </div>
 
-      <!-- Detail Informasi Menggunakan Tabel Adapting Light/Dark Mode -->
       <div class="max-h-[60vh] sm:max-h-[70vh] overflow-y-auto custom-scroll pr-1">
         <table style="width: 100%; border-collapse: collapse; table-layout: fixed;" class="text-xs text-slate-700 dark:text-slate-300">
           <tbody>
-            
             <tr>
               <td style="padding: 5px 0; width: 30%; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Status</td>
               <td style="padding: 5px 0; width: 70%; text-align: right; vertical-align: top;">
@@ -365,63 +388,54 @@ async function showTenantDetailPopup(noTenant) {
                 </span>
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Toko</td>
               <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top; white-space: normal !important; word-break: break-word !important;" class="text-slate-800 dark:text-slate-100">
                 ${escapeHtml(data.nama_toko || '-')}
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">${personLabel}</td>
               <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top; white-space: normal !important; word-break: break-word !important;" class="text-slate-800 dark:text-slate-100">
                 ${escapeHtml(data.penyewa || '-')}
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Tipe</td>
-              <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top; white-space: normal !important; word-break: break-word !important;" class="text-slate-800 dark:text-slate-100">
+              <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top;" class="text-slate-800 dark:text-slate-100">
                 ${escapeHtml(data.tipe || '-')}
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Luas Area</td>
               <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top;" class="text-slate-800 dark:text-slate-100">
                 ${escapeHtml(data.luas ? data.luas + ' m²' : '-')}
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Komoditi</td>
-              <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top; white-space: normal !important; word-break: break-word !important;" class="text-slate-800 dark:text-slate-100">
+              <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top;" class="text-slate-800 dark:text-slate-100">
                 ${escapeHtml(data.komoditi || '-')}
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">CP</td>
-              <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top; white-space: normal !important; word-break: break-all !important;" class="text-slate-800 dark:text-slate-100">
+              <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top;" class="text-slate-800 dark:text-slate-100">
                 ${escapeHtml(data.cp || '-')}
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Validasi</td>
               <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top;" class="text-slate-800 dark:text-slate-100">
                 ${escapeHtml(data.validasi || '-')}
               </td>
             </tr>
-
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Update</td>
               <td style="padding: 5px 0; text-align: right; font-family: monospace; font-size: 11px; vertical-align: top;" class="text-slate-500 dark:text-slate-400">
                 ${escapeHtml(data.update || '-')}
               </td>
             </tr>
-
           </tbody>
         </table>
       </div>
@@ -429,15 +443,10 @@ async function showTenantDetailPopup(noTenant) {
 
   } catch (err) {
     console.error("Gagal mengambil detail tenant:", err);
-    contentContainer.innerHTML = `
-      <div class="p-2 text-xs text-red-500">Gagal memuat informasi tenant.</div>
-    `;
+    contentContainer.innerHTML = `<div class="p-2 text-xs text-red-500">Gagal memuat informasi tenant.</div>`;
   }
 }
 
-// ==========================================
-// PLOTTING ACTION TENANT
-// ==========================================
 function startPlacement(no) {
   if (appMode !== 'edit' || !isSuperAdmin()) return;
   
@@ -484,7 +493,8 @@ function startDraggingTenantMarker(event, no) {
       target.koordinat = { 
         x: parseFloat(x.toFixed(2)), 
         y: parseFloat(y.toFixed(2)),
-        size: target.ukuran || 38
+        size: target.ukuran || 38,
+        floor: currentFloor
       };
       renderTenantMarkers();
     }
@@ -519,9 +529,6 @@ function deleteTenantCoordinate(no) {
   }
 }
 
-// ==========================================
-// MODAL MANAGEMENT & FORM (EDIT SIZE)
-// ==========================================
 function openModal(mode, no = null) {
   if (!isSuperAdmin()) return;
 
@@ -566,8 +573,9 @@ async function saveTenantData(e) {
         currentCoord.size = ukuran;
       }
 
+      const tableName = getTenantTableName();
       const { error } = await supabaseClient
-        .from('tenant')
+        .from(tableName)
         .update({ koordinat: currentCoord ? JSON.stringify(currentCoord) : null })
         .eq('no', editNo);
 

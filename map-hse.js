@@ -5,7 +5,6 @@
 let hseData = [];
 let selectedHSENo = null;
 
-// Konfigurasi Visual Ikon & Warna Berdasarkan Kategori Alat
 const HSE_CONFIG = {
   cctv: { icon: 'fa-video', bgColor: 'bg-indigo-600 dark:bg-indigo-500', label: 'CCTV' },
   apar: { icon: 'fa-fire-extinguisher', bgColor: 'bg-red-600 dark:bg-red-500', label: 'APAR' },
@@ -23,7 +22,6 @@ const HSE_CONFIG = {
 document.addEventListener('DOMContentLoaded', () => {
   fetchHSEFromSupabase();
 
-  // Realtime Listener ke Tabel "hse"
   supabaseClient
     .channel('public:hse')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'hse' }, () => {
@@ -32,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     .subscribe();
 });
 
-// Helper XSS Protection
 if (typeof escapeHtml !== 'function') {
   function escapeHtml(str) {
     if (!str) return '';
@@ -45,13 +42,21 @@ if (typeof escapeHtml !== 'function') {
   }
 }
 
-// JSONB Parsing utilities for "update" column
+function normalizeFloorName(floorStr) {
+  if (!floorStr) return 'basement';
+  const f = String(floorStr).trim().toLowerCase();
+  if (f === 'lb' || f.includes('basement') || f === 'b') return 'basement';
+  if (f === 'ld' || f.includes('ground') || f.includes('dasar') || f === 'g') return 'dasar';
+  if (f.includes('1') || f === 'satu') return 'satu';
+  if (f.includes('2') || f === 'dua') return 'dua';
+  if (f.includes('roof') || f === 'r') return 'rooftop';
+  return f;
+}
+
 function getLatestUpdateObj(rawUpdate) {
   if (!rawUpdate) return null;
-
   try {
     let parsed = (typeof rawUpdate === 'string') ? JSON.parse(rawUpdate) : rawUpdate;
-
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed[parsed.length - 1];
     } else if (typeof parsed === 'object' && parsed !== null) {
@@ -60,10 +65,7 @@ function getLatestUpdateObj(rawUpdate) {
   } catch (e) {
     if (typeof rawUpdate === 'string') {
       const parts = rawUpdate.split(',');
-      return {
-        date: parts[0]?.trim() || '',
-        note: parts[1]?.trim() || ''
-      };
+      return { date: parts[0]?.trim() || '', note: parts[1]?.trim() || '' };
     }
   }
   return null;
@@ -72,14 +74,11 @@ function getLatestUpdateObj(rawUpdate) {
 function formatUpdateDisplay(rawUpdate) {
   const latest = getLatestUpdateObj(rawUpdate);
   if (!latest) return '-';
-
   const dateStr = latest.date || '';
   const noteStr = latest.note ? `, ${latest.note}` : '';
-  
   return (dateStr + noteStr).trim() || '-';
 }
 
-// Menutup Floating Detail Card
 if (typeof closeFloatingCard !== 'function') {
   function closeFloatingCard() {
     const floatingCard = document.getElementById('floating-detail-card');
@@ -92,7 +91,6 @@ if (typeof closeFloatingCard !== 'function') {
 
 function getHSEVisualConfig(kategori) {
   if (!kategori) return { icon: 'fa-shield-halved', bgColor: 'bg-slate-600', label: 'HSE' };
-  
   const key = String(kategori).trim().toLowerCase().replace(/\s+/g, '_');
   
   if (key.includes('cctv')) return HSE_CONFIG.cctv;
@@ -107,11 +105,7 @@ function getHSEVisualConfig(kategori) {
   if (key.includes('pju') || key.includes('penerangan')) return HSE_CONFIG.pju;
   if (key.includes('deepwell') || key.includes('deep_well') || key.includes('sumur')) return HSE_CONFIG.deepwell;
 
-  return HSE_CONFIG[key] || { 
-    icon: 'fa-shield-halved', 
-    bgColor: 'bg-slate-600 dark:bg-slate-500', 
-    label: kategori 
-  };
+  return HSE_CONFIG[key] || { icon: 'fa-shield-halved', bgColor: 'bg-slate-600 dark:bg-slate-500', label: kategori };
 }
 
 // ==========================================
@@ -119,20 +113,17 @@ function getHSEVisualConfig(kategori) {
 // ==========================================
 async function fetchHSEFromSupabase() {
   try {
+    const currentBuildingBo = (typeof activeBuilding !== 'undefined' ? activeBuilding : 'pbc').toUpperCase();
+
     const { data, error } = await supabaseClient
       .from('hse')
       .select('*')
+      .ilike('bo', currentBuildingBo)
       .order('no', { ascending: true });
 
     if (error) throw error;
 
-    if (!data || data.length === 0) {
-      hseData = [];
-      if (typeof activeCategory !== 'undefined' && activeCategory === 'hse') renderHSEList();
-      return;
-    }
-
-    hseData = data.map(item => {
+    hseData = (data || []).map(item => {
       let parsedCoords = null;
       if (item.koordinat) {
         try {
@@ -144,6 +135,8 @@ async function fetchHSEFromSupabase() {
         }
       }
 
+      const rawFloor = (parsedCoords && parsedCoords.floor) ? parsedCoords.floor : item.lantai;
+
       return {
         no: item.no,
         lokasi: item.lokasi || '-',
@@ -152,20 +145,23 @@ async function fetchHSEFromSupabase() {
         dokumentasi: item.dokumentasi || '',
         kategori: item.kategori || '-',
         spek: item.spek || '-',
-        lantai: (parsedCoords && parsedCoords.floor) ? parsedCoords.floor : (typeof currentFloor !== 'undefined' ? currentFloor : 'basement'),
+        bo: item.bo || 'PBC',
+        lantai: normalizeFloorName(rawFloor),
         koordinat: parsedCoords,
         ukuran: (parsedCoords && parsedCoords.size) ? parseFloat(parsedCoords.size) : 32
       };
     });
 
-    if (typeof calculateHSECounts === 'function') calculateHSECounts();
-
-    if (typeof activeCategory !== 'undefined' && activeCategory === 'hse') {
-      renderHSEList();
-      renderHSEMarkers();
-    }
   } catch (err) {
     console.error("Gagal mengambil data dari tabel hse:", err);
+    hseData = [];
+  }
+
+  if (typeof calculateHSECounts === 'function') calculateHSECounts();
+
+  if (typeof activeCategory !== 'undefined' && activeCategory === 'hse') {
+    renderHSEList();
+    renderHSEMarkers();
   }
 }
 
@@ -230,7 +226,8 @@ function renderHSEList() {
   if (plottedEl) plottedEl.innerText = hseData.filter(h => h.koordinat !== null).length;
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">Tidak ada data HSE.</div>`;
+    const bName = (typeof activeBuilding !== 'undefined') ? activeBuilding.toUpperCase() : 'PBC';
+    container.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">Belum ada data HSE (${bName}).</div>`;
     return;
   }
 
@@ -326,9 +323,6 @@ function renderHSEMarkers() {
   });
 }
 
-// ==========================================
-// SELEKSI, PLOTTING & POPUP HSE
-// ==========================================
 function selectHSE(no) {
   selectedHSENo = no;
 
@@ -408,7 +402,7 @@ async function showHSEDetailPopup(noHSE) {
             ${escapeHtml(item.kategori || 'HSE')}
           </span>
           <span class="text-[11px] font-mono font-bold text-emerald-500">
-            #${item.no}
+            Gedung ${escapeHtml(item.bo || activeBuilding.toUpperCase())} • #${item.no}
           </span>
         </div>
         <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 leading-snug truncate" title="${escapeHtml(item.lokasi || 'Detail HSE')}">

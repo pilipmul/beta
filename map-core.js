@@ -5,29 +5,55 @@ const SUPABASE_URL = "https://sfblelnbczlvykqemhtm.supabase.co";
 const SUPABASE_KEY = "sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0"; 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const FLOOR_MAPS = {
-  basement: "basement.jpg",
-  dasar: "dasar.jpg",
-  satu: "satu.jpg",
-  dua: "dua.jpg",
-  rooftop: "rooftop.jpg"
+// State Gedung & Mapping Gambar Denah
+let activeBuilding = 'pbc'; // 'pbc' | 'pbm'
+
+const BUILDING_FLOOR_MAPS = {
+  pbc: {
+    basement: "basement.jpg",
+    dasar: "dasar.jpg",
+    satu: "satu.jpg",
+    dua: "dua.jpg",
+    rooftop: "rooftop.jpg"
+  },
+  pbm: {
+    basement: "pbm_LB.jpg",
+    dasar: "pbm_LD.jpg"
+  }
 };
 
-const FLOOR_LABELS = {
-  basement: "Basement",
-  dasar: "Dasar",
-  satu: "Lt 1",
-  dua: "Lt 2",
-  rooftop: "Rooftop"
+const BUILDING_FLOOR_LABELS = {
+  pbc: {
+    basement: "Basement",
+    dasar: "Dasar",
+    satu: "Lt 1",
+    dua: "Lt 2",
+    rooftop: "Rooftop"
+  },
+  pbm: {
+    basement: "Basement",
+    dasar: "Dasar"
+  }
 };
 
-const FLOOR_SHORT_CODES = {
-  basement: "B",
-  dasar: "G",
-  satu: "1",
-  dua: "2",
-  rooftop: "R"
+const BUILDING_FLOOR_SHORT_CODES = {
+  pbc: {
+    basement: "B",
+    dasar: "G",
+    satu: "1",
+    dua: "2",
+    rooftop: "R"
+  },
+  pbm: {
+    basement: "B",
+    dasar: "G"
+  }
 };
+
+// Backward Compatibility Aliases
+const FLOOR_MAPS = BUILDING_FLOOR_MAPS.pbc;
+const FLOOR_LABELS = BUILDING_FLOOR_LABELS.pbc;
+const FLOOR_SHORT_CODES = BUILDING_FLOOR_SHORT_CODES.pbc;
 
 // ==========================================
 // STATE GLOBAL APP & MAP
@@ -143,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderHamburgerMenuContent();
   initMapControls();
+  updateBuildingUI();
 
   const img = document.getElementById('denah-img');
   if (img) {
@@ -176,7 +203,6 @@ document.addEventListener('click', (e) => {
     dropdown.classList.add('hidden');
   }
 
-  // TUTUP FLOATING DETAIL CARD JIKA KLIK DI LUAR CARD DAN BUKAN PADA MARKER
   if (
     floatingCard && 
     !floatingCard.classList.contains('opacity-0') && 
@@ -187,13 +213,11 @@ document.addEventListener('click', (e) => {
     closeFloatingCard();
   }
 
-  // TUTUP LIVE SEARCH RESULT DROPDOWN JIKA KLIK DI LUAR SEARCH BAR
   if (!e.target.closest('#globalSearchInput') && !e.target.closest('#searchResultDropdown')) {
     closeSearchDropdown();
   }
 });
 
-// DUKUNGAN MENUTUP POPUP VIA TOMBOL ESCAPE (ESC)
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' || e.key === 'Esc') {
     closeFloatingCard();
@@ -206,22 +230,78 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('resize', () => { resetZoomToFit(); });
 
 // ==========================================
-// LANTAI & CATEGORY CONTROLLER
+// GEDUNG, LANTAI & CATEGORY CONTROLLER
 // ==========================================
+function switchBuilding(buildingKey) {
+  if (!BUILDING_FLOOR_MAPS[buildingKey] || activeBuilding === buildingKey) return;
+  activeBuilding = buildingKey;
+
+  // 1. Kosongkan memori lokal agar tidak ada sisa data gedung sebelumnya
+  if (typeof tenantsData !== 'undefined') tenantsData = [];
+  if (typeof hseData !== 'undefined') hseData = [];
+  if (typeof selectedTenantNo !== 'undefined') selectedTenantNo = null;
+  if (typeof selectedHSENo !== 'undefined') selectedHSENo = null;
+
+  // 2. Tutup popup detail jika sedang terbuka
+  closeFloatingCard();
+
+  // 3. Perbarui UI Gedung
+  updateBuildingUI();
+
+  // 4. Panggil pemuatan ulang data gedung baru dari Supabase
+  if (typeof fetchTenantFromSupabase === 'function') fetchTenantFromSupabase();
+  if (typeof fetchHSEFromSupabase === 'function') fetchHSEFromSupabase();
+
+  // 5. Pindah ke lantai dasar gedung yang dipilih
+  switchFloor('basement');
+}
+
+function updateBuildingUI() {
+  const isPbm = (activeBuilding === 'pbm');
+
+  document.querySelectorAll('.btn-building-pbc').forEach(btn => {
+    btn.className = (activeBuilding === 'pbc')
+      ? "btn-building-pbc px-2 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] sm:text-xs transition cursor-pointer shadow-xs"
+      : "btn-building-pbc px-2 py-0.5 rounded-md text-[#5f6368] dark:text-[#9aa0a6] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] font-bold text-[11px] sm:text-xs transition cursor-pointer";
+  });
+
+  document.querySelectorAll('.btn-building-pbm').forEach(btn => {
+    btn.className = (activeBuilding === 'pbm')
+      ? "btn-building-pbm px-2 py-0.5 rounded-md bg-blue-600 text-white font-bold text-[11px] sm:text-xs transition cursor-pointer shadow-xs"
+      : "btn-building-pbm px-2 py-0.5 rounded-md text-[#5f6368] dark:text-[#9aa0a6] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] font-bold text-[11px] sm:text-xs transition cursor-pointer";
+  });
+
+  ['satu', 'dua', 'rooftop'].forEach(f => {
+    document.querySelectorAll(`.tab-floor-${f}`).forEach(tab => {
+      if (isPbm) {
+        tab.classList.add('hidden');
+      } else {
+        tab.classList.remove('hidden');
+      }
+    });
+  });
+}
+
 function switchFloor(floorKey) {
+  if (activeBuilding === 'pbm' && !['basement', 'dasar'].includes(floorKey)) {
+    floorKey = 'basement';
+  }
+
   currentFloor = floorKey;
   cancelPlacement();
   closeFloatingCard();
   closeAllDropdowns();
   closeSearchDropdown();
 
+  const shortCodes = BUILDING_FLOOR_SHORT_CODES[activeBuilding] || BUILDING_FLOOR_SHORT_CODES['pbc'];
+
   document.querySelectorAll('.current-floor-label').forEach(el => {
-    el.innerText = FLOOR_SHORT_CODES[floorKey] || 'B';
+    el.innerText = shortCodes[floorKey] || 'B';
   });
 
   const mobileActiveText = document.getElementById('mobile-floor-text-active');
   if (mobileActiveText) {
-    mobileActiveText.innerText = FLOOR_SHORT_CODES[floorKey] || 'B';
+    mobileActiveText.innerText = shortCodes[floorKey] || 'B';
   }
 
   ['basement', 'dasar', 'satu', 'dua', 'rooftop'].forEach(f => {
@@ -234,10 +314,13 @@ function switchFloor(floorKey) {
     });
   });
 
+  updateBuildingUI();
+
   const denahImg = document.getElementById('denah-img');
   if (denahImg) {
     denahImg.onload = onImageLoaded;
-    denahImg.src = FLOOR_MAPS[floorKey] || FLOOR_MAPS['basement'];
+    const maps = BUILDING_FLOOR_MAPS[activeBuilding] || BUILDING_FLOOR_MAPS['pbc'];
+    denahImg.src = maps[floorKey] || maps['basement'];
   }
 
   refreshActiveModule();
@@ -362,7 +445,6 @@ function initMapControls() {
     }
   });
 
-  // GESTUR PINCH & TOUCH
   viewport.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) {
       isDraggingMap = false;
@@ -684,21 +766,21 @@ function renderSearchDropdownResults(searchVal) {
   if (activeCategory === 'tenant') {
     if (typeof tenantsData === 'undefined' || !Array.isArray(tenantsData)) return;
 
-    const matched = tenantsData.filter(t => 
-      t.lokasi.toLowerCase().includes(query) || 
-      (t.penyewa && t.penyewa.toLowerCase().includes(query)) || 
-      String(t.no).includes(query)
-    );
+    const matched = tenantsData.filter(t => {
+      return t.lokasi.toLowerCase().includes(query) || 
+             (t.penyewa && t.penyewa.toLowerCase().includes(query)) || 
+             String(t.no).includes(query);
+    });
 
     if (matched.length === 0) {
-      html = `<div class="p-3 text-center text-slate-400">Tenant / Penyewa tidak ditemukan</div>`;
+      html = `<div class="p-3 text-center text-slate-400">Tenant / Penyewa tidak ditemukan (${activeBuilding.toUpperCase()})</div>`;
     } else {
       html = matched.map(t => `
         <div onclick="selectTenantFromSearch(${t.no})" class="px-3 py-2 border-b border-slate-100 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between">
           <div>
             <div class="font-bold text-slate-800 dark:text-slate-100">${escapeHtml(t.lokasi)}</div>
             ${t.penyewa ? `<div class="text-[11px] text-blue-600 dark:text-blue-400 font-medium">Penyewa: ${escapeHtml(t.penyewa)}</div>` : ''}
-            <div class="text-[10px] text-slate-400 uppercase">Lantai: ${escapeHtml(t.lantai)} • #${t.no}</div>
+            <div class="text-[10px] text-slate-400 uppercase">Gedung: ${activeBuilding.toUpperCase()} • Lantai: ${escapeHtml(t.lantai)} • #${t.no}</div>
           </div>
           <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
         </div>
@@ -707,12 +789,15 @@ function renderSearchDropdownResults(searchVal) {
   } else if (activeCategory === 'hse') {
     if (typeof hseData === 'undefined' || !Array.isArray(hseData)) return;
 
-    const matched = hseData.filter(h => 
-      `${h.kategori} ${h.tipe} ${h.lokasi}`.toLowerCase().includes(query) || String(h.no).includes(query)
-    );
+    const matched = hseData.filter(h => {
+      const hseBo = String(h.bo || 'PBC').toUpperCase();
+      if (hseBo !== activeBuilding.toUpperCase()) return false;
+
+      return `${h.kategori} ${h.tipe} ${h.lokasi}`.toLowerCase().includes(query) || String(h.no).includes(query);
+    });
 
     if (matched.length === 0) {
-      html = `<div class="p-3 text-center text-slate-400">Data HSE tidak ditemukan</div>`;
+      html = `<div class="p-3 text-center text-slate-400">Data HSE tidak ditemukan (${activeBuilding.toUpperCase()})</div>`;
     } else {
       html = matched.map(h => {
         const config = (typeof getHSEVisualConfig === 'function') 
@@ -727,7 +812,7 @@ function renderSearchDropdownResults(searchVal) {
               </div>
               <div>
                 <div class="font-bold text-slate-800 dark:text-slate-100">${escapeHtml(h.kategori)} - ${escapeHtml(h.lokasi)}</div>
-                <div class="text-[10px] text-slate-400 uppercase">Lantai: ${escapeHtml(h.lantai)} • #${h.no}</div>
+                <div class="text-[10px] text-slate-400 uppercase">Gedung: ${activeBuilding.toUpperCase()} • Lantai: ${escapeHtml(h.lantai)} • #${h.no}</div>
               </div>
             </div>
             <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
@@ -825,6 +910,7 @@ async function exportToPDF() {
 
     if (typeof tenantsData !== 'undefined') {
       const floorTenants = tenantsData.filter(t => t.lantai === currentFloor);
+
       floorTenants.forEach(t => {
         if (!t.koordinat || t.koordinat.x == null) return;
 
@@ -853,7 +939,7 @@ async function exportToPDF() {
     const pdf = new jsPDF({ orientation, unit: 'px', format: [imgW, imgH] });
 
     pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
-    pdf.save(`Denah_Layout_${currentFloor.toUpperCase()}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    pdf.save(`Denah_Layout_${activeBuilding.toUpperCase()}_${currentFloor.toUpperCase()}_${new Date().toISOString().slice(0, 10)}.pdf`);
 
   } catch (err) {
     console.error("Gagal export PDF:", err);
@@ -936,6 +1022,9 @@ function calculateHSECounts() {
   let escalator = 0, ahu = 0, lift = 0, genset = 0, pju = 0, deepwell = 0;
 
   hseData.forEach(h => {
+    const hseBo = String(h.bo || 'PBC').toUpperCase();
+    if (hseBo !== activeBuilding.toUpperCase()) return;
+
     const key = String(h.kategori || '').trim().toLowerCase().replace(/\s+/g, '_');
     if (key.includes('cctv')) cctv++;
     else if (key.includes('apar')) apar++;
