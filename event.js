@@ -54,15 +54,19 @@ const tableFilter = new TableFilterManager({
 
 try {
   const savedFilters = JSON.parse(sessionStorage.getItem('event_filterSelections'));
-  if (savedFilters && typeof savedFilters === 'object') {
+  if (savedFilters && typeof savedFilters === 'object' && Object.keys(savedFilters).length > 0) {
     Object.keys(savedFilters).forEach(key => {
       if (Array.isArray(savedFilters[key])) {
         tableFilter.filterSelections[key] = new Set(savedFilters[key]);
       }
     });
+  } else {
+    tableFilter.filterSelections['status'] = new Set(['Open', 'In Progress']);
   }
 } catch {
-  tableFilter.filterSelections = {};
+  tableFilter.filterSelections = {
+    status: new Set(['Open', 'In Progress'])
+  };
 }
 
 function getUserData() {
@@ -124,18 +128,6 @@ function toggleConnDropdown(e) {
   if (dropdown) dropdown.classList.toggle('hidden');
 }
 
-function toggleDivisionMenu(e) {
-  if (e) e.stopPropagation();
-  const menu = document.getElementById('divisionMenu');
-  if (menu) menu.classList.toggle('hidden');
-}
-
-function selectDivisionOption(div) {
-  const menu = document.getElementById('divisionMenu');
-  if (menu) menu.classList.add('hidden');
-  switchDivision(div);
-}
-
 function switchDivision(div) {
   const userData = getUserData();
   const userPosition = userData?.position || '';
@@ -150,18 +142,8 @@ function switchDivision(div) {
   currentUserSession.division = div;
   sessionStorage.setItem('event_activeDivision', div);
 
-  const iconContainer = document.getElementById('divisionIcon');
-  if (iconContainer) {
-    if (div === 'cleaning') {
-      iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M19 3l-6 6"/><path d="M13.5 6.5l4 4"/><path d="M5 21l8-8-4-4-8 8a1 1 0 0 0 0 1.41L2.59 21A1 1 0 0 0 5 21z"/><path d="M7 15l2 2"/></svg>`;
-    } else if (div === 'engineering') {
-      iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`;
-    } else if (div === 'security') {
-      iconContainer.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`;
-    }
-  }
-
   setupDynamicFormCategory();
+  renderHamburgerMenu();
   currentPage = 1;
   saveStateToSession();
   fetchTableData();
@@ -187,6 +169,84 @@ function setupDynamicFormCategory() {
   });
 }
 
+function isShowingAllStatuses() {
+  const statusFilter = tableFilter.filterSelections['status'];
+  return !statusFilter || statusFilter.size === 0 || statusFilter.size >= 3;
+}
+
+function toggleShowAllStatuses() {
+  if (isShowingAllStatuses()) {
+    tableFilter.filterSelections['status'] = new Set(['Open', 'In Progress']);
+  } else {
+    delete tableFilter.filterSelections['status'];
+  }
+  
+  currentPage = 1;
+  saveStateToSession();
+  renderHamburgerMenu();
+  fetchTableData();
+}
+
+function renderHamburgerMenu() {
+  const customContainer = document.getElementById('custom-hamburger-content');
+  if (!customContainer) return;
+
+  const showingAll = isShowingAllStatuses();
+  const currentDiv = currentUserSession.division;
+
+  // Path SVG Sapu baru dengan pengisian fill="currentColor" dan skala yang harmonis
+  const cleanerIconSvg = `
+    <svg class="w-4 h-4 shrink-0 text-[#1a73e8] dark:text-[#8ab4f8]" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M22.4524 1.92267C22.7452 2.21557 22.7452 2.69044 22.4524 2.98333L15.5238 9.91189C17.2589 12.1667 17.0935 15.4132 15.0277 17.479L14.1963 18.3105L11.4091 22.4912C11.2845 22.6782 11.0826 22.7994 10.859 22.8215C10.6354 22.8437 10.4136 22.7644 10.2548 22.6055L1.76948 14.1202C1.6106 13.9614 1.53132 13.7396 1.55346 13.516C1.5756 13.2924 1.69683 13.0905 1.88378 12.9659L6.06475 10.1786L6.89601 9.3473C8.96179 7.28152 12.2083 7.11617 14.4631 8.85123L21.3917 1.92267C21.6846 1.62978 22.1595 1.62978 22.4524 1.92267ZM7.60312 10.7615L13.6135 16.7719L13.9671 16.4184C15.6268 14.7586 15.6268 12.0677 13.9671 10.408C12.3074 8.74823 9.6164 8.74823 7.95668 10.408L7.60312 10.7615ZM6.44689 11.7266L3.47704 13.7065L10.6685 20.898L12.6484 17.9281L6.44689 11.7266Z"/>
+    </svg>
+  `;
+
+  customContainer.innerHTML = `
+    <!-- General Actions -->
+    <button onclick="openModal('add'); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
+      <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      <span>Tambah Entry</span>
+    </button>
+    
+    <button onclick="toggleShowAllStatuses(); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
+      <svg class="w-4 h-4 ${showingAll ? 'text-amber-500' : 'text-purple-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+      <span>${showingAll ? 'Sembunyikan Resolved' : 'Tampilkan Semua Status'}</span>
+    </button>
+
+    <button onclick="openExportModal(); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer border-b border-[#dadce0] dark:border-[#3c4043]">
+      <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+      <span>Export CSV</span>
+    </button>
+
+    <!-- Division Selector Inside Hamburger Menu -->
+    <div class="px-3.5 py-1.5 text-[10px] font-bold text-[#5f6368] dark:text-[#9aa0a6] uppercase tracking-wider bg-[#f8f9fa] dark:bg-[#1e1e1e]">Pilih Divisi</div>
+    
+    <button onclick="switchDivision('cleaning'); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center justify-between text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer ${currentDiv === 'cleaning' ? 'bg-blue-50/60 dark:bg-blue-950/40 font-bold text-[#1a73e8] dark:text-[#8ab4f8]' : ''}">
+      <div class="flex items-center gap-2.5">
+        ${cleanerIconSvg}
+        <span>Cleaner</span>
+      </div>
+      ${currentDiv === 'cleaning' ? '<span>✓</span>' : ''}
+    </button>
+
+    <button onclick="switchDivision('engineering'); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center justify-between text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer ${currentDiv === 'engineering' ? 'bg-blue-50/60 dark:bg-blue-950/40 font-bold text-[#1a73e8] dark:text-[#8ab4f8]' : ''}">
+      <div class="flex items-center gap-2.5">
+        <svg class="w-4 h-4 shrink-0 text-[#1a73e8] dark:text-[#8ab4f8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Engineering</span>
+      </div>
+      ${currentDiv === 'engineering' ? '<span>✓</span>' : ''}
+    </button>
+
+    <button onclick="switchDivision('security'); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center justify-between text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer ${currentDiv === 'security' ? 'bg-blue-50/60 dark:bg-blue-950/40 font-bold text-[#1a73e8] dark:text-[#8ab4f8]' : ''}">
+      <div class="flex items-center gap-2.5">
+        <svg class="w-4 h-4 shrink-0 text-[#1a73e8] dark:text-[#8ab4f8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <span>Security</span>
+      </div>
+      ${currentDiv === 'security' ? '<span>✓</span>' : ''}
+    </button>
+  `;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   currentUserSession.nama = getUserSessionName();
 
@@ -195,35 +255,13 @@ document.addEventListener('DOMContentLoaded', () => {
     currentUserSession.division = getDivisionFromPosition(userData.position);
   }
 
-  const hamburgerMenuOptions = [
-    {
-      label: "Tambah Entry",
-      icon: `<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-      onClick: "openModal('add')"
-    },
-    {
-      label: "Export CSV",
-      icon: `<svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>`,
-      onClick: "openExportModal()"
-    }
-  ];
-
   if (typeof renderHeader === 'function') {
     renderHeader({ 
-      subtitle: "Event Dashboard",
-      hamburgerItems: hamburgerMenuOptions 
+      subtitle: "Event Dashboard"
     });
   }
 
-  const customContainer = document.getElementById('custom-hamburger-content');
-  if (customContainer && customContainer.innerHTML.trim() === '') {
-    customContainer.innerHTML = hamburgerMenuOptions.map(item => `
-      <button onclick="${item.onClick}; toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition">
-        ${item.icon}
-        <span>${item.label}</span>
-      </button>
-    `).join('');
-  }
+  renderHamburgerMenu();
 
   if (globalSearchQuery) {
     const searchInput = document.getElementById('globalSearchInput');
@@ -261,12 +299,6 @@ document.addEventListener('click', (e) => {
 
   if (dropdown && !dropdown.classList.contains('hidden') && !dropdown.contains(e.target)) {
     dropdown.classList.add('hidden');
-  }
-
-  const divMenu = document.getElementById('divisionMenu');
-  const divBtn = document.getElementById('btnDivisionDropdown');
-  if (divMenu && !divMenu.classList.contains('hidden') && !divMenu.contains(e.target) && !divBtn.contains(e.target)) {
-    divMenu.classList.add('hidden');
   }
 
   const popover = document.getElementById('filterPopover');
@@ -340,7 +372,6 @@ async function fetchTableData() {
     if (countErr) throw countErr;
 
     totalRows = count || 0;
-    document.getElementById('totalDataCount').innerText = totalRows;
 
     if (totalRows === 0) {
       tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data entry ditemukan.</td></tr>`;
@@ -502,6 +533,7 @@ function clearFilterColumn() {
 
 function applyFilter() {
   tableFilter.applyFilter();
+  renderHamburgerMenu();
 }
 
 function applySort(direction) {

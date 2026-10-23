@@ -127,45 +127,11 @@
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
       <div class="flex items-center gap-2 shrink-0">
         <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Event</h2>
-        <span id="totalDataCount" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-[#1a73e8] dark:text-[#8ab4f8] border border-blue-200 dark:border-blue-800">0</span>
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <!-- Division Dropdown -->
-        <div class="relative shrink-0">
-          <button type="button" id="btnDivisionDropdown" onclick="toggleDivisionMenu(event)" title="Pilih Divisi"
-                  class="w-9 h-9 bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-[#dadce0] dark:border-[#3c4043] rounded-xl flex items-center justify-center text-[#1a73e8] dark:text-[#8ab4f8] active:scale-95 transition cursor-pointer">
-            <span id="divisionIcon">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-                <path d="M19 3l-6 6"/><path d="M13.5 6.5l4 4"/><path d="M5 21l8-8-4-4-8 8a1 1 0 0 0 0 1.41L2.59 21A1 1 0 0 0 5 21z"/><path d="M7 15l2 2"/>
-              </svg>
-            </span>
-          </button>
-
-          <div id="divisionMenu" class="hidden absolute right-0 top-full mt-1.5 w-40 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-2xl shadow-xl py-1 z-[99999] text-xs">
-            <button type="button" onclick="selectDivisionOption('cleaning')" class="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] transition">
-              <svg class="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-                <path d="M19 3l-6 6"/><path d="M13.5 6.5l4 4"/><path d="M5 21l8-8-4-4-8 8a1 1 0 0 0 0 1.41L2.59 21A1 1 0 0 0 5 21z"/><path d="M7 15l2 2"/>
-              </svg>
-              <span class="font-medium">Cleaner</span>
-            </button>
-            <button type="button" onclick="selectDivisionOption('engineering')" class="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] transition">
-              <svg class="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              <span class="font-medium">Engineering</span>
-            </button>
-            <button type="button" onclick="selectDivisionOption('security')" class="w-full px-3.5 py-2.5 text-left flex items-center gap-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#3c4043] text-[#202124] dark:text-[#e8eaed] transition">
-              <svg class="w-4 h-4 text-[#1a73e8] dark:text-[#8ab4f8] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-              </svg>
-              <span class="font-medium">Security</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Mobile-friendly Search Bar -->
-        <div class="relative flex items-center w-28 xs:w-36 sm:w-52">
+        <!-- Search Bar -->
+        <div class="relative flex items-center w-32 xs:w-44 sm:w-56">
           <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
@@ -175,7 +141,7 @@
           <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
         </div>
 
-        <!-- Hamburger Options -->
+        <!-- 3-Line Hamburger Options Button -->
         <div class="relative flex items-center shrink-0">
           <button type="button" id="hamburgerBtn" class="h-9 w-9 rounded-xl border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 active:scale-95 cursor-pointer" title="Menu Opsi">
             <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +149,7 @@
             </svg>
           </button>
           
-          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-48 bg-white dark:bg-[#252525] rounded-2xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
+          <div id="customDropdownMenu" class="hidden absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-[#252525] rounded-2xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] overflow-hidden py-1 z-[99999] text-xs">
             <div id="custom-hamburger-content"></div>
           </div>
         </div>
@@ -309,7 +275,7 @@
 
   </div>
 
-  <!-- MODAL FORM EVENT (MOBILE BOTTOM SHEET STYLED) -->
+  <!-- MODAL FORM EVENT -->
   <div id="modal" class="fixed inset-0 bg-black/50 dark:bg-black/70 hidden backdrop-blur-xs flex justify-center items-end sm:items-center p-0 sm:p-4 z-[10005]">
     <div class="bg-white dark:bg-[#1e1e1e] border-t sm:border border-[#dadce0] dark:border-[#3c4043] rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 w-full max-w-lg shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto custom-scroll">
       <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto sm:hidden mb-1"></div>
