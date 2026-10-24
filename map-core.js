@@ -17,8 +17,8 @@ const BUILDING_FLOOR_MAPS = {
     rooftop: "rooftop.jpg"
   },
   pbm: {
-    basement: "pbm_LB.jpg",
-    dasar: "pbm_LD.jpg"
+    basement: "pbm_lb.jpg",
+    dasar: "pbm_ld.jpg"
   }
 };
 
