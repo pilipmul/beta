@@ -50,9 +50,9 @@ function renderHeader() {
               </button>
               
               <div class="sidebar-text truncate">
-                <h1 class="text-[15px] font-bold leading-tight truncate">SOT</h1>
-              </div>
-            </div>
+  <h1 class="text-[15px] font-bold leading-tight truncate">Djurnal</h1>
+</div>
+</div>
 
             <!-- Navigasi Menu Sidebar -->
             <nav class="flex-1 px-1.5 py-3 space-y-2 overflow-y-auto custom-scroll text-xs min-h-0">

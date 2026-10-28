@@ -6,13 +6,13 @@
       try {
         const session = localStorage.getItem("user");
         if (!session) {
-          window.location.replace("https://sotpbc.vercel.app/login.html");
+          window.location.replace("login.html");
           return;
         }
 
         const userData = JSON.parse(session);
         if (!userData) {
-          window.location.replace("https://sotpbc.vercel.app/login.html");
+          window.location.replace("login.html");
           return;
         }
 
@@ -22,19 +22,19 @@
           
           if (!punyaAkses) {
             alert("Anda tidak memiliki hak akses ke modul Inventory/Logistics.");
-            window.location.replace("https://sotpbc.vercel.app/login.html");
+            window.location.replace("login.html");
           }
         }
       } catch (err) {
         console.error("Autentikasi gagal:", err);
-        window.location.replace("https://sotpbc.vercel.app/login.html");
+        window.location.replace("login.html");
       }
     })();
   </script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logistics - SOT</title>
+  <title>Logistics - Djurnal</title>
   
   <link rel="stylesheet" href="global-header.css">
   <script src="https://unpkg.com/@tailwindcss/browser@4"></script>

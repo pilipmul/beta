@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HSE - SOT</title>
+  <title>HSE - Djurnal</title>
 
   <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
   <script>
@@ -26,7 +26,7 @@
           const punyaAkses = (aks.hse === "Y" || aks.tenant === "Y" || aks.item === "Y" || aks.inventory === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
           if (!punyaAkses) {
             alert("Anda tidak memiliki hak akses ke modul HSE.");
-            window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+            window.location.replace("dashboard.html");
           }
         }
       } catch (err) {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dokumentasi Perbaikan - SOT</title>
+  <title>Dokumentasi Perbaikan - Djurnal</title>
 
   <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
   <script>
@@ -16,7 +16,7 @@
       try {
         const userData = JSON.parse(userSessionString);
         if (!userData) {
-          window.location.replace("https://sotpbc.vercel.app/dashboard.html");
+          window.location.replace("dashboard.html");
         }
       } catch (err) {
         window.location.replace("login.html");
