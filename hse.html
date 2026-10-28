@@ -184,7 +184,7 @@
         <!-- Input Search -->
         <div class="relative flex items-center w-full max-w-[150px] xs:max-w-[180px] sm:max-w-64">
           <svg class="absolute left-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 0 0114 0z"/>
           </svg>
           <input type="text" id="globalSearchInput" onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
                  placeholder="Cari lokasi, spek, kondisi..." 
@@ -214,12 +214,18 @@
           <div class="bg-white dark:bg-[#1e1e1e] rounded-xl sm:rounded-2xl shadow-sm border border-[#dadce0] dark:border-[#3c4043] overflow-hidden relative">
             
             <div class="overflow-x-auto custom-scroll w-full">
-              <table class="w-full text-left border-collapse text-xs min-w-[1050px]">
+              <table class="w-full text-left border-collapse text-xs min-w-[1150px]">
                 <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase font-semibold tracking-wider border-b border-[#dadce0] dark:border-[#3c4043]">
                   <tr>
                     <th scope="col" class="p-2.5 w-[5%] text-center">
                       NO
                       <div class="filter-icon-btn" data-col="no" onclick="tableFilter.toggleMenu('no', event, fetchedData)">
+                        <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 w-[8%] text-center">
+                      BO
+                      <div class="filter-icon-btn" data-col="bo" onclick="tableFilter.toggleMenu('bo', event, fetchedData)">
                         <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                       </div>
                     </th>
@@ -247,7 +253,7 @@
                         <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
                       </div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[15%] text-center">
+                    <th scope="col" class="p-2.5 w-[14%] text-center">
                       UPDATE
                       <div class="filter-icon-btn" data-col="update" onclick="tableFilter.toggleMenu('update', event, fetchedData)">
                         <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg>
@@ -263,7 +269,7 @@
                 </thead>
                 <tbody id="tableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
                   <tr>
-                    <td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
+                    <td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td>
                   </tr>
                 </tbody>
               </table>
@@ -352,31 +358,38 @@
         
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
+            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Branch Office (BO)</label>
+            <input type="text" id="inputBo" placeholder="PBC / PBM..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Kategori</label>
             <input type="text" id="inputKategori" placeholder="Kategori HSE..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Lokasi *</label>
             <input type="text" id="inputLokasi" required placeholder="Lantai, area, unit..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Kondisi</label>
             <input type="text" id="inputKondisi" placeholder="Baik, Perlu Perbaikan, dll..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
-          <div>
-            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Spesifikasi (Spek)</label>
-            <input type="text" id="inputSpek" placeholder="Spesifikasi alat/unit..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
+            <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Spesifikasi (Spek)</label>
+            <input type="text" id="inputSpek" placeholder="Spesifikasi alat/unit..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Tgl Update</label>
             <input type="date" id="inputUpdateDate" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Dokumentasi</label>
             <input type="text" id="inputDokumentasi" placeholder="Link URL..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">

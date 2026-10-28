@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   tableFilter = new TableFilterManager({
     tableName: 'hse',
     supabaseClient: _supabase,
-    columns: ['no', 'kategori', 'lokasi', 'kondisi', 'spek', 'update', 'dokumentasi'],
+    columns: ['no', 'bo', 'kategori', 'lokasi', 'kondisi', 'spek', 'update', 'dokumentasi'],
     numericColumns: ['no'],
     dateColumns: [],
     popoverId: 'filterPopover',
@@ -227,11 +227,11 @@ function execSort(dir) {
 
 async function fetchTableData() {
   const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
 
   try {
     let countQuery = _supabase.from('hse').select('*', { count: 'exact', head: true });
-    countQuery = tableFilter.applyToSupabaseQuery(countQuery, ['lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
+    countQuery = tableFilter.applyToSupabaseQuery(countQuery, ['bo', 'lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
 
     const { count, error: countErr } = await countQuery;
     if (countErr) throw countErr;
@@ -240,7 +240,7 @@ async function fetchTableData() {
     document.getElementById('totalDataCount').innerText = totalRows;
 
     if (totalRows === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data HSE tidak ditemukan.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data HSE tidak ditemukan.</td></tr>`;
       updatePaginationUI();
       updateFilterUI();
       return;
@@ -253,7 +253,7 @@ async function fetchTableData() {
     const toIndex = Math.min(currentPage * PAGE_SIZE - 1, totalRows - 1);
 
     let dataQuery = _supabase.from('hse').select('*');
-    dataQuery = tableFilter.applyToSupabaseQuery(dataQuery, ['lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
+    dataQuery = tableFilter.applyToSupabaseQuery(dataQuery, ['bo', 'lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
 
     if (currentSort.column) {
       dataQuery = dataQuery.order(currentSort.column, { ascending: currentSort.ascending });
@@ -274,7 +274,7 @@ async function fetchTableData() {
     updateFilterUI();
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
   }
 }
 
@@ -283,7 +283,7 @@ function renderTable() {
   tbody.innerHTML = '';
 
   if (fetchedData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data yang sesuai filter.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Tidak ada data yang sesuai filter.</td></tr>`;
     updatePaginationUI();
     return;
   }
@@ -319,9 +319,11 @@ function renderTable() {
     }
 
     const updateFormatted = formatUpdateDisplay(row.update);
+    const boFormatted = row.bo ? String(row.bo).toUpperCase() : '-';
 
     tr.innerHTML = `
       <td class="p-2.5 text-center font-mono">${noBtn}</td>
+      <td class="p-2.5 text-center font-bold text-[#202124] dark:text-[#f1f3f4] uppercase truncate">${escapeHtml(boFormatted)}</td>
       <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.kategori || '-')}</td>
       <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.lokasi || '-')}</td>
       <td class="p-2.5 text-center">
@@ -418,6 +420,7 @@ function openModal(mode, data = null) {
     btnDelete.classList.remove('hidden');
 
     document.getElementById('editNo').value = data.no;
+    document.getElementById('inputBo').value = data.bo ? String(data.bo).toUpperCase() : '';
     document.getElementById('inputLokasi').value = data.lokasi || '';
     document.getElementById('inputKondisi').value = data.kondisi || '';
     document.getElementById('inputSpek').value = data.spek || '';
@@ -490,6 +493,7 @@ async function saveData(e) {
   }
 
   const payload = {
+    bo: document.getElementById('inputBo').value.trim().toUpperCase() || null,
     lokasi: document.getElementById('inputLokasi').value.trim() || null,
     kondisi: document.getElementById('inputKondisi').value.trim() || null,
     update: updatedHistory,
@@ -565,7 +569,7 @@ async function deleteDataInModal() {
 async function exportCSV() {
   try {
     let query = _supabase.from('hse').select('*').order('no', { ascending: true });
-    query = tableFilter.applyToSupabaseQuery(query, ['lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
+    query = tableFilter.applyToSupabaseQuery(query, ['bo', 'lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -575,13 +579,14 @@ async function exportCSV() {
       return;
     }
 
-    const headers = ['no', 'lokasi', 'kondisi', 'update', 'dokumentasi', 'kategori', 'spek'];
+    const headers = ['no', 'bo', 'lokasi', 'kondisi', 'update', 'dokumentasi', 'kategori', 'spek'];
     const csvRows = [headers.join(',')];
 
     data.forEach(row => {
       const values = headers.map(header => {
         let rawVal = row[header];
         if (header === 'update') rawVal = formatUpdateDisplay(rawVal);
+        if (header === 'bo' && rawVal) rawVal = String(rawVal).toUpperCase();
         return `"${String(rawVal ?? '').replace(/"/g, '""')}"`;
       });
       csvRows.push(values.join(','));
