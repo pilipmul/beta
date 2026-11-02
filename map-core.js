@@ -157,7 +157,7 @@ function renderHamburgerMenuContent() {
       html += `
         <button onclick="setAppMode('view'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
           <i class="fa-solid fa-eye text-blue-500"></i>
-          <span>View Mode</span>
+          <span>Kembali View Mode</span>
         </button>
       `;
     }
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHeader({ activeMenu: "denah", subtitle: "Denah Interaktif" });
   }
 
-  // Auto-select unit if user is strictly bound to PBM
+  // Auto-select unit jika user secara eksplisit terikat dengan PBM
   const userBo = getUserBoAccess();
   if (userBo === 'pbm') {
     activeBuilding = 'pbm';
@@ -193,7 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderHamburgerMenuContent();
   initMapControls();
-  updateBuildingUI();
+
+  // Explicitly switch floor ke basement gedung yang aktif saat init (memastikan denah PBM dimuat jika user = salwa)
+  switchFloor('basement');
 
   const img = document.getElementById('denah-img');
   if (img) {
