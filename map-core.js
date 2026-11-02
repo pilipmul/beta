@@ -76,7 +76,7 @@ let animFrameReq = null;
 let initialPinchDistance = null;
 let initialScale = 1;
 
-const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
+const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti", "Salwa"];
 
 // ==========================================
 // HELPER PERMISSION, BUILDING ACCESS & DROPDOWN TOUCH
