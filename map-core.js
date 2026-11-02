@@ -150,14 +150,14 @@ function renderHamburgerMenuContent() {
       html += `
         <button onclick="setAppMode('edit'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
           <i class="fa-solid fa-pen-to-square text-amber-500"></i>
-          <span>Masuk Edit Mode</span>
+          <span>Edit Mode</span>
         </button>
       `;
     } else {
       html += `
         <button onclick="setAppMode('view'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
           <i class="fa-solid fa-eye text-blue-500"></i>
-          <span>Kembali View Mode</span>
+          <span>View Mode</span>
         </button>
       `;
     }
