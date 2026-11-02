@@ -249,7 +249,7 @@
         
         .qty-wrapper { position: relative; display: grid; place-items: center; border-left: 1px solid var(--border-light); border-right: 1px solid var(--border-light); height: 34px; }
         .stock-overlay { grid-area: 1/1; font-size: 1.1rem; font-weight: 700; color: #EA4335; pointer-events: none; display: none; z-index: 1; }
-        input.qty { grid-area: 1/1; position: relative; z-index: 2; background: transparent !important; padding: 5px 0; -moz-appearance: textfield; }
+        input.qty { grid-area: 1/1; position: relative; z-index: 2; background: transparent !important; padding: 5px 0; appearance: none; -moz-appearance: textfield; }
         input.qty::-webkit-outer-spin-button, input.qty::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input.qty.hide-placeholder::placeholder { color: transparent; }
         textarea.desc { overflow-y: hidden; padding-top: 6px; padding-right: 25px; }
