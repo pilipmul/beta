@@ -32,6 +32,10 @@ class TableFilterManager {
       this.searchInputEl.setAttribute('autocomplete', 'off');
       this.searchInputEl.oninput = () => this.renderCheckboxes();
     }
+
+    if (this.selectAllCbEl) {
+      this.selectAllCbEl.onchange = (e) => this.toggleSelectAll(e.target.checked);
+    }
   }
 
   _applySingleFilter(query, colKey, selectedSet) {
@@ -42,7 +46,6 @@ class TableFilterManager {
     const nonBlankValues = selectedArray.filter(v => v !== '-');
     const isNumeric = this.numericColumns.has(colKey);
 
-    // Case 1: Hanya filter data kosong (-)
     if (hasBlank && nonBlankValues.length === 0) {
       if (isNumeric) {
         return query.is(colKey, null);
@@ -51,7 +54,6 @@ class TableFilterManager {
       }
     }
 
-    // Case 2: Filter data kosong (-) DAN ada nilai terisi yang dicentang
     if (hasBlank && nonBlankValues.length > 0) {
       const formattedNonBlank = nonBlankValues.map(v => `${v}`).join(',');
       if (isNumeric) {
@@ -61,7 +63,6 @@ class TableFilterManager {
       }
     }
 
-    // Case 3: Hanya nilai terisi yang dicentang
     if (!hasBlank && nonBlankValues.length > 0) {
       return query.in(colKey, nonBlankValues);
     }
@@ -114,18 +115,34 @@ class TableFilterManager {
       query = this._applySingleFilter(query, key, this.filterSelections[key]);
     }
 
+    const isNumeric = this.numericColumns.has(columnKey);
+    const sortFn = (a, b) => {
+      if (a === '-') return 1;
+      if (b === '-') return -1;
+      
+      if (isNumeric) {
+        const numA = Number(a);
+        const numB = Number(b);
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return numA - numB;
+        }
+      }
+      
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    };
+
     query.then(({ data, error }) => {
       if (!error && data) {
         const vals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
-        this.dbFilterOptions[columnKey] = Array.from(new Set(vals)).sort();
+        this.dbFilterOptions[columnKey] = Array.from(new Set(vals)).sort(sortFn);
       } else {
         const fallback = fallbackData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
-        this.dbFilterOptions[columnKey] = Array.from(new Set(fallback)).sort();
+        this.dbFilterOptions[columnKey] = Array.from(new Set(fallback)).sort(sortFn);
       }
       this._updateDrafts();
     }).catch(() => {
       const fallback = fallbackData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
-      this.dbFilterOptions[columnKey] = Array.from(new Set(fallback)).sort();
+      this.dbFilterOptions[columnKey] = Array.from(new Set(fallback)).sort(sortFn);
       this._updateDrafts();
     });
   }
@@ -135,6 +152,35 @@ class TableFilterManager {
     const allOpts = this.dbFilterOptions[this.activeFilterColumn] || [];
     this.draftFilterSelections = (activeSaved && activeSaved.size > 0) ? new Set(activeSaved) : new Set(allOpts);
     this.renderCheckboxes();
+  }
+
+  _getFilteredValues() {
+    const uniqueValues = this.dbFilterOptions[this.activeFilterColumn] || [];
+    const searchVal = this.searchInputEl ? this.searchInputEl.value.trim().toLowerCase() : '';
+
+    if (!searchVal) return uniqueValues;
+
+    const isDateCol = this.dateColumns.has(this.activeFilterColumn);
+    const monthNames = ["januari", "februari", "maret", "april", "mei", "juni", "juli", "agustus", "september", "oktober", "november", "desember"];
+    const monthNamesEn = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+
+    return uniqueValues.filter(val => {
+      if (val === '-') return searchVal === '-' || searchVal === 'blank' || searchVal === '(blank)';
+      if (!isDateCol) return val.toLowerCase().includes(searchVal);
+
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return val.toLowerCase().includes(searchVal);
+
+      const yearStr = String(d.getFullYear());
+      const monthIdx = d.getMonth();
+      const dayVal = String(d.getDate());
+
+      const yearMatch = yearStr.includes(searchVal);
+      const monthMatch = monthNames[monthIdx].includes(searchVal) || monthNamesEn[monthIdx].includes(searchVal);
+      const dateMatch = val.toLowerCase().includes(searchVal) || dayVal.includes(searchVal);
+
+      return yearMatch || monthMatch || dateMatch;
+    });
   }
 
   renderCheckboxes() {
@@ -149,18 +195,17 @@ class TableFilterManager {
     } else {
       this._renderFlatCheckboxes(uniqueValues);
     }
+
+    this.updateSelectAllState();
   }
 
   _renderFlatCheckboxes(uniqueValues) {
     const searchVal = this.searchInputEl ? this.searchInputEl.value.trim().toLowerCase() : '';
-    let visibleCount = 0, visibleCheckedCount = 0;
 
     uniqueValues.forEach(val => {
       if (searchVal && !val.toLowerCase().includes(searchVal)) return;
 
-      visibleCount++;
       const isChecked = this.draftFilterSelections.has(val);
-      if (isChecked) visibleCheckedCount++;
 
       const label = document.createElement('label');
       label.className = 'flex items-center gap-2 text-[11px] text-[#202124] dark:text-[#e8eaed] hover:bg-[#e8eaed] dark:hover:bg-[#2d2d2d] p-1 rounded cursor-pointer truncate';
@@ -185,10 +230,6 @@ class TableFilterManager {
 
       this.containerEl.appendChild(label);
     });
-
-    if (this.selectAllCbEl) {
-      this.selectAllCbEl.checked = visibleCount > 0 && visibleCheckedCount === visibleCount;
-    }
   }
 
   _renderDateTree(uniqueValues) {
@@ -447,25 +488,44 @@ class TableFilterManager {
       cb.checked = this.draftFilterSelections.has(cb.value);
     });
 
-    const visibleChecked = Array.from(allLeafCbs).filter(cb => cb.checked).length;
-    if (this.selectAllCbEl) {
-      this.selectAllCbEl.checked = allLeafCbs.length > 0 && visibleChecked === allLeafCbs.length;
-      this.selectAllCbEl.indeterminate = visibleChecked > 0 && visibleChecked < allLeafCbs.length;
-    }
+    this.updateSelectAllState();
   }
 
   updateSelectAllState() {
-    const cbs = this.containerEl.querySelectorAll('.filter-cb');
-    const allChecked = cbs.length > 0 && Array.from(cbs).every(cb => cb.checked);
-    if (this.selectAllCbEl) this.selectAllCbEl.checked = allChecked;
+    if (!this.selectAllCbEl) return;
+    const filteredValues = this._getFilteredValues();
+
+    if (filteredValues.length === 0) {
+      this.selectAllCbEl.checked = false;
+      this.selectAllCbEl.indeterminate = false;
+      return;
+    }
+
+    const checkedCount = filteredValues.filter(val => this.draftFilterSelections.has(val)).length;
+
+    if (checkedCount === filteredValues.length) {
+      this.selectAllCbEl.checked = true;
+      this.selectAllCbEl.indeterminate = false;
+    } else if (checkedCount > 0) {
+      this.selectAllCbEl.checked = false;
+      this.selectAllCbEl.indeterminate = true;
+    } else {
+      this.selectAllCbEl.checked = false;
+      this.selectAllCbEl.indeterminate = false;
+    }
   }
 
   toggleSelectAll(checked) {
-    const uniqueValues = this.dbFilterOptions[this.activeFilterColumn] || [];
-    uniqueValues.forEach(val => {
-      if (checked) this.draftFilterSelections.add(val);
-      else this.draftFilterSelections.delete(val);
+    const targetValues = this._getFilteredValues();
+
+    targetValues.forEach(val => {
+      if (checked) {
+        this.draftFilterSelections.add(val);
+      } else {
+        this.draftFilterSelections.delete(val);
+      }
     });
+
     this.renderCheckboxes();
   }
 
