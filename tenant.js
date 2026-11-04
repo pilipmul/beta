@@ -9,8 +9,13 @@ let totalRows = 0;
 let rawDataMap = new Map();
 let fetchedData = [];
 
+// Penentuan Tabel Berdasarkan User BO
+let currentSourceTable = 'tenant'; // Default 'tenant' (PBC)
+let userBo = ''; // Store user BO ('pbc', 'pbm', 'tcbu')
+let realtimeChannel = null;
+
 // INSTANCE TABLE FILTER MANAGER
-let tableFilter;
+let tableFilter = null;
 
 let globalSearchQuery = sessionStorage.getItem('tenant_globalSearchQuery') || '';
 let sortConfig = JSON.parse(sessionStorage.getItem('tenant_sortConfig')) || { column: null, direction: null };
@@ -18,58 +23,77 @@ let sortConfig = JSON.parse(sessionStorage.getItem('tenant_sortConfig')) || { co
 // Daftar akun yang memiliki hak akses CRUD (Create, Update, Delete)
 const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
 
-function isSuperAdmin() {
+function getuserData() {
   try {
     const session = localStorage.getItem("user");
-    if (!session) return false;
-    
-    const userData = JSON.parse(session);
-    if (!userData) return false;
-
-    // Cek apakah nama atau username ada di dalam daftar ALLOWED_EDITORS
-    const isEditor = ALLOWED_EDITORS.includes(userData.nama) || ALLOWED_EDITORS.includes(userData.username);
-
-    return isEditor || userData.role === "Admin" || userData.role === "SuperAdmin";
+    return session ? JSON.parse(session) : null;
   } catch (err) {
-    console.error("Gagal verifikasi hak akses editor:", err);
-    return false;
+    console.error("Gagal membaca session user:", err);
+    return null;
   }
 }
 
-function initTableFilter() {
-  tableFilter = new TableFilterManager({
-    tableName: 'tenant',
-    supabaseClient: _supabase,
-    columns: ['no', 'lokasi', 'nama_toko', 'luas', 'tipe', 'penyewa', 'komoditi', 'status', 'cp', 'validasi', 'update'],
-    dateColumns: ['update'],
-    globalSearchQuery: globalSearchQuery,
-    onFilterChange: () => {
-      currentPage = 1;
-      saveStateToSession();
-      fetchTableData();
-    }
-  });
+function initUserBoAccess() {
+  const userData = getuserData();
+  if (userData && userData.bo) {
+    userBo = String(userData.bo).toLowerCase();
+  }
 
-  // Restore saved filter selections
-  try {
-    const savedFilters = JSON.parse(sessionStorage.getItem('tenant_filterSelections'));
-    if (savedFilters && typeof savedFilters === 'object') {
-      Object.keys(savedFilters).forEach(key => {
-        if (Array.isArray(savedFilters[key])) {
-          tableFilter.filterSelections[key] = new Set(savedFilters[key]);
-        }
-      });
+  // Set default tabel aktif berdasarkan hak akses BO
+  if (userBo === 'pbm') {
+    currentSourceTable = 'tenant_pbm';
+  } else if (userBo === 'pbc') {
+    currentSourceTable = 'tenant';
+  } else {
+    // Untuk 'tcbu' atau fallback
+    currentSourceTable = sessionStorage.getItem('tenant_activeTable') || 'tenant';
+  }
+}
+
+function isSuperAdmin() {
+  const userData = getuserData();
+  if (!userData) return false;
+
+  const isEditor = ALLOWED_EDITORS.includes(userData.nama) || ALLOWED_EDITORS.includes(userData.username);
+  return isEditor || userData.role === "Admin" || userData.role === "SuperAdmin";
+}
+
+function initTableFilter() {
+  if (typeof TableFilterManager !== 'undefined') {
+    tableFilter = new TableFilterManager({
+      tableName: currentSourceTable,
+      supabaseClient: _supabase,
+      columns: ['no', 'lokasi', 'nama_toko', 'luas', 'tipe', 'penyewa', 'komoditi', 'status', 'cp', 'validasi', 'update'],
+      dateColumns: ['update'],
+      globalSearchQuery: globalSearchQuery,
+      onFilterChange: () => {
+        currentPage = 1;
+        saveStateToSession();
+        fetchTableData();
+      }
+    });
+
+    try {
+      const savedFilters = JSON.parse(sessionStorage.getItem('tenant_filterSelections'));
+      if (savedFilters && typeof savedFilters === 'object') {
+        Object.keys(savedFilters).forEach(key => {
+          if (Array.isArray(savedFilters[key])) {
+            tableFilter.filterSelections[key] = new Set(savedFilters[key]);
+          }
+        });
+      }
+    } catch {
+      if (tableFilter) tableFilter.filterSelections = {};
     }
-  } catch {
-    tableFilter.filterSelections = {};
   }
 }
 
 function saveStateToSession() {
   sessionStorage.setItem('tenant_globalSearchQuery', globalSearchQuery);
   sessionStorage.setItem('tenant_sortConfig', JSON.stringify(sortConfig));
+  sessionStorage.setItem('tenant_activeTable', currentSourceTable);
 
-  if (tableFilter) {
+  if (tableFilter && tableFilter.filterSelections) {
     const serializableFilters = {};
     Object.keys(tableFilter.filterSelections).forEach(key => {
       if (tableFilter.filterSelections[key] && tableFilter.filterSelections[key].size > 0) {
@@ -86,16 +110,73 @@ function toggleHamburgerMenu(e) {
   if (dropdown) dropdown.classList.toggle('hidden');
 }
 
+function switchTenantSource(targetTable) {
+  if (currentSourceTable === targetTable) return;
+
+  currentSourceTable = targetTable;
+  currentPage = 1;
+  saveStateToSession();
+
+  // Re-initialize filter table & realtime listener
+  if (tableFilter) {
+    tableFilter.tableName = currentSourceTable;
+    tableFilter.filterSelections = {};
+  }
+  
+  setupRealtimeSubscription();
+  fetchTableData();
+  renderHamburgerMenuContent();
+}
+
 function renderHamburgerMenuContent() {
   const container = document.getElementById('custom-hamburger-content');
   if (!container) return;
 
   let html = '';
+
+  // --- TOGGLE PBC & PBM BERDASARKAN BO ---
+  html += `<div class="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-[#dadce0] dark:border-[#3c4043] bg-slate-50 dark:bg-[#1a1a1a]">Kategori Tenant</div>`;
+
+  if (userBo === 'tcbu') {
+    // Bisa beralih PBC dan PBM
+    html += `
+      <div class="p-1 flex gap-1 bg-[#f1f3f4] dark:bg-[#1e1e1e] mx-2 my-1.5 rounded-lg border border-[#dadce0] dark:border-[#3c4043]">
+        <button onclick="switchTenantSource('tenant'); toggleHamburgerMenu();" 
+                class="flex-1 py-1 px-2 text-center rounded-md font-semibold text-xs transition cursor-pointer ${currentSourceTable === 'tenant' ? 'bg-[#1a73e8] text-white shadow-sm' : 'text-[#5f6368] dark:text-[#bdc1c6] hover:bg-slate-200 dark:hover:bg-slate-700'}">
+          PBC
+        </button>
+        <button onclick="switchTenantSource('tenant_pbm'); toggleHamburgerMenu();" 
+                class="flex-1 py-1 px-2 text-center rounded-md font-semibold text-xs transition cursor-pointer ${currentSourceTable === 'tenant_pbm' ? 'bg-[#1a73e8] text-white shadow-sm' : 'text-[#5f6368] dark:text-[#bdc1c6] hover:bg-slate-200 dark:hover:bg-slate-700'}">
+          PBM
+        </button>
+      </div>
+    `;
+  } else if (userBo === 'pbm') {
+    // Hanya PBM
+    html += `
+      <div class="px-3 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center justify-between">
+        <span>Tipe: PBM</span>
+        <span class="text-[10px] bg-emerald-100 dark:bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-500/30">Aktif</span>
+      </div>
+    `;
+  } else {
+    // Default PBC (termasuk userBo === 'pbc')
+    html += `
+      <div class="px-3 py-2 text-xs font-semibold text-blue-600 dark:text-blue-400 flex items-center justify-between">
+        <span>Tipe: PBC</span>
+        <span class="text-[10px] bg-blue-100 dark:bg-blue-950 px-1.5 py-0.5 rounded border border-blue-500/30">Aktif</span>
+      </div>
+    `;
+  }
+
+  html += `<div class="border-t border-[#dadce0] dark:border-[#3c4043] my-1"></div>`;
+
+  // --- MENU CRUD & EXPORT ---
   if (isSuperAdmin()) {
     html += `
       <button onclick="openModal('add'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
         <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        <span>Tambah Tenant</span>
+        <span>Tambah Data ${currentSourceTable === 'tenant_pbm' ? 'PBM' : 'PBC'}</span>
       </button>
     `;
   }
@@ -120,27 +201,28 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initTableFilter();
-
-  const hamburgerMenuOptions = [];
-  if (isSuperAdmin()) {
-    hamburgerMenuOptions.push({
-      label: "Tambah Tenant",
-      icon: `<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-      onClick: "openModal('add')"
-    });
+function setupRealtimeSubscription() {
+  if (realtimeChannel) {
+    _supabase.removeChannel(realtimeChannel);
   }
-  hamburgerMenuOptions.push({
-    label: "Export CSV",
-    icon: `<svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>`,
-    onClick: "exportCSV()"
-  });
+
+  realtimeChannel = _supabase
+    .channel(`public:${currentSourceTable}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: currentSourceTable }, () => {
+      fetchTableData();
+    })
+    .subscribe();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Urutan inisialisasi diperbaiki
+  initUserBoAccess();
+  initTableFilter();
 
   if (typeof renderHeader === 'function') {
     renderHeader({
       subtitle: "Tenant",
-      hamburgerItems: hamburgerMenuOptions
+      hamburgerItems: []
     });
   }
 
@@ -154,13 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   fetchTableData();
-
-  _supabase
-    .channel('public:tenant')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'tenant' }, () => {
-      fetchTableData();
-    })
-    .subscribe();
+  setupRealtimeSubscription();
 });
 
 document.addEventListener('click', (e) => {
@@ -210,7 +286,7 @@ function updateFilterButtonStyles() {
     const btn = document.getElementById(`btn-filter-${col}`);
     if (!btn) return;
 
-    const isActive = tableFilter && tableFilter.filterSelections[col] && tableFilter.filterSelections[col].size > 0;
+    const isActive = tableFilter && tableFilter.filterSelections && tableFilter.filterSelections[col] && tableFilter.filterSelections[col].size > 0;
 
     if (isActive) {
       btn.className = "p-0.5 text-[#1a73e8] dark:text-[#8ab4f8] cursor-pointer transition-transform duration-150 scale-140 inline-block";
@@ -223,7 +299,7 @@ function updateFilterButtonStyles() {
 }
 
 function applySupabaseFilters(query) {
-  if (tableFilter) {
+  if (tableFilter && typeof tableFilter.applyToSupabaseQuery === 'function') {
     return tableFilter.applyToSupabaseQuery(query, [
       'lokasi', 'nama_toko', 'tipe', 'penyewa', 'status', 'komoditi', 'cp', 'validasi'
     ]);
@@ -233,10 +309,10 @@ function applySupabaseFilters(query) {
 
 async function fetchTableData() {
   const tbody = document.getElementById('tableBody');
-  tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data ${currentSourceTable === 'tenant_pbm' ? 'PBM' : 'PBC'}...</td></tr>`;
 
   try {
-    let countQuery = _supabase.from('tenant').select('*', { count: 'exact', head: true });
+    let countQuery = _supabase.from(currentSourceTable).select('*', { count: 'exact', head: true });
     countQuery = applySupabaseFilters(countQuery);
 
     const { count, error: countErr } = await countQuery;
@@ -246,7 +322,7 @@ async function fetchTableData() {
     document.getElementById('totalDataCount').innerText = totalRows;
 
     if (totalRows === 0) {
-      tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data tenant tidak ditemukan.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Data tenant (${currentSourceTable === 'tenant_pbm' ? 'PBM' : 'PBC'}) tidak ditemukan.</td></tr>`;
       updatePaginationUI();
       updateFilterButtonStyles();
       return;
@@ -258,7 +334,7 @@ async function fetchTableData() {
     const fromIndex = (currentPage - 1) * PAGE_SIZE;
     const toIndex = Math.min(currentPage * PAGE_SIZE - 1, totalRows - 1);
 
-    let dataQuery = _supabase.from('tenant').select('*');
+    let dataQuery = _supabase.from(currentSourceTable).select('*');
     dataQuery = applySupabaseFilters(dataQuery);
 
     if (sortConfig.column && sortConfig.direction) {
@@ -279,6 +355,7 @@ async function fetchTableData() {
     renderTable();
 
   } catch (err) {
+    console.error(err);
     tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
   }
 }
@@ -336,7 +413,6 @@ function renderTable() {
   updateFilterButtonStyles();
 }
 
-// INTEGRASI DELEGASI FILTER TERUSAN KE TABLE FILTER MANAGER
 function toggleFilterMenu(columnKey, event) {
   if (tableFilter) {
     tableFilter.toggleMenu(columnKey, event, fetchedData);
@@ -442,11 +518,13 @@ function openModal(mode, data = null) {
   form.reset();
   document.getElementById('editNo').value = '';
 
+  const tagTabel = currentSourceTable === 'tenant_pbm' ? '(PBM)' : '(PBC)';
+
   if (mode === 'add') {
-    title.innerText = 'Tambah Tenant Baru';
+    title.innerText = `Tambah Tenant Baru ${tagTabel}`;
     btnDelete.classList.add('hidden');
   } else if (mode === 'edit' && data) {
-    title.innerText = `Edit Tenant #${data.no}`;
+    title.innerText = `Edit Tenant ${tagTabel} #${data.no}`;
     btnDelete.classList.remove('hidden');
 
     document.getElementById('editNo').value = data.no;
@@ -498,14 +576,14 @@ async function saveData(e) {
   try {
     if (editNo) {
       const { error } = await _supabase
-        .from('tenant')
+        .from(currentSourceTable)
         .update(payload)
         .eq('no', editNo);
 
       if (error) throw error;
     } else {
       const { data: maxNoData, error: maxNoError } = await _supabase
-        .from('tenant')
+        .from(currentSourceTable)
         .select('no')
         .order('no', { ascending: false })
         .limit(1);
@@ -520,7 +598,7 @@ async function saveData(e) {
       payload.no = nextNo;
 
       const { error } = await _supabase
-        .from('tenant')
+        .from(currentSourceTable)
         .insert([payload]);
 
       if (error) throw error;
@@ -544,7 +622,7 @@ async function deleteDataInModal() {
 
   try {
     const { error } = await _supabase
-      .from('tenant')
+      .from(currentSourceTable)
       .delete()
       .eq('no', no);
 
@@ -561,7 +639,7 @@ async function deleteDataInModal() {
 
 async function exportCSV() {
   try {
-    let query = _supabase.from('tenant').select('*').order('no', { ascending: true });
+    let query = _supabase.from(currentSourceTable).select('*').order('no', { ascending: true });
     query = applySupabaseFilters(query);
 
     const { data, error } = await query;
@@ -584,7 +662,7 @@ async function exportCSV() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `tenant_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute('download', `${currentSourceTable}_${new Date().toISOString().slice(0,10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
