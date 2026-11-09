@@ -201,6 +201,21 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+// Helper untuk mengambil nilai paling baru dari data array JSONB / string
+function parseJsonbFirst(val) {
+  if (!val) return '-';
+  if (Array.isArray(val)) return val[0] || '-';
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed[0] || '-';
+    } catch (e) {
+      return val;
+    }
+  }
+  return String(val);
+}
+
 function setupRealtimeSubscription() {
   if (realtimeChannel) {
     _supabase.removeChannel(realtimeChannel);
@@ -215,7 +230,6 @@ function setupRealtimeSubscription() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Urutan inisialisasi diperbaiki
   initUserBoAccess();
   initTableFilter();
 
@@ -389,28 +403,85 @@ function renderTable() {
       statusBadgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-500/20';
     }
 
-    tr.innerHTML = `
-      <td class="p-2.5 text-center">${noContent}</td>
-      <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.lokasi || '-')}</td>
-      <td class="p-2.5 font-semibold text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.nama_toko || '-')}</td>
-      <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.luas || '-')}</td>
-      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.tipe || '-')}</td>
-      <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.penyewa || '-')}</td>
-      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.komoditi || '-')}</td>
-      <td class="p-2.5 text-center">
-        <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusBadgeClass}">
-          ${escapeHtml(row.status || '-')}
-        </span>
-      </td>
-      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate" title="${escapeHtml(row.cp || '')}">${escapeHtml(row.cp || '-')}</td>
-      <td class="p-2.5 text-center font-semibold text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.validasi || '-')}</td>
-      <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] font-mono text-[11px] truncate">${escapeHtml(row.update || '-')}</td>
-    `;
+    // Mengambil status validasi dan tanggal update terbaru
+    const currentValidasi = parseJsonbFirst(row.validasi);
+    const currentUpdate = parseJsonbFirst(row.update);
+
+    // Di dalam renderTable(), ganti bagian <td> validasi dengan kode berikut:
+tr.innerHTML = `
+  <td class="p-2.5 text-center">${noContent}</td>
+  <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.lokasi || '-')}</td>
+  <td class="p-2.5 font-semibold text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.nama_toko || '-')}</td>
+  <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.luas || '-')}</td>
+  <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.tipe || '-')}</td>
+  <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.penyewa || '-')}</td>
+  <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.komoditi || '-')}</td>
+  <td class="p-2.5 text-center">
+    <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusBadgeClass}">
+      ${escapeHtml(row.status || '-')}
+    </span>
+  </td>
+  <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate" title="${escapeHtml(row.cp || '')}">${escapeHtml(row.cp || '-')}</td>
+  <td class="p-2.5 text-center">
+    <button onclick="showHistoryModal(${row.no})" title="Lihat riwayat validasi #${row.no}" class="font-mono text-xs font-semibold text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] transition-colors cursor-pointer select-none">
+      ${escapeHtml(currentValidasi)}
+    </button>
+  </td>
+  <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] font-mono text-[11px] truncate">${escapeHtml(currentUpdate)}</td>
+`;
     tbody.appendChild(tr);
   });
 
   updatePaginationUI();
   updateFilterButtonStyles();
+}
+
+function showHistoryModal(no) {
+  const data = rawDataMap.get(no);
+  if (!data) return;
+
+  const historyList = document.getElementById('historyListContent');
+  
+  let validasiArr = [];
+  if (Array.isArray(data.validasi)) {
+    validasiArr = data.validasi;
+  } else if (data.validasi) {
+    try { validasiArr = JSON.parse(data.validasi); } catch { validasiArr = [data.validasi]; }
+  }
+
+  let updateArr = [];
+  if (Array.isArray(data.update)) {
+    updateArr = data.update;
+  } else if (data.update) {
+    try { updateArr = JSON.parse(data.update); } catch { updateArr = [data.update]; }
+  }
+
+  if (!Array.isArray(validasiArr)) validasiArr = [validasiArr];
+  if (!Array.isArray(updateArr)) updateArr = [updateArr];
+
+  if (validasiArr.length === 0 || (validasiArr.length === 1 && !validasiArr[0])) {
+    historyList.innerHTML = `<div class="text-[#5f6368] dark:text-[#9aa0a6] text-center italic py-2">Belum ada riwayat validasi</div>`;
+  } else {
+    let itemsHtml = '';
+    const maxLength = Math.max(validasiArr.length, updateArr.length);
+
+    for (let i = 0; i < maxLength; i++) {
+      const dateVal = updateArr[i] || '-';
+      const statusVal = validasiArr[i] || '-';
+      itemsHtml += `
+        <div class="flex items-center justify-between py-1.5 border-b border-[#f1f3f4] dark:border-[#2d2d2d] last:border-0">
+          <span class="font-bold text-[#1a73e8] dark:text-[#8ab4f8]">${escapeHtml(dateVal)}</span>
+          <span class="font-medium text-[#202124] dark:text-[#e8eaed]">${escapeHtml(statusVal)}</span>
+        </div>`;
+    }
+    historyList.innerHTML = itemsHtml;
+  }
+
+  document.getElementById('historyModal').classList.remove('hidden');
+}
+
+function closeHistoryModal() {
+  document.getElementById('historyModal').classList.add('hidden');
 }
 
 function toggleFilterMenu(columnKey, event) {
@@ -537,7 +608,7 @@ function openModal(mode, data = null) {
     document.getElementById('inputStatus').value = data.status || '';
     document.getElementById('inputKomoditi').value = data.komoditi || '';
     document.getElementById('inputCp').value = data.cp || '';
-    document.getElementById('inputValidasi').value = data.validasi || '';
+    document.getElementById('inputValidasi').value = parseJsonbFirst(data.validasi);
   }
 
   modal.classList.remove('hidden');
@@ -558,23 +629,56 @@ async function saveData(e) {
 
   const editNo = document.getElementById('editNo').value;
   const currentDate = new Date().toISOString().split('T')[0];
+  const newValidasiInput = document.getElementById('inputValidasi').value.trim();
 
-  const payload = {
-    lokasi: document.getElementById('inputLokasi').value.trim() || null,
-    lantai: document.getElementById('inputLantai').value.trim() || null,
-    nama_toko: document.getElementById('inputNamaToko').value.trim() || null,
-    luas: document.getElementById('inputLuas').value.trim() || null,
-    tipe: document.getElementById('inputTipe').value.trim() || null,
-    penyewa: document.getElementById('inputPenyewa').value.trim() || null,
-    status: document.getElementById('inputStatus').value.trim() || null,
-    komoditi: document.getElementById('inputKomoditi').value.trim() || null,
-    cp: document.getElementById('inputCp').value.trim() || null,
-    validasi: document.getElementById('inputValidasi').value.trim() || null,
-    update: currentDate
-  };
+  let validasiArray = [];
+  let updateArray = [];
 
   try {
     if (editNo) {
+      const existingData = rawDataMap.get(parseInt(editNo, 10)) || {};
+
+      // Parsing riwayat validasi lama
+      if (Array.isArray(existingData.validasi)) {
+        validasiArray = [...existingData.validasi];
+      } else if (existingData.validasi) {
+        try { validasiArray = JSON.parse(existingData.validasi); } catch { validasiArray = [existingData.validasi]; }
+      }
+
+      // Parsing riwayat update lama
+      if (Array.isArray(existingData.update)) {
+        updateArray = [...existingData.update];
+      } else if (existingData.update) {
+        try { updateArray = JSON.parse(existingData.update); } catch { updateArray = [existingData.update]; }
+      }
+
+      if (!Array.isArray(validasiArray)) validasiArray = [validasiArray];
+      if (!Array.isArray(updateArray)) updateArray = [updateArray];
+
+      const lastValidasi = validasiArray[0] || '';
+
+      // Jika ada perubahan nilai validasi, push ke paling awal (unshift)
+      if (newValidasiInput !== lastValidasi) {
+        if (newValidasiInput) {
+          validasiArray.unshift(newValidasiInput);
+          updateArray.unshift(currentDate);
+        }
+      }
+
+      const payload = {
+        lokasi: document.getElementById('inputLokasi').value.trim() || null,
+        lantai: document.getElementById('inputLantai').value.trim() || null,
+        nama_toko: document.getElementById('inputNamaToko').value.trim() || null,
+        luas: document.getElementById('inputLuas').value.trim() || null,
+        tipe: document.getElementById('inputTipe').value.trim() || null,
+        penyewa: document.getElementById('inputPenyewa').value.trim() || null,
+        status: document.getElementById('inputStatus').value.trim() || null,
+        komoditi: document.getElementById('inputKomoditi').value.trim() || null,
+        cp: document.getElementById('inputCp').value.trim() || null,
+        validasi: validasiArray,
+        update: updateArray
+      };
+
       const { error } = await _supabase
         .from(currentSourceTable)
         .update(payload)
@@ -582,6 +686,12 @@ async function saveData(e) {
 
       if (error) throw error;
     } else {
+      // Untuk Insert Data Baru
+      if (newValidasiInput) {
+        validasiArray = [newValidasiInput];
+        updateArray = [currentDate];
+      }
+
       const { data: maxNoData, error: maxNoError } = await _supabase
         .from(currentSourceTable)
         .select('no')
@@ -595,7 +705,20 @@ async function saveData(e) {
         nextNo = parseInt(maxNoData[0].no, 10) + 1;
       }
 
-      payload.no = nextNo;
+      const payload = {
+        no: nextNo,
+        lokasi: document.getElementById('inputLokasi').value.trim() || null,
+        lantai: document.getElementById('inputLantai').value.trim() || null,
+        nama_toko: document.getElementById('inputNamaToko').value.trim() || null,
+        luas: document.getElementById('inputLuas').value.trim() || null,
+        tipe: document.getElementById('inputTipe').value.trim() || null,
+        penyewa: document.getElementById('inputPenyewa').value.trim() || null,
+        status: document.getElementById('inputStatus').value.trim() || null,
+        komoditi: document.getElementById('inputKomoditi').value.trim() || null,
+        cp: document.getElementById('inputCp').value.trim() || null,
+        validasi: validasiArray,
+        update: updateArray
+      };
 
       const { error } = await _supabase
         .from(currentSourceTable)
@@ -654,7 +777,11 @@ async function exportCSV() {
     const csvRows = [headers.join(',')];
 
     data.forEach(row => {
-      const values = headers.map(header => `"${String(row[header] ?? '').replace(/"/g, '""')}"`);
+      const values = headers.map(header => {
+        const rawVal = row[header];
+        const val = (header === 'validasi' || header === 'update') ? parseJsonbFirst(rawVal) : rawVal;
+        return `"${String(val ?? '').replace(/"/g, '""')}"`;
+      });
       csvRows.push(values.join(','));
     });
 

@@ -207,7 +207,7 @@
                     <th scope="col" class="p-2.5 w-[9%] relative">
                       <div class="flex items-center justify-between gap-0.5"><span class="truncate">CP</span><button id="btn-filter-cp" onclick="toggleFilterMenu('cp', event)"></button></div>
                     </th>
-                    <th scope="col" class="p-2.5 w-[7%] text-center relative">
+                    <th scope="col" class="p-2.5 w-[9%] text-center relative">
                       <div class="flex items-center justify-center gap-0.5"><span class="truncate">Validasi</span><button id="btn-filter-validasi" onclick="toggleFilterMenu('validasi', event)"></button></div>
                     </th>
                     <th scope="col" class="p-2.5 w-[8%] text-center relative">
@@ -376,7 +376,7 @@
           </div>
           <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Validasi</label>
-            <input type="text" id="inputValidasi" placeholder="Valid / Pending..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <input type="text" id="inputValidasi" placeholder="Buka / Tutup / Valid..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
           </div>
         </div>
 
@@ -392,6 +392,22 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL RIWAYAT VALIDASI -->
+  <div id="historyModal" class="fixed inset-0 bg-black/60 z-[10006] hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1e1e1e] max-w-xs sm:max-w-sm w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043] flex flex-col">
+      <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 py-3 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center">
+        <h3 class="font-bold text-xs sm:text-sm">Riwayat Validasi</h3>
+        <button onclick="closeHistoryModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-lg font-bold cursor-pointer">&times;</button>
+      </div>
+      <div id="historyListContent" class="p-4 max-h-60 overflow-y-auto custom-scroll font-mono text-xs space-y-1.5 text-[#202124] dark:text-[#e8eaed]">
+        <!-- Riwayat format 'YYYY-MM-DD Validasi' di-render di sini -->
+      </div>
+      <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 py-2 border-t border-[#f1f3f4] dark:border-[#3c4043] text-right">
+        <button onclick="closeHistoryModal()" class="px-3 py-1 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg font-semibold transition cursor-pointer text-xs">Tutup</button>
+      </div>
     </div>
   </div>
 
