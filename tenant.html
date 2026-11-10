@@ -133,8 +133,10 @@
     
     <!-- HEADER -->
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
-      <div class="flex items-center gap-1.5 shrink-0">
-        <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Tenant</h2>
+  <div class="flex items-center gap-1.5 shrink-0">
+    <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Tenant</h2>
+        <!-- BADGE STATUS AKTIF (PBC / PBM) -->
+        <span id="activeBoBadge" class="text-xs sm:text-sm font-bold text-[#5f6368] dark:text-[#9aa0a6]"></span>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -150,7 +152,7 @@
           </svg>
           <input type="text" id="globalSearchInput" 
                  onkeydown="if(event.key==='Enter') triggerGlobalSearch()" 
-                 placeholder="Cari lokasi, nama toko, penyewa... (Enter)" 
+                 placeholder="Cari lokasi, nama toko, penyewa... " 
                  class="w-full h-7 sm:h-8 bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-full pl-8 pr-6 text-xs outline-none focus:border-blue-500 transition-all" />
           <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden cursor-pointer" title="Hapus Pencarian">✕</button>
         </div>

@@ -110,6 +110,18 @@ function toggleHamburgerMenu(e) {
   if (dropdown) dropdown.classList.toggle('hidden');
 }
 
+// UPDATE BADGE INFORMASI BO DI SAMPING JUDUL
+function updateActiveBoBadge() {
+  const badge = document.getElementById('activeBoBadge');
+  if (!badge) return;
+
+  if (currentSourceTable === 'tenant_pbm') {
+    badge.innerText = ' PBM';
+  } else {
+    badge.innerText = ' PBC';
+  }
+}
+
 function switchTenantSource(targetTable) {
   if (currentSourceTable === targetTable) return;
 
@@ -126,6 +138,7 @@ function switchTenantSource(targetTable) {
   setupRealtimeSubscription();
   fetchTableData();
   renderHamburgerMenuContent();
+  updateActiveBoBadge();
 }
 
 function renderHamburgerMenuContent() {
@@ -134,9 +147,7 @@ function renderHamburgerMenuContent() {
 
   let html = '';
 
-  // --- TOGGLE PBC & PBM BERDASARKAN BO ---
-  html += `<div class="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-[#dadce0] dark:border-[#3c4043] bg-slate-50 dark:bg-[#1a1a1a]">Kategori Tenant</div>`;
-
+  // --- TOGGLE PBC & PBM BERDASARKAN BO (Teks Header "Kategori Tenant" Telah Dihapus) ---
   if (userBo === 'tcbu') {
     // Bisa beralih PBC dan PBM
     html += `
@@ -241,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   renderHamburgerMenuContent();
+  updateActiveBoBadge();
 
   if (globalSearchQuery) {
     const searchInput = document.getElementById('globalSearchInput');
