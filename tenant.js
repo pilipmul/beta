@@ -313,11 +313,41 @@ function updateFilterButtonStyles() {
 }
 
 function applySupabaseFilters(query) {
+  // Sync globalSearchQuery into tableFilter if available
+  if (tableFilter) {
+    tableFilter.globalSearchQuery = globalSearchQuery;
+  }
+
+  // Safe Supabase ILIKE filters for standard string columns only
+  if (globalSearchQuery) {
+    const rawTerm = globalSearchQuery.trim();
+    const q = `%${rawTerm}%`;
+
+    const searchConditions = [
+      `lokasi.ilike.${q}`,
+      `nama_toko.ilike.${q}`,
+      `tipe.ilike.${q}`,
+      `penyewa.ilike.${q}`,
+      `status.ilike.${q}`,
+      `komoditi.ilike.${q}`,
+      `cp.ilike.${q}`
+    ];
+
+    // Safe query for numeric 'no' column without type mismatch
+    if (!isNaN(rawTerm) && rawTerm !== '') {
+      searchConditions.push(`no.eq.${parseInt(rawTerm, 10)}`);
+    }
+
+    query = query.or(searchConditions.join(','));
+  }
+
+  // Apply column-specific popover filters if tableFilter exists
   if (tableFilter && typeof tableFilter.applyToSupabaseQuery === 'function') {
-    return tableFilter.applyToSupabaseQuery(query, [
-      'lokasi', 'nama_toko', 'tipe', 'penyewa', 'status', 'komoditi', 'cp', 'validasi'
+    query = tableFilter.applyToSupabaseQuery(query, [
+      'lokasi', 'nama_toko', 'tipe', 'penyewa', 'status', 'komoditi', 'cp'
     ]);
   }
+
   return query;
 }
 
@@ -326,13 +356,64 @@ async function fetchTableData() {
   tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data ${currentSourceTable === 'tenant_pbm' ? 'PBM' : 'PBC'}...</td></tr>`;
 
   try {
-    let countQuery = _supabase.from(currentSourceTable).select('*', { count: 'exact', head: true });
-    countQuery = applySupabaseFilters(countQuery);
+    let dataQuery = _supabase.from(currentSourceTable).select('*');
+    
+    // Fetch base query filtered by search text
+    if (!globalSearchQuery) {
+      dataQuery = applySupabaseFilters(dataQuery);
+    } else {
+      // If searching, fetch all matching database records to perform safe all-column matching
+      const rawTerm = globalSearchQuery.trim();
+      const q = `%${rawTerm}%`;
+      const conditions = [
+        `lokasi.ilike.${q}`,
+        `nama_toko.ilike.${q}`,
+        `tipe.ilike.${q}`,
+        `penyewa.ilike.${q}`,
+        `status.ilike.${q}`,
+        `komoditi.ilike.${q}`,
+        `cp.ilike.${q}`
+      ];
+      if (!isNaN(rawTerm) && rawTerm !== '') {
+        conditions.push(`no.eq.${parseInt(rawTerm, 10)}`);
+      }
+      dataQuery = dataQuery.or(conditions.join(','));
+    }
 
-    const { count, error: countErr } = await countQuery;
-    if (countErr) throw countErr;
+    if (sortConfig.column && sortConfig.direction) {
+      dataQuery = dataQuery.order(sortConfig.column, { ascending: sortConfig.direction === 'asc' });
+    } else {
+      dataQuery = dataQuery.order('no', { ascending: true });
+    }
 
-    totalRows = count || 0;
+    const { data, error } = await dataQuery;
+    if (error) throw error;
+
+    let rows = data || [];
+
+    // Complete all-column matching client-side (including 'luas', 'validasi', 'update', 'no')
+    if (globalSearchQuery) {
+      const term = globalSearchQuery.trim().toLowerCase();
+      rows = rows.filter(row => {
+        const noMatch = String(row.no || '').toLowerCase().includes(term);
+        const lokasiMatch = String(row.lokasi || '').toLowerCase().includes(term);
+        const tokoMatch = String(row.nama_toko || '').toLowerCase().includes(term);
+        const luasMatch = String(row.luas || '').toLowerCase().includes(term);
+        const tipeMatch = String(row.tipe || '').toLowerCase().includes(term);
+        const penyewaMatch = String(row.penyewa || '').toLowerCase().includes(term);
+        const statusMatch = String(row.status || '').toLowerCase().includes(term);
+        const komoditiMatch = String(row.komoditi || '').toLowerCase().includes(term);
+        const cpMatch = String(row.cp || '').toLowerCase().includes(term);
+        const validasiMatch = String(parseJsonbFirst(row.validasi)).toLowerCase().includes(term);
+        const updateMatch = String(parseJsonbFirst(row.update)).toLowerCase().includes(term);
+
+        return noMatch || lokasiMatch || tokoMatch || luasMatch || tipeMatch || 
+               penyewaMatch || statusMatch || komoditiMatch || cpMatch || 
+               validasiMatch || updateMatch;
+      });
+    }
+
+    totalRows = rows.length;
     document.getElementById('totalDataCount').innerText = totalRows;
 
     if (totalRows === 0) {
@@ -346,23 +427,9 @@ async function fetchTableData() {
     if (currentPage > totalPages) currentPage = totalPages;
 
     const fromIndex = (currentPage - 1) * PAGE_SIZE;
-    const toIndex = Math.min(currentPage * PAGE_SIZE - 1, totalRows - 1);
+    const toIndex = Math.min(currentPage * PAGE_SIZE, totalRows);
 
-    let dataQuery = _supabase.from(currentSourceTable).select('*');
-    dataQuery = applySupabaseFilters(dataQuery);
-
-    if (sortConfig.column && sortConfig.direction) {
-      dataQuery = dataQuery.order(sortConfig.column, { ascending: sortConfig.direction === 'asc' });
-    } else {
-      dataQuery = dataQuery.order('no', { ascending: true });
-    }
-
-    dataQuery = dataQuery.range(fromIndex, toIndex);
-
-    const { data, error } = await dataQuery;
-    if (error) throw error;
-
-    fetchedData = data || [];
+    fetchedData = rows.slice(fromIndex, toIndex);
     rawDataMap.clear();
     fetchedData.forEach(row => rawDataMap.set(row.no, row));
 
@@ -403,32 +470,30 @@ function renderTable() {
       statusBadgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-500/20';
     }
 
-    // Mengambil status validasi dan tanggal update terbaru
     const currentValidasi = parseJsonbFirst(row.validasi);
     const currentUpdate = parseJsonbFirst(row.update);
 
-    // Di dalam renderTable(), ganti bagian <td> validasi dengan kode berikut:
-tr.innerHTML = `
-  <td class="p-2.5 text-center">${noContent}</td>
-  <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.lokasi || '-')}</td>
-  <td class="p-2.5 font-semibold text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.nama_toko || '-')}</td>
-  <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.luas || '-')}</td>
-  <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.tipe || '-')}</td>
-  <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.penyewa || '-')}</td>
-  <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.komoditi || '-')}</td>
-  <td class="p-2.5 text-center">
-    <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusBadgeClass}">
-      ${escapeHtml(row.status || '-')}
-    </span>
-  </td>
-  <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate" title="${escapeHtml(row.cp || '')}">${escapeHtml(row.cp || '-')}</td>
-  <td class="p-2.5 text-center">
-    <button onclick="showHistoryModal(${row.no})" title="Lihat riwayat validasi #${row.no}" class="font-mono text-xs font-semibold text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] transition-colors cursor-pointer select-none">
-      ${escapeHtml(currentValidasi)}
-    </button>
-  </td>
-  <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] font-mono text-[11px] truncate">${escapeHtml(currentUpdate)}</td>
-`;
+    tr.innerHTML = `
+      <td class="p-2.5 text-center">${noContent}</td>
+      <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.lokasi || '-')}</td>
+      <td class="p-2.5 font-semibold text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.nama_toko || '-')}</td>
+      <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.luas || '-')}</td>
+      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.tipe || '-')}</td>
+      <td class="p-2.5 font-medium text-[#202124] dark:text-[#f1f3f4] break-words">${escapeHtml(row.penyewa || '-')}</td>
+      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate">${escapeHtml(row.komoditi || '-')}</td>
+      <td class="p-2.5 text-center">
+        <span class="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusBadgeClass}">
+          ${escapeHtml(row.status || '-')}
+        </span>
+      </td>
+      <td class="p-2.5 text-[#5f6368] dark:text-[#9aa0a6] truncate" title="${escapeHtml(row.cp || '')}">${escapeHtml(row.cp || '-')}</td>
+      <td class="p-2.5 text-center">
+        <button onclick="showHistoryModal(${row.no})" title="Lihat riwayat validasi #${row.no}" class="font-mono text-xs font-semibold text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] transition-colors cursor-pointer select-none">
+          ${escapeHtml(currentValidasi)}
+        </button>
+      </td>
+      <td class="p-2.5 text-center text-[#5f6368] dark:text-[#9aa0a6] font-mono text-[11px] truncate">${escapeHtml(currentUpdate)}</td>
+    `;
     tbody.appendChild(tr);
   });
 
@@ -638,14 +703,12 @@ async function saveData(e) {
     if (editNo) {
       const existingData = rawDataMap.get(parseInt(editNo, 10)) || {};
 
-      // Parsing riwayat validasi lama
       if (Array.isArray(existingData.validasi)) {
         validasiArray = [...existingData.validasi];
       } else if (existingData.validasi) {
         try { validasiArray = JSON.parse(existingData.validasi); } catch { validasiArray = [existingData.validasi]; }
       }
 
-      // Parsing riwayat update lama
       if (Array.isArray(existingData.update)) {
         updateArray = [...existingData.update];
       } else if (existingData.update) {
@@ -657,7 +720,6 @@ async function saveData(e) {
 
       const lastValidasi = validasiArray[0] || '';
 
-      // Jika ada perubahan nilai validasi, push ke paling awal (unshift)
       if (newValidasiInput !== lastValidasi) {
         if (newValidasiInput) {
           validasiArray.unshift(newValidasiInput);
@@ -686,7 +748,6 @@ async function saveData(e) {
 
       if (error) throw error;
     } else {
-      // Untuk Insert Data Baru
       if (newValidasiInput) {
         validasiArray = [newValidasiInput];
         updateArray = [currentDate];
