@@ -12,6 +12,7 @@ let fetchedData = [];
 
 let dbUsersList = [];
 let selectedExportSites = [];
+let userBo = null; // Menyimpan BO user: 'PBC', 'PBM', atau 'TCBU'
 
 // Instance TableFilterManager
 let tableFilter = null;
@@ -27,6 +28,109 @@ function isSuperAdmin() {
   } catch {
     return false;
   }
+}
+
+async function loadCurrentUserBo() {
+  try {
+    const session = localStorage.getItem("user");
+    if (!session) return null;
+    const userData = JSON.parse(session);
+
+    if (userData.bo) {
+      userBo = String(userData.bo).trim().toUpperCase();
+      return userBo;
+    }
+
+    let query = _supabase.from('users').select('bo');
+    if (userData.id) {
+      query = query.eq('id', userData.id);
+    } else if (userData.username) {
+      query = query.eq('username', userData.username);
+    } else if (userData.nama) {
+      query = query.eq('nama', userData.nama);
+    } else {
+      return null;
+    }
+
+    const { data, error } = await query.single();
+    if (!error && data && data.bo) {
+      userBo = String(data.bo).trim().toUpperCase();
+      userData.bo = userBo;
+      localStorage.setItem("user", JSON.stringify(userData));
+    }
+    return userBo;
+  } catch (err) {
+    console.error('Gagal memuat BO user:', err);
+    return null;
+  }
+}
+
+function isSiteAllowed(site) {
+  if (!userBo) return false;
+  const normalizedSite = String(site || '').trim().toUpperCase();
+  if (userBo === 'TCBU') {
+    return normalizedSite === 'PBC' || normalizedSite === 'PBM';
+  }
+  return normalizedSite === userBo;
+}
+
+function applyBoAccessFilter(query) {
+  if (!userBo) {
+    return query.eq('site', '__UNAUTHORIZED__');
+  }
+  if (userBo === 'PBC' || userBo === 'PBM') {
+    return query.ilike('site', userBo);
+  }
+  if (userBo === 'TCBU') {
+    return query.in('site', ['PBC', 'PBM', 'pbc', 'pbm']);
+  }
+  return query.eq('site', '__UNAUTHORIZED__');
+}
+
+function applyBoFilterToHeaderDropdown(filterInstance) {
+  if (!filterInstance) return;
+
+  const methodNames = ['openFilter', 'openPopover', 'loadColumnOptions', 'fetchUniqueValues'];
+  methodNames.forEach(method => {
+    if (typeof filterInstance[method] === 'function') {
+      const originalMethod = filterInstance[method].bind(filterInstance);
+      filterInstance[method] = async function (...args) {
+        const res = await originalMethod(...args);
+        if (filterInstance.dbFilterOptions && Array.isArray(filterInstance.dbFilterOptions['site'])) {
+          filterInstance.dbFilterOptions['site'] = filterInstance.dbFilterOptions['site'].filter(val =>
+            isSiteAllowed(val)
+          );
+        }
+        renderCleanSiteCheckboxDOM();
+        return res;
+      };
+    }
+  });
+
+  const container = document.getElementById('filterItemsList');
+  if (container) {
+    const observer = new MutationObserver(() => {
+      if (filterInstance.activeFilterColumn === 'site') {
+        renderCleanSiteCheckboxDOM();
+      }
+    });
+    observer.observe(container, { childList: true, subtree: true });
+  }
+}
+
+function renderCleanSiteCheckboxDOM() {
+  const container = document.getElementById('filterItemsList');
+  if (!container) return;
+
+  container.querySelectorAll('label, div').forEach(item => {
+    const cb = item.querySelector('input[type="checkbox"]');
+    if (cb && cb.id !== 'selectAllCheckbox') {
+      const val = cb.value || item.textContent.trim();
+      if (val && !isSiteAllowed(val)) {
+        item.remove();
+      }
+    }
+  });
 }
 
 function toggleHamburgerMenu(e) {
@@ -67,7 +171,9 @@ function renderHamburgerMenuContent() {
   container.innerHTML = items.join('');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadCurrentUserBo();
+
   const hamburgerMenuOptions = [];
   if (isSuperAdmin()) {
     hamburgerMenuOptions.push({
@@ -108,6 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Sembunyikan opsi site yang tidak sesuai BO pada filter header
+  applyBoFilterToHeaderDropdown(tableFilter);
+
   fetchTableData();
   preloadSuggestions();
   setupDropzone();
@@ -115,10 +224,16 @@ document.addEventListener('DOMContentLoaded', () => {
   _supabase
     .channel('public:assets')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'assets' }, (payload) => {
-      handleRealtimeUpdate(payload.new);
+      if (isSiteAllowed(payload.new?.site)) {
+        handleRealtimeUpdate(payload.new);
+      } else {
+        fetchTableData();
+      }
     })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assets' }, () => {
-      fetchTableData();
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'assets' }, (payload) => {
+      if (isSiteAllowed(payload.new?.site)) {
+        fetchTableData();
+      }
     })
     .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'assets' }, () => {
       fetchTableData();
@@ -410,6 +525,7 @@ async function fetchTableData() {
 
   try {
     let countQuery = _supabase.from('assets').select('*', { count: 'exact', head: true });
+    countQuery = applyBoAccessFilter(countQuery);
     countQuery = tableFilter.applyToSupabaseQuery(countQuery, ['aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note']);
 
     const { count, error: countErr } = await countQuery;
@@ -434,6 +550,7 @@ async function fetchTableData() {
     const toIndex = Math.min(currentPage * PAGE_SIZE - 1, totalRows - 1);
 
     let dataQuery = _supabase.from('assets').select('*');
+    dataQuery = applyBoAccessFilter(dataQuery);
     dataQuery = tableFilter.applyToSupabaseQuery(dataQuery, ['aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note']);
 
     if (currentSort.column) {
@@ -712,10 +829,14 @@ async function openExportModal() {
   const modal = document.getElementById('exportModal');
   
   try {
-    const { data, error } = await _supabase
+    let query = _supabase
       .from('assets')
       .select('site')
       .not('site', 'is', null);
+
+    query = applyBoAccessFilter(query);
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -801,12 +922,19 @@ async function processExportCSV() {
     return;
   }
 
+  const allowedSelectedSites = selectedExportSites.filter(site => isSiteAllowed(site));
+  if (allowedSelectedSites.length === 0) {
+    alert('Anda tidak memiliki akses untuk mengekspor site yang dipilih.');
+    return;
+  }
+
   try {
     let query = _supabase
       .from('assets')
       .select('*')
-      .in('site', selectedExportSites);
+      .in('site', allowedSelectedSites);
 
+    query = applyBoAccessFilter(query);
     query = tableFilter.applyToSupabaseQuery(query, ['aset', 'site', 'lokasi', 'pic', 'kondisi', 'id', 'note']);
 
     const { data, error } = await query;
@@ -847,9 +975,9 @@ async function processExportCSV() {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
