@@ -11,6 +11,7 @@ class TableFilterManager {
     this.allColumns = options.columns || [];
     this.dateColumns = new Set(options.dateColumns || ['date', 'created_at', 'updated_at']);
     this.numericColumns = new Set(options.numericColumns || ['no', 'in', 'out', 'balance']);
+    this.jsonbColumns = new Set(options.jsonbColumns || ['validasi', 'update']);
     this.onFilterChange = options.onFilterChange;
     
     this.globalSearchQuery = options.globalSearchQuery || '';
@@ -38,6 +39,29 @@ class TableFilterManager {
     }
   }
 
+  // Ekstrak nilai pertama (LIFO) jika kolom bertipe JSONB array
+  _extractValue(rawVal, colKey) {
+    if (rawVal === null || rawVal === undefined || rawVal === '') return '-';
+
+    if (this.jsonbColumns.has(colKey)) {
+      if (Array.isArray(rawVal)) {
+        return rawVal[0] !== undefined && rawVal[0] !== null && rawVal[0] !== '' ? String(rawVal[0]) : '-';
+      }
+      if (typeof rawVal === 'string') {
+        try {
+          const parsed = JSON.parse(rawVal);
+          if (Array.isArray(parsed)) {
+            return parsed[0] !== undefined && parsed[0] !== null && parsed[0] !== '' ? String(parsed[0]) : '-';
+          }
+        } catch (e) {
+          return rawVal;
+        }
+      }
+    }
+
+    return String(rawVal);
+  }
+
   _applySingleFilter(query, colKey, selectedSet) {
     if (!selectedSet || selectedSet.size === 0) return query;
 
@@ -45,6 +69,27 @@ class TableFilterManager {
     const hasBlank = selectedArray.includes('-');
     const nonBlankValues = selectedArray.filter(v => v !== '-');
     const isNumeric = this.numericColumns.has(colKey);
+    const isJsonb = this.jsonbColumns.has(colKey);
+
+    // Penanganan khusus kolom JSONB (cek elemen indeks ke-0 / LIFO)
+    if (isJsonb) {
+      const targetCol = `${colKey}->>0`;
+      const conditions = [];
+
+      if (hasBlank) {
+        conditions.push(`${colKey}.is.null`);
+        conditions.push(`${targetCol}.is.null`);
+        conditions.push(`${targetCol}.eq.""`);
+      }
+
+      if (nonBlankValues.length > 0) {
+        nonBlankValues.forEach(v => {
+          conditions.push(`${targetCol}.eq."${v.replace(/"/g, '\\"')}"`);
+        });
+      }
+
+      return conditions.length > 0 ? query.or(conditions.join(',')) : query;
+    }
 
     if (hasBlank && nonBlankValues.length === 0) {
       if (isNumeric) {
@@ -133,15 +178,15 @@ class TableFilterManager {
 
     query.then(({ data, error }) => {
       if (!error && data) {
-        const vals = data.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+        const vals = data.map(r => this._extractValue(r[columnKey], columnKey));
         this.dbFilterOptions[columnKey] = Array.from(new Set(vals)).sort(sortFn);
       } else {
-        const fallback = fallbackData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+        const fallback = fallbackData.map(r => this._extractValue(r[columnKey], columnKey));
         this.dbFilterOptions[columnKey] = Array.from(new Set(fallback)).sort(sortFn);
       }
       this._updateDrafts();
     }).catch(() => {
-      const fallback = fallbackData.map(r => (r[columnKey] !== null && r[columnKey] !== undefined && r[columnKey] !== '') ? String(r[columnKey]) : '-');
+      const fallback = fallbackData.map(r => this._extractValue(r[columnKey], columnKey));
       this.dbFilterOptions[columnKey] = Array.from(new Set(fallback)).sort(sortFn);
       this._updateDrafts();
     });
