@@ -27,11 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '\u0026')
+    .replace(/</g, '\u003c')
+    .replace(/>/g, '\u003e')
+    .replace(/"/g, '\u0022')
+    .replace(/'/g, '\u0027');
 }
 
 function normalizeFloorName(floorStr) {
@@ -53,8 +53,33 @@ function closeFloatingCard() {
   }
 }
 
+// Helper metode LIFO: mengambil elemen indeks 0 (data terbaru yang terakhir masuk)
+function getLatestValue(field) {
+  if (!field) return '';
+  let val = field;
+
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        val = JSON.parse(trimmed);
+      } catch (e) {
+        return trimmed;
+      }
+    } else {
+      return trimmed;
+    }
+  }
+
+  if (Array.isArray(val) && val.length > 0) {
+    return String(val[0] || '').trim();
+  }
+
+  return '';
+}
+
 function getStatusClass(status, validasi) {
-  const v = String(validasi || '').trim().toLowerCase();
+  const v = getLatestValue(validasi).toLowerCase();
   if (v === 'tutup') return 'status-hilang';
 
   if (!status) return 'status-hilang';
@@ -103,7 +128,7 @@ async function fetchTenantFromSupabase() {
         lokasi: item.lokasi || `Tenant ${item.no}`,
         penyewa: item.penyewa || '',
         nama_toko: item.nama_toko || '',
-        update: item.update || '-',
+        update: getLatestValue(item.update) || '-',
         lantai: normalizeFloorName(rawFloor),
         koordinat: parsedCoords,
         ukuran: (parsedCoords && parsedCoords.size) ? parseFloat(parsedCoords.size) : 38,
@@ -361,6 +386,8 @@ async function showTenantDetailPopup(noTenant) {
 
     const personLabel = statusLower.includes('terjual') ? 'Pemilik' : 'Penyewa';
     const bName = (typeof activeBuilding !== 'undefined') ? activeBuilding.toUpperCase() : 'PBC';
+    const latestValidasiText = getLatestValue(data.validasi) || '-';
+    const latestUpdateText = getLatestValue(data.update) || '-';
 
     contentContainer.innerHTML = `
       <div class="flex items-start justify-between border-b border-slate-200 dark:border-zinc-800 pb-2 mb-3">
@@ -427,13 +454,13 @@ async function showTenantDetailPopup(noTenant) {
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Validasi</td>
               <td style="padding: 5px 0; text-align: right; font-weight: 600; vertical-align: top;" class="text-slate-800 dark:text-slate-100">
-                ${escapeHtml(data.validasi || '-')}
+                ${escapeHtml(latestValidasiText)}
               </td>
             </tr>
             <tr>
               <td style="padding: 5px 0; font-weight: 500; vertical-align: top;" class="text-slate-400 dark:text-slate-400">Update</td>
               <td style="padding: 5px 0; text-align: right; font-family: monospace; font-size: 11px; vertical-align: top;" class="text-slate-500 dark:text-slate-400">
-                ${escapeHtml(data.update || '-')}
+                ${escapeHtml(latestUpdateText)}
               </td>
             </tr>
           </tbody>
