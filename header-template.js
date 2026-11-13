@@ -50,9 +50,9 @@ function renderHeader() {
               </button>
               
               <div class="sidebar-text truncate">
-  <h1 class="text-[15px] font-bold leading-tight truncate">Djurnal</h1>
-</div>
-</div>
+                <h1 id="nav-header-title" class="text-[15px] font-bold leading-tight truncate">User</h1>
+              </div>
+            </div>
 
             <!-- Navigasi Menu Sidebar -->
             <nav class="flex-1 px-1.5 py-3 space-y-2 overflow-y-auto custom-scroll text-xs min-h-0">
@@ -248,12 +248,16 @@ function initNavbarAccess() {
     }
 
     const userData = user.data || user;
-    const displayName = userData.nama || userData.username || "U";
+    const displayName = (userData.nama || userData.username || "User").toString().trim();
+    const firstName = displayName.split(/\s+/)[0] || "User";
     
     const headerAvatarEl = document.getElementById("nav-header-avatar");
-    if (headerAvatarEl) headerAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+    if (headerAvatarEl) headerAvatarEl.textContent = firstName.charAt(0).toUpperCase();
 
-    const isSuperAdmin = (userData.nama || userData.username || "").toString().trim().toLowerCase() === "dede hidayat";
+    const headerTitleEl = document.getElementById("nav-header-title");
+    if (headerTitleEl) headerTitleEl.textContent = firstName;
+
+    const isSuperAdmin = displayName.toLowerCase() === "dede hidayat";
 
     const modules = [
         { id: "nav-map",          key: "map",       aksKey: "MAP"       },
