@@ -55,7 +55,7 @@
                     <div class="flex justify-center items-center mb-2">
                         <img src="logo-djurnal.png" alt="Logo Djurnal" class="h-16 w-auto object-contain rounded-xl drop-shadow-md">
                     </div>
-                    <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide uppercase mt-1">PBC Integrated Portal</p>
+                    <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 tracking-wide uppercase mt-1">Integrated Portal</p>
                 </div>
 
                 <div class="space-y-4 relative">
@@ -94,7 +94,7 @@
     </div>
 
     <footer class="w-full text-center py-4 text-xs font-medium text-slate-400 dark:text-slate-500 border-t border-slate-200/60 dark:border-slate-800/80 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm transition-colors">
-        <p>Power by: PBC Internal Dev Team</p>
+        <p>Developed by : Sylar</p>
     </footer>
 
     <script>
@@ -239,19 +239,20 @@
                 msg.className = baseMsgClass + "text-emerald-600 dark:text-emerald-400 font-bold";
                 
                 const aksesMapping = {
-                    MAP: data.map,
-                    ESKALASI: data.eskalasi,
-                    RKM: data.rkm,
-                    PERBAIKAN: data.perbaikan,
-                    TASK: data.task,
-                    SYNC: data.sync,
-                    LOG: data.log,
-                    ITEM: data.item,
-                    TENANT: data.tenant,
-                    HSE: data.hse,
-                    ASSETS: data.assets,
-                    ACCESS: data.acces
-                };
+    MAP: data.map,
+    EVENT: data.event,
+    ESKALASI: data.eskalasi,
+    RKM: data.rkm,
+    PERBAIKAN: data.perbaikan,
+    TASK: data.task,
+    SYNC: data.sync,
+    LOG: data.log,
+    ITEM: data.item,
+    TENANT: data.tenant,
+    HSE: data.hse,
+    ASSETS: data.assets,
+    ACCESS: data.acces
+};
 
                 const userPayload = { 
                     success: true, 
@@ -276,19 +277,20 @@
                 const isAdmin = (data.nama || "").toLowerCase().trim() === "dede hidayat";
                 
                 const permissions = [
-                    checkAccessVal(data.map),
-                    checkAccessVal(data.eskalasi),
-                    checkAccessVal(data.rkm),
-                    checkAccessVal(data.perbaikan),
-                    checkAccessVal(data.task),
-                    checkAccessVal(data.sync),
-                    checkAccessVal(data.log),
-                    checkAccessVal(data.item),
-                    checkAccessVal(data.tenant),
-                    checkAccessVal(data.hse),
-                    checkAccessVal(data.acces),
-                    checkAccessVal(data.assets)
-                ];
+    checkAccessVal(data.map),
+    checkAccessVal(data.event),
+    checkAccessVal(data.eskalasi),
+    checkAccessVal(data.rkm),
+    checkAccessVal(data.perbaikan),
+    checkAccessVal(data.task),
+    checkAccessVal(data.sync),
+    checkAccessVal(data.log),
+    checkAccessVal(data.item),
+    checkAccessVal(data.tenant),
+    checkAccessVal(data.hse),
+    checkAccessVal(data.acces),
+    checkAccessVal(data.assets)
+];
 
                 const activeCount = permissions.filter(Boolean).length;
 
