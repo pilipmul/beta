@@ -18,10 +18,13 @@ let selectedFiles = { before: null, after: null };
 let tableFilter;
 
 function canWriteSr() {
-  if (typeof window.canWriteModule === 'function') {
-    return window.canWriteModule('sr');
+  if (window.srAccessLevel === 'W' || window.srAccessLevel === 'R') {
+    return window.srAccessLevel === 'W';
   }
-  return window.srAccessLevel === 'W';
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('sr') || window.canWriteModule('log');
+  }
+  return false;
 }
 
 let globalSearchQuery = sessionStorage.getItem('sr_globalSearchQuery') || '';

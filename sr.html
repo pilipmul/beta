@@ -8,7 +8,7 @@
   <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
   <script>
     (function checkAuth() {
-      const userSessionString = localStorage.getItem("user") || sessionStorage.getItem("user");
+      const userSessionString = localStorage.getItem("user") || localStorage.getItem("sot_user") || sessionStorage.getItem("user");
       if (!userSessionString) {
         window.location.replace("login.html");
         return;
@@ -31,16 +31,22 @@
         function normalizeLevel(val) {
           if (!val) return "";
           const str = String(val).trim().toUpperCase();
-          if (str === "W") return "W";
+          if (str === "W" || str === "Y" || str === "TRUE" || str === "1") return "W";
           if (str === "R") return "R";
           return "";
         }
 
         const level = normalizeLevel(userData.sr) ||
                       normalizeLevel(userData.SR) ||
+                      normalizeLevel(userData.log) ||
+                      normalizeLevel(userData.LOG) ||
+                      normalizeLevel(userData.logbook) ||
                       (userData.akses && (
                         normalizeLevel(userData.akses.SR) ||
-                        normalizeLevel(userData.akses.sr)
+                        normalizeLevel(userData.akses.sr) ||
+                        normalizeLevel(userData.akses.LOG) ||
+                        normalizeLevel(userData.akses.log) ||
+                        normalizeLevel(userData.akses.logbook)
                       )) || "";
 
         if (level !== "R" && level !== "W") {
