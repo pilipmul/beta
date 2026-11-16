@@ -33,11 +33,10 @@
     <title>SyncFlow - Djurnal</title> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Auth Guard LocalStorage Terperbaiki -->
+    <!-- Auth Guard LocalStorage Terperbaiki (R / W) -->
     <script>
         (function() {
             try {
-                // Read from multiple session sources safely
                 const rawSession = localStorage.getItem("user") || localStorage.getItem("sot_user") || sessionStorage.getItem("user");
                 if (!rawSession) {
                     window.location.replace("login.html");
@@ -47,23 +46,45 @@
                 const parsed = JSON.parse(rawSession);
                 const u = parsed.data || parsed;
 
-                const nameStr = (u.nama || u.username || "").toLowerCase().trim();
-                const isSuperAdmin = nameStr === "dede hidayat";
+                if (!u) {
+                    window.location.replace("login.html");
+                    return;
+                }
 
-                const checkVal = (v) => {
-                    if (!v) return false;
+                const nameStr = (u.nama || u.username || "").toLowerCase().trim();
+                if (nameStr === "dede hidayat") {
+                    window.syncflowAccessLevel = "W";
+                    return;
+                }
+
+                const normalizeLevel = (v) => {
+                    if (!v) return "";
                     const s = String(v).trim().toUpperCase();
-                    return s === "Y" || s === "TRUE" || s === "1";
+                    if (s === "W") return "W";
+                    if (s === "R") return "R";
+                    return "";
                 };
 
-                // Check direct property sync / log or nested access object
-                const hasSyncAccess = checkVal(u.sync) || checkVal(u.log) || (u.akses && (checkVal(u.akses.syncflow) || checkVal(u.akses.sync)));
+                const level = normalizeLevel(u.sync) ||
+                              normalizeLevel(u.syncflow) ||
+                              normalizeLevel(u.SYNC) ||
+                              normalizeLevel(u.SYNCFLOW) ||
+                              (u.akses && (
+                                  normalizeLevel(u.akses.SYNCFLOW) ||
+                                  normalizeLevel(u.akses.syncflow) ||
+                                  normalizeLevel(u.akses.SYNC) ||
+                                  normalizeLevel(u.akses.sync)
+                              )) || "";
 
-                if (!isSuperAdmin && !hasSyncAccess) {
-                    window.location.replace("login.html");
+                if (level !== "R" && level !== "W") {
+                    window.location.replace("dashboard.html");
+                    return;
                 }
+
+                window.syncflowAccessLevel = level;
             } catch (err) {
                 console.error("Auth Guard Error:", err);
+                window.location.replace("login.html");
             }
         })();
     </script>
@@ -480,8 +501,9 @@
             
             <div id="popupToast" class="popup-toast"></div>
 
-            <div style="display: flex; justify-content: center; align-items: center; margin: 12px 0 16px 0; width: 100%;">
+            <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 12px 0 16px 0; width: 100%; gap: 6px;">
                 <img id="titleBtn" src="https://raw.githubusercontent.com/pilipmul/PBC-cek-Piutang/c917d70c8d2a8f1630b8dd1400a2d13c2aa55d65/Title%20PBC%20B.png" alt="PBC SyncFlow" style="display: block; margin: 0 auto;">
+                <span id="readOnlyBadge" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
             </div>
             
             <form id="myForm">
@@ -508,7 +530,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="btn-group">
+                <div class="btn-group" id="actionBtnGroup">
                     <button type="button" class="in" id="btnIn">IN</button>
                     <button type="button" class="add-row" id="addRow" onclick="handleAddRow(event)">
                         <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px" fill="#1A73E8"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
@@ -541,6 +563,13 @@
         
         const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+        function canWriteSyncflow() {
+            if (typeof window.canWriteModule === 'function') {
+                return window.canWriteModule('syncflow') || window.canWriteModule('sync');
+            }
+            return window.syncflowAccessLevel === 'W';
+        }
+
         // Ambil data user secara aman dari berbagai struktur LocalStorage
         function getUserSession() {
             try {
@@ -557,6 +586,27 @@
 
         let nameData = [], itemData = [], itemStock = {}, lastTransactions = [], gaMode = false, activeTextarea = null, longPressTimer, passAction = "", currentMode = "", currentItems = [], currentName = "";
 
+        function applySyncflowReadOnlyUI() {
+            if (canWriteSyncflow()) return;
+
+            const badge = document.getElementById("readOnlyBadge");
+            if (badge) badge.classList.remove("hidden");
+
+            const actionBtnGroup = document.getElementById("actionBtnGroup");
+            if (actionBtnGroup) actionBtnGroup.style.display = "none";
+
+            const btnGA = document.getElementById("btnGABase");
+            if (btnGA) {
+                btnGA.textContent = "Riwayat";
+                btnGA.title = "Lihat Riwayat ~50 Trx (Read Only)";
+            }
+
+            document.querySelectorAll("#itemContainer input, #itemContainer textarea").forEach(el => {
+                el.disabled = true;
+                el.style.cursor = "not-allowed";
+            });
+        }
+
         function preventNonNumeric(e) {
             if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
                 (e.keyCode === 65 && (e.ctrlKey === true || e.metaKey === true)) ||
@@ -570,13 +620,38 @@
             }
         }
 
-        function clearInput(e, btn) { e.preventDefault(); const inp = btn.parentElement.querySelector('input'); inp.value = ''; const list = btn.parentElement.querySelector('.autocomplete-list'); if(list) list.style.display = 'none'; inp.focus(); refreshAllStockOverlays(); }
-        function startLongPress(e, el) { activeTextarea = el; longPressTimer = setTimeout(() => { document.getElementById("descPopupInput").value = el.value; document.getElementById("descPopup").style.display = "flex"; document.getElementById("descPopupInput").focus(); }, 600); }
+        function clearInput(e, btn) {
+            e.preventDefault();
+            if (!canWriteSyncflow()) return;
+            const inp = btn.parentElement.querySelector('input');
+            inp.value = '';
+            const list = btn.parentElement.querySelector('.autocomplete-list');
+            if (list) list.style.display = 'none';
+            inp.focus();
+            refreshAllStockOverlays();
+        }
+
+        function startLongPress(e, el) {
+            if (!canWriteSyncflow()) return;
+            activeTextarea = el;
+            longPressTimer = setTimeout(() => {
+                document.getElementById("descPopupInput").value = el.value;
+                document.getElementById("descPopup").style.display = "flex";
+                document.getElementById("descPopupInput").focus();
+            }, 600);
+        }
         function cancelLongPress() { clearTimeout(longPressTimer); }
-        function saveDescPopup() { if (activeTextarea) activeTextarea.value = document.getElementById("descPopupInput").value; document.getElementById("descPopup").style.display = "none"; }
+        function saveDescPopup() { if (activeTextarea && canWriteSyncflow()) activeTextarea.value = document.getElementById("descPopupInput").value; document.getElementById("descPopup").style.display = "none"; }
         
         function handleGABtnClick(e) {
             e.stopPropagation();
+
+            // Jika Read Only, langsung buka riwayat transaksi tanpa akses GA Mode
+            if (!canWriteSyncflow()) {
+                openHistoryFromMenu(e);
+                return;
+            }
+
             const dropdown = document.getElementById("gaDropdownMenu");
             
             if (!gaMode) { 
@@ -603,6 +678,8 @@
         }
 
         function updateGAUI(status) { 
+            if (!canWriteSyncflow()) return;
+
             gaMode = status; 
             const btnGA = document.getElementById("btnGABase");
             const dropdown = document.getElementById("gaDropdownMenu");
@@ -712,6 +789,7 @@
         }
 
         function initAutocomplete() { 
+            if (!canWriteSyncflow()) return;
             setupAutocomplete(document.getElementById("name"), document.getElementById("nameList"), nameData); 
             document.querySelectorAll(".item-row").forEach(row => { 
                 setupAutocomplete(row.querySelector(".item"), row.querySelector(".autocomplete-list"), itemData, true, row.querySelector(".stock-overlay"), row.querySelector(".qty")); 
@@ -755,6 +833,13 @@
         } 
 
         async function handleSubmit(mode) { 
+            if (!canWriteSyncflow()) {
+                return showToast("⚠️ Akses Read Only");
+            }
+            if (mode === 'in' && !gaMode) {
+                return showToast("⚠️ Aktifkan GA Mode");
+            }
+
             currentName = document.getElementById("name").value.trim(); 
             if (!currentName) return showToast("⚠️ Pilih Nama!"); 
             
@@ -793,6 +878,7 @@
         }
         
         async function executeFinalSubmit(mode, name, items) { 
+            if (!canWriteSyncflow()) return;
             document.getElementById("loaderOverlay").style.display = "flex";
             
             try { 
@@ -807,7 +893,7 @@
                     note: it.desc || null
                 }));
 
-                const { data, error } = await supabaseClient
+                const { error } = await supabaseClient
                     .from('inventory')
                     .insert(payload);
 
@@ -834,6 +920,7 @@
         }
 
         function checkPassword() { 
+            if (!canWriteSyncflow()) return;
             if (document.getElementById("adminPass").value === "azza") { 
                 document.getElementById("passPopup").style.display = "none"; 
                 document.getElementById("adminPass").value = ""; 
@@ -883,6 +970,7 @@
 
         function handleAddRow(e) {
             if (e) e.stopPropagation();
+            if (!canWriteSyncflow()) return;
             const container = document.getElementById("itemContainer"); 
             const btnAdd = document.getElementById("addRow"); 
             if (container && container.children.length < 5) { 
@@ -906,6 +994,7 @@
 
         function removeRow(e, btn) {
             if (e) e.stopPropagation();
+            if (!canWriteSyncflow()) return;
             const container = document.getElementById("itemContainer");
             const row = btn.closest(".item-row");
             if (row && container.children.length > 1) {
@@ -937,6 +1026,7 @@
         document.getElementById("btnOut").onclick = () => handleSubmit("out");
         
         window.onload = function() {
+            applySyncflowReadOnlyUI();
             fetchDataAndUpdateUI();
 
             // Prioritaskan nama asli dari sesi login
