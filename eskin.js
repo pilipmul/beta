@@ -12,6 +12,62 @@ const userList = ["Dede H.", "Edo S.", "Sutriono", "(....................)"];
 let rowCount = 0;
 let isEditMode = false; // Flag untuk penanda mode Edit / Baru
 
+function hasWritePermission() {
+    if (typeof window.canWriteModule === "function") {
+        return window.canWriteModule("eskalasi");
+    }
+    return window.eskalasiAccessLevel === "W";
+}
+
+function applyModalPermissionState() {
+    const canWrite = hasWritePermission();
+    const form = document.getElementById("formEskin");
+    const btnAdd = document.getElementById("btnAddRow");
+    const btnSubmit = document.getElementById("btnSubmit");
+    const titleEl = document.getElementById("modalEskalasiTitle");
+    const subtitleEl = document.getElementById("modalEskalasiSubtitle");
+
+    if (titleEl) {
+        titleEl.textContent = canWrite
+            ? (isEditMode ? "Edit Pengajuan Eskalasi Budget" : "Formulir Pengajuan Eskalasi Budget")
+            : "Detail Pengajuan Eskalasi Budget (Read Only)";
+    }
+    if (subtitleEl) {
+        subtitleEl.textContent = canWrite
+            ? "Isi data anggaran dan penanggung jawab untuk mencetak dokumen PDF"
+            : "Mode lihat saja — Anda dapat mengunduh dokumen PDF eskalasi ini";
+    }
+
+    if (form) {
+        form.querySelectorAll("input, textarea").forEach(el => {
+            if (el.id === "nilai") {
+                el.readOnly = true;
+            } else {
+                el.disabled = !canWrite;
+            }
+        });
+        form.querySelectorAll(".btn-delete-row").forEach(btn => {
+            btn.style.display = canWrite ? "" : "none";
+        });
+    }
+
+    if (btnAdd) {
+        if (!canWrite) {
+            btnAdd.style.display = "none";
+            btnAdd.classList.add("hidden");
+        } else {
+            updateBtnAddVisibility();
+        }
+    }
+
+    if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = canWrite
+            ? `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg> Submit & Download PDF`
+            : `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download PDF`;
+    }
+}
+
 // Utility Convert Gambar ke Base64
 function fetchImageAsBase64(url) {
     return new Promise((resolve) => {
@@ -47,6 +103,12 @@ function updateBtnAddVisibility() {
     const tbody = document.getElementById("itemRows");
     if (!btnAdd) return;
 
+    if (!hasWritePermission()) {
+        btnAdd.style.display = "none";
+        btnAdd.classList.add("hidden");
+        return;
+    }
+
     const actualRows = tbody ? tbody.children.length : rowCount;
     rowCount = actualRows;
 
@@ -78,8 +140,13 @@ function resetFormEskalasi() {
 
 // Fungsi Buka & Tutup Modal Pop-up
 function openModalEskalasi() {
+    if (!isEditMode && !hasWritePermission()) {
+        alert("Anda hanya memiliki akses Read Only pada modul Eskalasi.");
+        return;
+    }
     const modal = document.getElementById("modalEskalasiBaru");
     if (modal) {
+        applyModalPermissionState();
         requestAnimationFrame(() => {
             modal.classList.add("active");
         });
@@ -94,7 +161,7 @@ function closeModalEskalasi() {
     }
 }
 
-// FUNGSI AMBIL DATA ESKALASI DARI SUPABASE UNTUK DIEDIT
+// FUNGSI AMBIL DATA ESKALASI DARI SUPABASE UNTUK DIEDIT / DILIHAT
 async function loadAndEditEskalasi(kodeEskalasi) {
     try {
         const { data, error } = await supabaseClient
@@ -106,7 +173,7 @@ async function loadAndEditEskalasi(kodeEskalasi) {
         if (error) throw error;
 
         if (data) {
-            isEditMode = true; // Set mode ke Edit
+            isEditMode = true; // Set mode ke Edit / View
             
             // 1. Isi input utama
             document.getElementById("displayKode").value = data.kode || "";
@@ -164,6 +231,7 @@ function cekAutofill() {
 }
 
 function showUserSuggestions(input) {
+    if (!hasWritePermission()) return;
     const listContainer = input.nextElementSibling;
     const val = input.value.toLowerCase();
     listContainer.innerHTML = "";
@@ -186,6 +254,7 @@ function showUserSuggestions(input) {
 }
 
 function showItemSuggestions(input) {
+    if (!hasWritePermission()) return;
     const listContainer = input.nextElementSibling;
     const val = input.value.trim().toLowerCase();
     listContainer.innerHTML = "";
@@ -226,12 +295,13 @@ function tambahBaris() {
     }
 
     const isFirstRow = tbody.children.length === 0;
+    const canWrite = hasWritePermission();
 
     const tr = document.createElement("tr");
     tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#252525] transition-colors group relative";
     
-    const deleteBtnHtml = !isFirstRow ? `
-        <button type="button" onclick="hapusBaris(this)" class="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 inline-flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/20 rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer z-10" title="Hapus Baris">
+    const deleteBtnHtml = (!isFirstRow && canWrite) ? `
+        <button type="button" onclick="hapusBaris(this)" class="btn-delete-row absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 inline-flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-red-500/20 rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer z-10" title="Hapus Baris">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -241,15 +311,15 @@ function tambahBaris() {
     tr.innerHTML = `
         <td class="p-2">
             <div class="relative w-full">
-                <input type="text" class="item-name w-full !bg-[#f1f3f4] dark:!bg-[#2d2d2d] !text-[#202124] dark:!text-[#e8eaed] border border-transparent dark:border-[#3c4043] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="Ketik nama item..." oninput="showItemSuggestions(this)">
+                <input type="text" ${canWrite ? '' : 'disabled'} class="item-name w-full !bg-[#f1f3f4] dark:!bg-[#2d2d2d] !text-[#202124] dark:!text-[#e8eaed] border border-transparent dark:border-[#3c4043] rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="Ketik nama item..." oninput="showItemSuggestions(this)">
                 <div class="autocomplete-list absolute left-0 right-0 mt-1 bg-white dark:bg-[#252525] border border-[#dadce0] dark:border-[#3c4043] rounded-xl max-h-40 overflow-y-auto z-50 shadow-lg hidden divide-y divide-[#f1f3f4] dark:divide-[#3c4043]"></div>
             </div>
         </td>
         <td class="p-2">
-            <input type="text" inputmode="numeric" class="item-qty w-full !bg-[#f1f3f4] dark:!bg-[#2d2d2d] !text-[#202124] dark:!text-[#e8eaed] border border-transparent dark:border-[#3c4043] rounded-xl px-3 py-1.5 text-xs text-center outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
+            <input type="text" ${canWrite ? '' : 'disabled'} inputmode="numeric" class="item-qty w-full !bg-[#f1f3f4] dark:!bg-[#2d2d2d] !text-[#202124] dark:!text-[#e8eaed] border border-transparent dark:border-[#3c4043] rounded-xl px-3 py-1.5 text-xs text-center outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
         </td>
         <td class="p-2 relative">
-            <input type="text" inputmode="numeric" class="item-cost w-full !bg-[#f1f3f4] dark:!bg-[#2d2d2d] !text-[#202124] dark:!text-[#e8eaed] border border-transparent dark:border-[#3c4043] rounded-xl pl-3 pr-8 py-1.5 text-xs text-center outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
+            <input type="text" ${canWrite ? '' : 'disabled'} inputmode="numeric" class="item-cost w-full !bg-[#f1f3f4] dark:!bg-[#2d2d2d] !text-[#202124] dark:!text-[#e8eaed] border border-transparent dark:border-[#3c4043] rounded-xl pl-3 pr-8 py-1.5 text-xs text-center outline-none focus:border-[#1a73e8] dark:focus:border-[#8ab4f8] transition" placeholder="0" oninput="this.value = this.value.replace(/[^0-9]/g, ''); hitungTotal()">
             ${deleteBtnHtml}
         </td>
     `;
@@ -260,6 +330,7 @@ function tambahBaris() {
 
 // Hapus Baris Item Spesifik
 function hapusBaris(btn) {
+    if (!hasWritePermission()) return;
     const tr = btn.closest("tr");
     if (!tr) return;
     
@@ -446,9 +517,9 @@ function generateLocalPDF(payload) {
 
     const sigY3 = doc.lastAutoTable.finalY + 12;
     doc.setFont("helvetica", "bold"); doc.setFontSize(8);
-    doc.text("Diajukan,", 35, sigY3, { align: "center" }); doc.text("Dede H.", 35, sigY3 + 12, { align: "center" });
-    doc.text("Diketahui,", 105, sigY3, { align: "center" }); doc.text("Edo S.", 105, sigY3 + 12, { align: "center" });
-    doc.text("Disetujui,", 175, sigY3, { align: "center" }); doc.text("Sutriono", 175, sigY3 + 12, { align: "center" });
+    doc.text("Diajukan,", 35, sigY3, { align: "center" }); doc.text(diajukan, 35, sigY3 + 12, { align: "center" });
+    doc.text("Diketahui,", 105, sigY3, { align: "center" }); doc.text(diketahui, 105, sigY3 + 12, { align: "center" });
+    doc.text("Disetujui,", 175, sigY3, { align: "center" }); doc.text(disetujui, 175, sigY3 + 12, { align: "center" });
 
     doc.save(`${kode.replace(/[\/\.]/g, ".")}_${subject}.pdf`);
 }
@@ -479,9 +550,7 @@ async function initEskin() {
         }
         
         updateBtnAddVisibility();
-        
-        const btnSubmit = document.getElementById("btnSubmit");
-        if (btnSubmit) btnSubmit.disabled = false;
+        applyModalPermissionState();
     } catch (e) { 
         console.error("Init Error Eskalasi:", e);
     }
@@ -532,20 +601,24 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
 
+                // Jika mode Read Only (R), hanya unduh PDF tanpa menulis ke Supabase
+                if (!hasWritePermission()) {
+                    generateLocalPDF({ kode, subject, nilai, diajukan, diketahui, disetujui, items: itemsList });
+                    return;
+                }
+
                 // 2. Format objek PIC
                 const picData = { diajukan, diketahui, disetujui };
 
                 // 3. Simpan / Edit ke Supabase Database
                 let dbError = null;
                 if (isEditMode) {
-                    // Update data berdasarkan kode eskalasi
                     const { error } = await supabaseClient
                         .from('eskalasi')
                         .update({ subject, nilai, pic: picData, item: itemsList })
                         .eq('kode', kode);
                     dbError = error;
                 } else {
-                    // Insert data baru
                     const { error } = await supabaseClient
                         .from('eskalasi')
                         .insert([{ kode, subject, nilai, pic: picData, item: itemsList }]);
@@ -563,8 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error(err);
                 alert("Proses Gagal: " + err.message);
             } finally { 
-                btn.disabled = false;
-                btn.innerText = "Submit & Download PDF";
+                applyModalPermissionState();
             }
         };
     }

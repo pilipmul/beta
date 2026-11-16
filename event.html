@@ -4,33 +4,49 @@
   <script>
   (function() {
     try {
-      const session = localStorage.getItem("user");
+      const session = localStorage.getItem("user") || sessionStorage.getItem("user");
       if (!session) {
         window.location.replace("login.html");
         return;
       }
 
-      const userData = JSON.parse(session);
+      const rawUser = JSON.parse(session);
+      const userData = rawUser.data || rawUser;
       if (!userData) {
         window.location.replace("login.html");
         return;
       }
 
-      if (userData.akses) {
-        const aks = userData.akses;
-        const punyaAkses = (aks.log === "Y" || aks.event === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
-        
-        if (!punyaAkses) {
-          alert("Anda tidak memiliki hak akses ke modul Event.");
-          window.location.replace("login.html");
-        }
+      const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
+      if (username === "dede hidayat") {
+        window.eventAccessLevel = "W";
+        return;
       }
+
+      function normalizeLevel(val) {
+        if (!val) return "";
+        const str = String(val).trim().toUpperCase();
+        if (str === "W") return "W";
+        if (str === "R") return "R";
+        return "";
+      }
+
+      const level = normalizeLevel(userData.event) ||
+                    normalizeLevel(userData.EVENT) ||
+                    (userData.akses && (normalizeLevel(userData.akses.EVENT) || normalizeLevel(userData.akses.event))) || "";
+
+      if (level !== "R" && level !== "W") {
+        window.location.replace("dashboard.html");
+        return;
+      }
+
+      window.eventAccessLevel = level;
     } catch (err) {
       console.error("Autentikasi gagal:", err);
       window.location.replace("login.html");
     }
   })();
-</script>
+  </script>
 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -127,6 +143,7 @@
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
       <div class="flex items-center gap-2 shrink-0">
         <h2 class="font-bold text-sm text-[#202124] dark:text-[#e8eaed]">Event</h2>
+        <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -260,10 +277,10 @@
                 </div>
 
                 <div class="flex items-center gap-0.5">
-                  <button id="btnHome" onclick="goToHome()" title="Pertama" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold">|&lt;</button>
-                  <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold">&lt;</button>
-                  <button id="btnNext" onclick="changePage(1)" title="Berikutnya" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold">&gt;</button>
-                  <button id="btnEnd" onclick="goToEnd()" title="Terakhir" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold">&gt;|</button>
+                  <button id="btnHome" onclick="goToHome()" title="Pertama" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold">|<</button>
+                  <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold"><</button>
+                  <button id="btnNext" onclick="changePage(1)" title="Berikutnya" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold">></button>
+                  <button id="btnEnd" onclick="goToEnd()" title="Terakhir" class="px-2 py-1 text-[#5f6368] dark:text-[#9aa0a6] disabled:opacity-30 font-mono font-bold">>|</button>
                 </div>
               </div>
             </div>
@@ -343,46 +360,48 @@
         <div>
           <label class="block font-medium text-[#5f6368] dark:text-[#9aa0a6] mb-1.5">Lampiran Foto Bukti</label>
           
-          <div class="flex border-b border-[#dadce0] dark:border-[#3c4043] mb-2 text-[11px] font-medium">
-            <button type="button" id="tabUpload" onclick="switchDocMode('upload')" class="px-3 py-2 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold">
-              📁 Upload
-            </button>
-            <button type="button" id="tabCamera" onclick="switchDocMode('camera')" class="px-3 py-2 border-b-2 border-transparent text-[#5f6368] dark:text-[#9aa0a6]">
-              📷 Kamera
-            </button>
-            <button type="button" id="tabUrl" onclick="switchDocMode('url')" class="px-3 py-2 border-b-2 border-transparent text-[#5f6368] dark:text-[#9aa0a6]">
-              🔗 URL
-            </button>
-          </div>
-
-          <div id="docSectionUpload" class="space-y-2">
-            <div id="dropzonePhoto" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] hover:border-[#1a73e8] rounded-xl p-4 text-center cursor-pointer transition bg-[#f8f9fa] dark:bg-[#252525]">
-              <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">
-                Ketuk untuk memilih foto atau <span class="text-[#1a73e8] font-semibold underline">pilih file</span>
-              </p>
-              <input type="file" id="fileInputPhoto" accept="image/*" class="hidden" onchange="handleFileSelected(this.files)" />
-            </div>
-          </div>
-
-          <div id="docSectionCamera" class="hidden space-y-2">
-            <div class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center border border-[#3c4043]">
-              <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-              <canvas id="cameraCanvas" class="hidden"></canvas>
-            </div>
-            <div class="flex items-center justify-between gap-2">
-              <button type="button" onclick="toggleCameraFacing()" class="px-3 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] rounded-xl text-xs font-medium active:scale-95">
-                🔄 Putar Kamera
+          <div id="docAttachmentControls">
+            <div class="flex border-b border-[#dadce0] dark:border-[#3c4043] mb-2 text-[11px] font-medium">
+              <button type="button" id="tabUpload" onclick="switchDocMode('upload')" class="px-3 py-2 border-b-2 border-[#1a73e8] text-[#1a73e8] dark:text-[#8ab4f8] font-bold">
+                📁 Upload
               </button>
-              <button type="button" onclick="capturePhotoFromCamera()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold active:scale-95 transition">
-                📸 Ambil Foto
+              <button type="button" id="tabCamera" onclick="switchDocMode('camera')" class="px-3 py-2 border-b-2 border-transparent text-[#5f6368] dark:text-[#9aa0a6]">
+                📷 Kamera
+              </button>
+              <button type="button" id="tabUrl" onclick="switchDocMode('url')" class="px-3 py-2 border-b-2 border-transparent text-[#5f6368] dark:text-[#9aa0a6]">
+                🔗 URL
               </button>
             </div>
-          </div>
 
-          <div id="docSectionUrl" class="hidden space-y-2">
-            <div class="flex gap-2">
-              <input type="url" id="inputUrlLink" placeholder="https://..." class="flex-1 bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent rounded-xl px-3 py-2.5 text-xs outline-none focus:border-[#1a73e8]" />
-              <button type="button" onclick="applyUrlLink()" class="px-3 py-2.5 bg-[#1a73e8] text-white rounded-xl text-xs font-medium">Tempel</button>
+            <div id="docSectionUpload" class="space-y-2">
+              <div id="dropzonePhoto" class="border-2 border-dashed border-[#dadce0] dark:border-[#3c4043] hover:border-[#1a73e8] rounded-xl p-4 text-center cursor-pointer transition bg-[#f8f9fa] dark:bg-[#252525]">
+                <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">
+                  Ketuk untuk memilih foto atau <span class="text-[#1a73e8] font-semibold underline">pilih file</span>
+                </p>
+                <input type="file" id="fileInputPhoto" accept="image/*" class="hidden" onchange="handleFileSelected(this.files)" />
+              </div>
+            </div>
+
+            <div id="docSectionCamera" class="hidden space-y-2">
+              <div class="relative bg-black rounded-xl overflow-hidden aspect-video flex items-center justify-center border border-[#3c4043]">
+                <video id="cameraVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                <canvas id="cameraCanvas" class="hidden"></canvas>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <button type="button" onclick="toggleCameraFacing()" class="px-3 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] rounded-xl text-xs font-medium active:scale-95">
+                  🔄 Putar Kamera
+                </button>
+                <button type="button" onclick="capturePhotoFromCamera()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold active:scale-95 transition">
+                  📸 Ambil Foto
+                </button>
+              </div>
+            </div>
+
+            <div id="docSectionUrl" class="hidden space-y-2">
+              <div class="flex gap-2">
+                <input type="url" id="inputUrlLink" placeholder="https://..." class="flex-1 bg-[#f1f3f4] dark:bg-[#2d2d2d] border border-transparent rounded-xl px-3 py-2.5 text-xs outline-none focus:border-[#1a73e8]" />
+                <button type="button" onclick="applyUrlLink()" class="px-3 py-2.5 bg-[#1a73e8] text-white rounded-xl text-xs font-medium">Tempel</button>
+              </div>
             </div>
           </div>
 
@@ -391,7 +410,7 @@
               <img id="imgPreviewPhoto" class="w-10 h-10 object-cover rounded-lg border border-[#dadce0] dark:border-[#3c4043]" src="" alt="preview">
               <span id="fileNamePhoto" class="text-xs truncate max-w-[160px] font-medium text-[#202124] dark:text-[#e8eaed]">File Selected</span>
             </div>
-            <button type="button" onclick="removeSelectedFile()" class="text-xs text-red-500 font-semibold hover:underline shrink-0 p-1">Hapus</button>
+            <button type="button" id="btnRemovePhoto" onclick="removeSelectedFile()" class="text-xs text-red-500 font-semibold hover:underline shrink-0 p-1">Hapus</button>
           </div>
         </div>
 
@@ -402,9 +421,9 @@
           </button>
           <div class="flex gap-2 ml-auto">
             <button type="button" onclick="closeModal()" class="px-4 py-2.5 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium cursor-pointer">
-              Batal
+              Tutup
             </button>
-            <button type="submit" class="px-5 py-2.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-md active:scale-95 transition cursor-pointer">
+            <button type="submit" id="btnSaveEvent" class="px-5 py-2.5 bg-[#1a73e8] dark:bg-[#8ab4f8] text-white dark:text-[#202124] rounded-xl font-medium shadow-md active:scale-95 transition cursor-pointer">
               Simpan
             </button>
           </div>
@@ -418,7 +437,7 @@
     <div class="max-w-2xl w-full bg-white dark:bg-[#1e1e1e] rounded-2xl overflow-hidden shadow-2xl border border-[#dadce0] dark:border-[#3c4043]" onclick="event.stopPropagation()">
       <div class="px-4 py-3 bg-[#f8f9fa] dark:bg-[#252525] border-b border-[#dadce0] dark:border-[#3c4043] flex items-center justify-between text-xs font-bold">
         <span id="modalPhotoTitle" class="text-[#202124] dark:text-[#e8eaed]">Preview Foto Event</span>
-        <button onclick="closePhotoModal()" class="text-xl p-1 cursor-pointer text-[#5f6368] hover:text-[#202124] dark:text-[#9aa0a6] dark:hover:text-white">&times;</button>
+        <button onclick="closePhotoModal()" class="text-xl p-1 cursor-pointer text-[#5f6368] hover:text-[#202124] dark:text-[#9aa0a6] dark:hover:text-white">×</button>
       </div>
       <div class="p-2 flex justify-center bg-zinc-950">
         <img id="modalImage" class="max-h-[75vh] object-contain rounded-lg" src="" alt="photo view">
@@ -433,7 +452,7 @@
         <h3 class="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f1f3f4] flex items-center gap-2">
           <span>📥</span> Export CSV Event
         </h3>
-        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">×</button>
       </div>
 
       <div class="space-y-3.5">

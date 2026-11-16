@@ -2,29 +2,49 @@
 <html lang="id">
 <head>
   <script>
-    (function() {
-      try {
-        const session = localStorage.getItem("user");
-        if (!session) {
-          window.location.replace("login.html");
-          return;
-        }
+    (function checkAuth() {
+      const userSessionString = localStorage.getItem("user") || sessionStorage.getItem("user");
 
-        const userData = JSON.parse(session);
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+
+      try {
+        const rawUser = JSON.parse(userSessionString);
+        const userData = rawUser.data || rawUser;
         if (!userData) {
           window.location.replace("login.html");
           return;
         }
 
-        if (userData.akses) {
-          const aks = userData.akses;
-          const punyaAkses = (aks.inventory === "Y" || aks.log === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
-          
-          if (!punyaAkses) {
-            alert("Anda tidak memiliki hak akses ke modul Inventory/Logistics.");
-            window.location.replace("login.html");
-          }
+        const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
+        if (username === "dede hidayat") {
+          window.logisticsAccessLevel = "W";
+          return;
         }
+
+        function normalizeLevel(val) {
+          if (!val) return "";
+          const str = String(val).trim().toUpperCase();
+          if (str === "W") return "W";
+          if (str === "R") return "R";
+          return "";
+        }
+
+        const level = normalizeLevel(userData.log) ||
+                      normalizeLevel(userData.LOG) ||
+                      (userData.akses && (
+                        normalizeLevel(userData.akses.LOG) ||
+                        normalizeLevel(userData.akses.log)
+                      )) || "";
+
+        if (level !== "R" && level !== "W") {
+          window.location.replace("dashboard.html");
+          return;
+        }
+
+        window.logisticsAccessLevel = level;
       } catch (err) {
         console.error("Autentikasi gagal:", err);
         window.location.replace("login.html");
@@ -154,8 +174,9 @@
     
     <!-- HEADER RESPONSIVE -->
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
-      <div class="flex items-center gap-1.5 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Logistics</h2>
+        <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -293,19 +314,19 @@
                 <div class="flex items-center gap-1">
                   <button id="btnHome" onclick="goToHome()" title="Halaman Pertama"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    |&lt;
+                    |<
                   </button>
                   <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    &lt;
+                    <
                   </button>
                   <button id="btnNext" onclick="changePage(1)" title="Berikutnya"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    &gt;
+                    >
                   </button>
                   <button id="btnEnd" onclick="goToEnd()" title="Halaman Terakhir"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    &gt;|
+                    >|
                   </button>
                 </div>
               </div>
@@ -378,9 +399,9 @@
           </div>
           <div class="flex gap-2">
             <button type="button" onclick="closeModal()" class="px-3.5 sm:px-4 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-xl font-medium transition cursor-pointer">
-              Batal
+              Tutup
             </button>
-            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
+            <button type="submit" id="btnSaveTrx" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-xl font-medium shadow-md transition cursor-pointer">
               Simpan
             </button>
           </div>
@@ -396,7 +417,7 @@
         <h3 class="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f1f3f4] flex items-center gap-2">
           <span>📥</span> Export CSV
         </h3>
-        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+        <button onclick="closeExportModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">×</button>
       </div>
 
       <div class="space-y-4">

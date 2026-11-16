@@ -8,7 +8,7 @@
     <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
     <script>
         (function checkAuth() {
-            const userSessionString = localStorage.getItem("user");
+            const userSessionString = localStorage.getItem("user") || sessionStorage.getItem("user");
             
             // 1. Jika tidak ada sesi -> redirect ke login.html
             if (!userSessionString) {
@@ -25,28 +25,38 @@
                     return;
                 }
 
-                // 2. Super Admin (Dede Hidayat) lolos tanpa syarat
+                // 2. Super Admin (Dede Hidayat) lolos tanpa syarat dengan akses Write
                 const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
                 if (username === "dede hidayat") {
+                    window.tasksAccessLevel = "W";
                     return;
                 }
 
-                // 3. Fungsi penilai nilai akses
-                function checkVal(val) {
-                    if (!val) return false;
+                // 3. Normalisasi nilai hak akses R / W
+                function normalizeLevel(val) {
+                    if (!val) return "";
                     const str = String(val).trim().toUpperCase();
-                    return str === "Y" || str === "TRUE" || str === "1";
+                    if (str === "W") return "W";
+                    if (str === "R") return "R";
+                    return "";
                 }
 
                 // 4. Cek akses tasks (baik userData.task/tasks maupun userData.akses.TASK)
-                const hasAccess = checkVal(userData.task) || 
-                                  checkVal(userData.tasks) || 
-                                  checkVal(userData.TASK) || 
-                                  (userData.akses && (checkVal(userData.akses.TASK) || checkVal(userData.akses.task) || checkVal(userData.akses.tasks)));
+                const level = normalizeLevel(userData.task) || 
+                              normalizeLevel(userData.tasks) || 
+                              normalizeLevel(userData.TASK) || 
+                              (userData.akses && (
+                                  normalizeLevel(userData.akses.TASK) || 
+                                  normalizeLevel(userData.akses.task) || 
+                                  normalizeLevel(userData.akses.tasks)
+                              )) || "";
 
-                if (!hasAccess) {
+                if (level !== "R" && level !== "W") {
                     window.location.replace("dashboard.html");
+                    return;
                 }
+
+                window.tasksAccessLevel = level;
 
             } catch (err) {
                 window.location.replace("login.html");
@@ -107,8 +117,9 @@
         <!-- MAIN DASHBOARD CONTENT -->
         <div class="main-content custom-scroll">
             <div class="header-area">
-                <div class="header-title-wrapper">
+                <div class="header-title-wrapper" style="display: flex; align-items: center; gap: 8px;">
                     <div class="header-title" id="current-list-title">Semua Tugas</div>
+                    <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
                 </div>
                 
                 <div class="header-controls">
@@ -127,7 +138,7 @@
                 </div>
             </div>
 
-            <div class="input-container">
+            <div class="input-container" id="addTaskContainer">
                 <i class="fas fa-plus"></i>
                 <input type="text" class="task-input" id="task-input" placeholder="Tambah Tugas Baru...">
                 <button class="add-btn" id="btnAddTask">Tambah</button>
@@ -147,8 +158,8 @@
         <!-- PANEL DETAIL & EDIT TUGAS (RIGHT SIDE) -->
         <div id="detailPanel" class="detail-panel">
             <div class="panel-header">
-                <h3>Detail & Edit Tugas</h3>
-                <span class="close-btn" id="btnCloseDetailPanel">&times;</span>
+                <h3 id="detailPanelTitle">Detail & Edit Tugas</h3>
+                <span class="close-btn" id="btnCloseDetailPanel">×</span>
             </div>
             <div class="panel-body custom-scroll">
                 <input type="hidden" id="edit-task-id">
@@ -183,7 +194,7 @@
                 </div>
             </div>
             <div class="panel-footer">
-                <button class="btn btn-secondary" id="btnCancelDetailPanel">Batal</button>
+                <button class="btn btn-secondary" id="btnCancelDetailPanel">Tutup</button>
                 <button class="btn btn-primary" id="btnSaveDetailPanel">Simpan</button>
             </div>
         </div>
@@ -194,7 +205,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Buat List / Grup Baru</h2>
-                <span class="close-btn" id="btnCloseNewListModal">&times;</span>
+                <span class="close-btn" id="btnCloseNewListModal">×</span>
             </div>
             <div class="modal-body">
                 <div class="form-group">
@@ -245,7 +256,7 @@
         <div class="modal-content" style="width: 400px;">
             <div class="modal-header">
                 <h2>Edit Nama List / Grup</h2>
-                <span class="close-btn" id="btnCloseEditListModal">&times;</span>
+                <span class="close-btn" id="btnCloseEditListModal">×</span>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="old-list-name">
@@ -266,7 +277,7 @@
         <div class="modal-content" style="width: 440px;">
             <div class="modal-header">
                 <h2>Hapus List / Grup</h2>
-                <span class="close-btn" id="btnCloseDeleteListModal">&times;</span>
+                <span class="close-btn" id="btnCloseDeleteListModal">×</span>
             </div>
             <div class="modal-body">
                 <p id="delete-list-message" style="font-size: 13px; margin-bottom: 14px; color: var(--text-color);"></p>

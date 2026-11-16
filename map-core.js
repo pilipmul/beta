@@ -76,16 +76,15 @@ let animFrameReq = null;
 let initialPinchDistance = null;
 let initialScale = 1;
 
-const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti", "Salwa"];
-
 // ==========================================
 // HELPER PERMISSION, BUILDING ACCESS & DROPDOWN TOUCH
 // ==========================================
 function getUserBoAccess() {
   try {
-    const session = localStorage.getItem("user");
+    const session = localStorage.getItem("user") || sessionStorage.getItem("user");
     if (!session) return "pbc";
-    const userData = JSON.parse(session);
+    const rawUser = JSON.parse(session);
+    const userData = rawUser.data || rawUser;
     if (!userData || !userData.bo) return "tcbu";
     return String(userData.bo).trim().toLowerCase();
   } catch {
@@ -99,17 +98,11 @@ function canAccessBuilding(buildingKey) {
   return userBo === String(buildingKey).toLowerCase();
 }
 
-function isSuperAdmin() {
-  try {
-    const session = localStorage.getItem("user");
-    if (!session) return false;
-    const userData = JSON.parse(session);
-    if (!userData) return false;
-    const namaUser = userData.nama || userData.username;
-    return ALLOWED_EDITORS.includes(namaUser);
-  } catch {
-    return false;
+function canWriteMap() {
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('map');
   }
+  return window.mapAccessLevel === 'W';
 }
 
 function toggleDropdownMenu(containerId, e) {
@@ -143,7 +136,7 @@ function renderHamburgerMenuContent() {
   if (!container) return;
 
   let html = '';
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteMap();
 
   if (allowEdit) {
     if (appMode === 'view') {
@@ -185,6 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHeader({ activeMenu: "denah", subtitle: "Denah Interaktif" });
   }
 
+  if (!canWriteMap()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
+  }
+
   // Auto-select unit jika user secara eksplisit terikat dengan PBM
   const userBo = getUserBoAccess();
   if (userBo === 'pbm') {
@@ -194,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHamburgerMenuContent();
   initMapControls();
 
-  // Explicitly switch floor ke basement gedung yang aktif saat init (memastikan denah PBM dimuat jika user = salwa)
+  // Explicitly switch floor ke basement gedung yang aktif saat init
   switchFloor('basement');
 
   const img = document.getElementById('denah-img');
@@ -431,8 +429,8 @@ function refreshActiveModule() {
 }
 
 function setAppMode(mode) {
-  if (mode === 'edit' && !isSuperAdmin()) {
-    alert("Akses Terbatas: Anda tidak memiliki izin untuk masuk ke Edit Mode.");
+  if (mode === 'edit' && !canWriteMap()) {
+    alert("Akses Terbatas: Anda hanya memiliki akses Read Only pada modul Denah.");
     return;
   }
 
@@ -551,7 +549,7 @@ function initMapControls() {
   });
 
   viewport.addEventListener('click', (e) => {
-    if (!isPlacingMode || appMode !== 'edit' || !isSuperAdmin()) return;
+    if (!isPlacingMode || appMode !== 'edit' || !canWriteMap()) return;
 
     const img = document.getElementById('denah-img');
     if (!img) return;
@@ -927,11 +925,11 @@ function selectHSEFromSearch(no) {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
 
 async function exportToPDF() {

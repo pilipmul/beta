@@ -34,11 +34,11 @@ if (typeof escapeHtml !== 'function') {
   function escapeHtml(str) {
     if (!str) return '';
     return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"')
+      .replace(/'/g, '');
   }
 }
 
@@ -163,7 +163,7 @@ async function fetchHSEFromSupabase() {
 }
 
 async function saveHSECoordinate(noHSE, xPercent, yPercent) {
-  if (appMode !== 'edit' || !isSuperAdmin()) return;
+  if (appMode !== 'edit' || !canWriteMap()) return;
 
   const target = hseData.find(h => h.no === noHSE);
   const currentSize = target ? target.ukuran : 32;
@@ -228,7 +228,7 @@ function renderHSEList() {
     return;
   }
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteMap();
 
   container.innerHTML = filtered.map(h => {
     const hasCoords = h.koordinat !== null;
@@ -312,7 +312,7 @@ function renderHSEMarkers() {
       selectHSE(h.no);
     });
 
-    if (appMode === 'edit' && isSuperAdmin()) {
+    if (appMode === 'edit' && canWriteMap()) {
       marker.addEventListener('mousedown', (e) => startDraggingHSEMarker(e, h.no));
     }
 
@@ -453,7 +453,7 @@ async function showHSEDetailPopup(noHSE) {
 }
 
 function startHSEPlacement(no) {
-  if (appMode !== 'edit' || !isSuperAdmin()) return;
+  if (appMode !== 'edit' || !canWriteMap()) return;
   
   selectedHSENo = no;
   isPlacingMode = true;
@@ -475,7 +475,7 @@ function startHSEPlacement(no) {
 }
 
 function startDraggingHSEMarker(event, no) {
-  if (event.button !== 0 || isPlacingMode || appMode !== 'edit' || !isSuperAdmin()) return;
+  if (event.button !== 0 || isPlacingMode || appMode !== 'edit' || !canWriteMap()) return;
   event.stopPropagation();
   selectHSE(no);
 
@@ -527,7 +527,7 @@ function startDraggingHSEMarker(event, no) {
 }
 
 function deleteHSECoordinate(no) {
-  if (appMode !== 'edit' || !isSuperAdmin()) return;
+  if (appMode !== 'edit' || !canWriteMap()) return;
   if (confirm(`Hapus titik lokasi untuk HSE #${no}?`)) {
     saveHSECoordinate(no, null, null);
     closeFloatingCard();

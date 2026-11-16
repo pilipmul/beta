@@ -1,6 +1,6 @@
 const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
-const GOOGLE_DRIVE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1hEe3lHhkLKX_lM0JiG1YB0_3sFsTXzjsT3-wUfwVFdHFbMUSFiOBGZ2sSAKUVBLO/exec";
+const GOOGLE_DRIVE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1hEe3lHhkLKX_lM0JiG1YB0_3sFsTXzjsT3-wUfwVFbMUSFiOBGZ2sSAKUVBLO/exec";
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -71,9 +71,10 @@ try {
 
 function getUserData() {
   try {
-    const session = localStorage.getItem("user");
+    const session = localStorage.getItem("user") || sessionStorage.getItem("user");
     if (!session) return null;
-    return JSON.parse(session);
+    const parsed = JSON.parse(session);
+    return parsed?.data || parsed;
   } catch {
     return null;
   }
@@ -81,7 +82,16 @@ function getUserData() {
 
 function isSuperAdmin() {
   const userData = getUserData();
-  return userData && (userData.nama === "Dede Hidayat" || userData.username === "Dede Hidayat");
+  const displayName = (userData?.nama || userData?.username || "").toString().trim().toLowerCase();
+  return displayName === "dede hidayat";
+}
+
+function canWriteEvent() {
+  if (isSuperAdmin()) return true;
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('event');
+  }
+  return window.eventAccessLevel === 'W';
 }
 
 function getUserSessionName() {
@@ -193,20 +203,24 @@ function renderHamburgerMenu() {
 
   const showingAll = isShowingAllStatuses();
   const currentDiv = currentUserSession.division;
+  const canWrite = canWriteEvent();
 
-  // Path SVG Sapu baru dengan pengisian fill="currentColor" dan skala yang harmonis
   const cleanerIconSvg = `
     <svg class="w-4 h-4 shrink-0 text-[#1a73e8] dark:text-[#8ab4f8]" viewBox="0 0 24 24" fill="currentColor">
       <path d="M22.4524 1.92267C22.7452 2.21557 22.7452 2.69044 22.4524 2.98333L15.5238 9.91189C17.2589 12.1667 17.0935 15.4132 15.0277 17.479L14.1963 18.3105L11.4091 22.4912C11.2845 22.6782 11.0826 22.7994 10.859 22.8215C10.6354 22.8437 10.4136 22.7644 10.2548 22.6055L1.76948 14.1202C1.6106 13.9614 1.53132 13.7396 1.55346 13.516C1.5756 13.2924 1.69683 13.0905 1.88378 12.9659L6.06475 10.1786L6.89601 9.3473C8.96179 7.28152 12.2083 7.11617 14.4631 8.85123L21.3917 1.92267C21.6846 1.62978 22.1595 1.62978 22.4524 1.92267ZM7.60312 10.7615L13.6135 16.7719L13.9671 16.4184C15.6268 14.7586 15.6268 12.0677 13.9671 10.408C12.3074 8.74823 9.6164 8.74823 7.95668 10.408L7.60312 10.7615ZM6.44689 11.7266L3.47704 13.7065L10.6685 20.898L12.6484 17.9281L6.44689 11.7266Z"/>
     </svg>
   `;
 
-  customContainer.innerHTML = `
-    <!-- General Actions -->
+  const addEntryBtnHtml = canWrite ? `
     <button onclick="openModal('add'); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
       <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
       <span>Tambah Entry</span>
     </button>
+  ` : '';
+
+  customContainer.innerHTML = `
+    <!-- General Actions -->
+    ${addEntryBtnHtml}
     
     <button onclick="toggleShowAllStatuses(); toggleConnDropdown();" class="w-full text-left px-3.5 py-2.5 hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 text-xs text-[#202124] dark:text-[#e8eaed] transition cursor-pointer">
       <svg class="w-4 h-4 ${showingAll ? 'text-amber-500' : 'text-purple-500'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -250,15 +264,18 @@ function renderHamburgerMenu() {
 document.addEventListener('DOMContentLoaded', () => {
   currentUserSession.nama = getUserSessionName();
 
+  if (!canWriteEvent()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
+  }
+
   const userData = getUserData();
   if (!hasFullDivisionAccess() && userData && userData.position) {
     currentUserSession.division = getDivisionFromPosition(userData.position);
   }
 
   if (typeof renderHeader === 'function') {
-    renderHeader({ 
-      subtitle: "Event Dashboard"
-    });
+    renderHeader();
   }
 
   renderHamburgerMenu();
@@ -600,10 +617,19 @@ function jumpToPage() {
 }
 
 function openModal(mode, data = null) {
+  const canWrite = canWriteEvent();
+  if (mode === 'add' && !canWrite) {
+    alert("Anda hanya memiliki akses Read Only pada modul Event.");
+    return;
+  }
+
   const modal = document.getElementById('modal');
   const form = document.getElementById('eventForm');
   const title = document.getElementById('modalTitle');
   const btnDelete = document.getElementById('btnDeleteInModal');
+  const btnSave = document.getElementById('btnSaveEvent');
+  const docControls = document.getElementById('docAttachmentControls');
+  const btnRemovePhoto = document.getElementById('btnRemovePhoto');
 
   form.reset();
   removeSelectedFile();
@@ -615,8 +641,12 @@ function openModal(mode, data = null) {
     title.innerText = 'Tambah Entry Event Baru';
     btnDelete.classList.add('hidden');
   } else if (mode === 'edit' && data) {
-    title.innerText = `Edit Entry #${data.id}`;
-    btnDelete.classList.remove('hidden');
+    title.innerText = canWrite ? `Edit Entry #${data.id}` : `Detail Entry #${data.id} (Read Only)`;
+    if (canWrite) {
+      btnDelete.classList.remove('hidden');
+    } else {
+      btnDelete.classList.add('hidden');
+    }
 
     document.getElementById('editId').value = data.id;
     document.getElementById('inputLocation').value = data.location || '';
@@ -630,6 +660,14 @@ function openModal(mode, data = null) {
 
     if (data.link) showImagePreview(data.link, 'Foto Tersimpan');
   }
+
+  // Terapkan kunci form bila mode Read Only (R)
+  form.querySelectorAll('input:not([type="hidden"]), select, textarea').forEach(el => {
+    el.disabled = !canWrite;
+  });
+  if (docControls) docControls.classList.toggle('hidden', !canWrite);
+  if (btnRemovePhoto) btnRemovePhoto.classList.toggle('hidden', !canWrite);
+  if (btnSave) btnSave.classList.toggle('hidden', !canWrite);
 
   modal.classList.remove('hidden');
 }
@@ -719,10 +757,14 @@ function setupDropzone() {
 
   if (!zone || !fileInput) return;
 
-  zone.addEventListener('click', () => fileInput.click());
+  zone.addEventListener('click', () => {
+    if (!canWriteEvent()) return;
+    fileInput.click();
+  });
 
   zone.addEventListener('dragover', (e) => {
     e.preventDefault();
+    if (!canWriteEvent()) return;
     zone.classList.add('border-[#1a73e8]', 'bg-blue-50/20');
   });
 
@@ -733,6 +775,7 @@ function setupDropzone() {
   zone.addEventListener('drop', (e) => {
     e.preventDefault();
     zone.classList.remove('border-[#1a73e8]', 'bg-blue-50/20');
+    if (!canWriteEvent()) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileSelected(e.dataTransfer.files);
     }
@@ -740,6 +783,7 @@ function setupDropzone() {
 }
 
 function handleFileSelected(files) {
+  if (!canWriteEvent()) return;
   if (!files || files.length === 0) return;
   const file = files[0];
 
@@ -760,6 +804,7 @@ function handleFileSelected(files) {
 }
 
 async function startCameraStream() {
+  if (!canWriteEvent()) return;
   stopCameraStream();
   const video = document.getElementById('cameraVideo');
 
@@ -786,6 +831,7 @@ function toggleCameraFacing() {
 }
 
 function capturePhotoFromCamera() {
+  if (!canWriteEvent()) return;
   const video = document.getElementById('cameraVideo');
   const canvas = document.getElementById('cameraCanvas');
 
@@ -822,6 +868,7 @@ function capturePhotoFromCamera() {
 }
 
 function applyUrlLink() {
+  if (!canWriteEvent()) return;
   const url = document.getElementById('inputUrlLink').value.trim();
   if (url) {
     selectedImageFile = null;
@@ -854,6 +901,11 @@ function closePhotoModal() {
 
 async function saveData(e) {
   e.preventDefault();
+
+  if (!canWriteEvent()) {
+    alert("Anda hanya memiliki akses Read Only pada modul Event.");
+    return;
+  }
 
   const submitBtn = e.target.querySelector('button[type="submit"]');
   if (submitBtn) submitBtn.disabled = true;
@@ -905,6 +957,11 @@ async function saveData(e) {
 }
 
 async function deleteDataInModal() {
+  if (!canWriteEvent()) {
+    alert("Anda hanya memiliki akses Read Only pada modul Event.");
+    return;
+  }
+
   const idVal = document.getElementById('editId').value;
   if (!idVal || !confirm(`Apakah Anda yakin ingin menghapus entry event #${idVal}?`)) return;
 
@@ -975,9 +1032,9 @@ async function processExportCSV() {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }

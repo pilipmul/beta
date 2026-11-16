@@ -33,15 +33,11 @@ try {
   filterSelections = {};
 }
 
-function isSuperAdmin() {
-  try {
-    const session = localStorage.getItem("user");
-    if (!session) return false;
-    const userData = JSON.parse(session);
-    return userData && (userData.nama === "Dede Hidayat" || userData.username === "Dede Hidayat");
-  } catch {
-    return false;
+function canWriteInventory() {
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('item') || window.canWriteModule('inventory');
   }
+  return window.inventoryAccessLevel === 'W';
 }
 
 function saveStateToSession() {
@@ -104,7 +100,7 @@ function renderHamburgerMenuContent() {
     `;
   }
 
-  if (isSuperAdmin() && currentViewMode === 'casual') {
+  if (canWriteInventory() && currentViewMode === 'casual') {
     html += `
       <button onclick="openModal('add'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
         <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -257,19 +253,19 @@ function getCasualViewHtml() {
           <div class="flex items-center gap-1">
             <button id="btnHome" onclick="goToHome()" title="Halaman Pertama"
                     class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-              |&lt;
+              |<
             </button>
             <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya"
                     class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-              &lt;
+              <
             </button>
             <button id="btnNext" onclick="changePage(1)" title="Berikutnya"
                     class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-              &gt;
+              >
             </button>
             <button id="btnEnd" onclick="goToEnd()" title="Halaman Terakhir"
                     class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-              &gt;|
+              >|
             </button>
           </div>
         </div>
@@ -282,16 +278,21 @@ function getCasualViewHtml() {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof renderHeader === 'function') {
     renderHeader({ subtitle: "Inventory" });
+  }
+
+  if (!canWriteInventory()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
   }
 
   renderHamburgerMenuContent();
@@ -486,16 +487,14 @@ function renderTable() {
     return;
   }
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteInventory();
 
   fetchedData.forEach(row => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors';
 
     const projectText = escapeHtml(row.project || '-');
-    const projectBtn = allowEdit 
-      ? `<button onclick="openModalForNo(${row.no})" title="Edit Item #${row.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`
-      : `<span class="inline-block max-w-full px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${projectText}</span>`;
+    const projectBtn = `<button onclick="openModalForNo(${row.no})" title="${allowEdit ? 'Edit Item' : 'Lihat Detail Item'} #${row.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`;
 
     tr.innerHTML = `
       <td class="p-2.5 text-center font-mono text-[#5f6368] dark:text-[#9aa0a6]">${row.no}</td>
@@ -598,10 +597,18 @@ function jumpToPage() {
 }
 
 function openModal(mode, data = null) {
+  const allowWrite = canWriteInventory();
+
+  if (mode === 'add' && !allowWrite) {
+    alert("Anda hanya memiliki akses Read Only pada modul Inventory.");
+    return;
+  }
+
   const modal = document.getElementById('modal');
   const form = document.getElementById('itemForm');
   const title = document.getElementById('modalTitle');
   const btnDelete = document.getElementById('btnDeleteInModal');
+  const btnSave = document.getElementById('btnSaveItem');
 
   form.reset();
   document.getElementById('editNo').value = '';
@@ -610,14 +617,26 @@ function openModal(mode, data = null) {
     title.innerText = 'Add New Item';
     btnDelete.classList.add('hidden');
   } else if (mode === 'edit' && data) {
-    title.innerText = `Edit Item #${data.no}`;
-    btnDelete.classList.remove('hidden');
+    title.innerText = allowWrite ? `Edit Item #${data.no}` : `Detail Item #${data.no} (Read Only)`;
+    if (allowWrite) {
+      btnDelete.classList.remove('hidden');
+    } else {
+      btnDelete.classList.add('hidden');
+    }
 
     document.getElementById('editNo').value = data.no;
     document.getElementById('inputItem').value = data.item || '';
     document.getElementById('inputCode').value = data.code || '';
     document.getElementById('inputUnit').value = data.satuan || '';
     document.getElementById('inputProject').value = data.project || '';
+  }
+
+  // Kunci form jika user hanya memiliki izin Read Only (R)
+  form.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(el => {
+    el.disabled = !allowWrite;
+  });
+  if (btnSave) {
+    btnSave.classList.toggle('hidden', !allowWrite);
   }
 
   modal.classList.remove('hidden');
@@ -634,6 +653,10 @@ function closeModal() {
 
 async function saveData(e) {
   e.preventDefault();
+  if (!canWriteInventory()) {
+    alert("Anda hanya memiliki akses Read Only pada modul Inventory.");
+    return;
+  }
 
   const editNo = document.getElementById('editNo').value;
   const item = document.getElementById('inputItem').value.trim();
@@ -684,6 +707,10 @@ async function saveData(e) {
 }
 
 async function deleteDataInModal() {
+  if (!canWriteInventory()) {
+    alert("Anda hanya memiliki akses Read Only pada modul Inventory.");
+    return;
+  }
   const no = document.getElementById('editNo').value;
   if (!no) return;
 

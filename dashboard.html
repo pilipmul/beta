@@ -418,10 +418,17 @@
     let currentUser = null;
     let isRedirecting = false;
 
-    function checkAccessVal(val) {
-      if (!val) return false;
+    function normalizeAccessLevel(val) {
+      if (!val) return "";
       const str = String(val).trim().toUpperCase();
-      return str === "Y" || str === "TRUE" || str === "1";
+      if (str === "W") return "W";
+      if (str === "R") return "R";
+      return "";
+    }
+
+    function checkAccessVal(val) {
+      const level = normalizeAccessLevel(val);
+      return level === "R" || level === "W";
     }
 
     function toggleConnDropdown(e) {
@@ -455,26 +462,27 @@
       let rawUser = JSON.parse(storedRaw);
       let userObj = rawUser.data ? rawUser.data : rawUser;
 
-      const getAccessString = (val) => checkAccessVal(val) ? "Y" : "N";
-
       function renderPermissions(uData) {
         const isAdmin = (uData.nama || "").toString().trim().toLowerCase() === "dede hidayat";
+        const resolveLevel = (val) => isAdmin ? "W" : normalizeAccessLevel(val);
 
         currentUser = {
           ...uData,
-          map: isAdmin ? "Y" : getAccessString(uData.map),
-          event: isAdmin ? "Y" : getAccessString(uData.event),
-          eskalasi: isAdmin ? "Y" : getAccessString(uData.eskalasi),
-          rkm: isAdmin ? "Y" : getAccessString(uData.rkm),
-          perbaikan: isAdmin ? "Y" : getAccessString(uData.perbaikan),
-          task: isAdmin ? "Y" : getAccessString(uData.task),
-          sync: isAdmin ? "Y" : getAccessString(uData.sync),
-          inventory: isAdmin ? "Y" : getAccessString(uData.log),
-          item: isAdmin ? "Y" : getAccessString(uData.item),
-          tenant: isAdmin ? "Y" : getAccessString(uData.tenant),
-          hse: isAdmin ? "Y" : getAccessString(uData.hse),
-          acces: isAdmin ? "Y" : getAccessString(uData.acces),
-          assets: isAdmin ? "Y" : getAccessString(uData.assets)
+          bo: isAdmin ? "TCBU" : (uData.bo || ""),
+          map: resolveLevel(uData.map),
+          event: resolveLevel(uData.event),
+          eskalasi: resolveLevel(uData.eskalasi),
+          rkm: resolveLevel(uData.rkm),
+          perbaikan: resolveLevel(uData.perbaikan),
+          task: resolveLevel(uData.task),
+          sync: resolveLevel(uData.sync),
+          log: resolveLevel(uData.log),
+          inventory: resolveLevel(uData.log),
+          item: resolveLevel(uData.item),
+          tenant: resolveLevel(uData.tenant),
+          hse: resolveLevel(uData.hse),
+          acces: resolveLevel(uData.acces),
+          assets: resolveLevel(uData.assets)
         };
 
         const nameStr = currentUser.nama || "User";
@@ -490,19 +498,19 @@
         if (avatarElem) avatarElem.textContent = nameStr.charAt(0).toUpperCase();
 
         const menuConfig = [
-          { id: "map", file: "map.html", allowed: checkAccessVal(currentUser.map) },
-          { id: "event", file: "event.html", allowed: checkAccessVal(currentUser.event) },
-          { id: "eskalasi", file: "eskalasi.html", allowed: checkAccessVal(currentUser.eskalasi) },
-          { id: "RKM", file: "RKM.html", allowed: checkAccessVal(currentUser.rkm) },
-          { id: "dokPerbaikan", file: "sr.html", allowed: checkAccessVal(currentUser.perbaikan) },
-          { id: "tasks", file: "tasks.html", allowed: checkAccessVal(currentUser.task) },
-          { id: "syncflow", file: "syncflow.html", allowed: checkAccessVal(currentUser.sync) },
-          { id: "logistics", file: "logistics.html", allowed: checkAccessVal(currentUser.inventory) },
-          { id: "inventory", file: "inventory.html", allowed: checkAccessVal(currentUser.item) },
-          { id: "tenant", file: "tenant.html", allowed: checkAccessVal(currentUser.tenant) },
-          { id: "hse", file: "hse.html", allowed: checkAccessVal(currentUser.hse) },
-          { id: "accesControl", file: "access.html", allowed: checkAccessVal(currentUser.acces) },
-          { id: "assets", file: "assets.html", allowed: checkAccessVal(currentUser.assets) }
+          { id: "map", file: "map.html", level: currentUser.map },
+          { id: "event", file: "event.html", level: currentUser.event },
+          { id: "eskalasi", file: "eskalasi.html", level: currentUser.eskalasi },
+          { id: "RKM", file: "RKM.html", level: currentUser.rkm },
+          { id: "dokPerbaikan", file: "sr.html", level: currentUser.perbaikan },
+          { id: "tasks", file: "tasks.html", level: currentUser.task },
+          { id: "syncflow", file: "syncflow.html", level: currentUser.sync },
+          { id: "logistics", file: "logistics.html", level: currentUser.log },
+          { id: "inventory", file: "inventory.html", level: currentUser.item },
+          { id: "tenant", file: "tenant.html", level: currentUser.tenant },
+          { id: "hse", file: "hse.html", level: currentUser.hse },
+          { id: "accesControl", file: "access.html", level: currentUser.acces },
+          { id: "assets", file: "assets.html", level: currentUser.assets }
         ];
 
         const activeLinks = [];
@@ -510,12 +518,27 @@
         menuConfig.forEach(item => {
           const el = document.getElementById(item.id);
           if (el) {
-            if (item.allowed) {
+            const allowed = item.level === "R" || item.level === "W";
+            if (allowed) {
               el.style.display = "flex";
+              el.dataset.accessLevel = item.level;
               const separator = item.file.includes("?") ? "&" : "?";
               const fullUrl = `${item.file}${separator}user=${encodeURIComponent(currentUser.nama)}`;
               el.href = fullUrl;
               activeLinks.push(fullUrl);
+
+              // Tampilkan badge Read Only jika akses user hanya R
+              let badgeEl = el.querySelector(".access-mode-badge");
+              if (item.level === "R") {
+                if (!badgeEl) {
+                  badgeEl = document.createElement("span");
+                  badgeEl.className = "access-mode-badge absolute top-3 right-3 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60";
+                  badgeEl.textContent = "Read Only";
+                  el.appendChild(badgeEl);
+                }
+              } else if (badgeEl) {
+                badgeEl.remove();
+              }
             } else {
               el.style.display = "none";
             }
@@ -535,10 +558,50 @@
           }
           const { data, error } = await query.maybeSingle();
           if (data && !error) {
-            userObj = data;
-            const fullUserObj = { success: true, data: userObj, ...userObj };
+            const isAdmin = (data.nama || "").toString().trim().toLowerCase() === "dede hidayat";
+            const resolveLevel = (colVal) => isAdmin ? "W" : normalizeAccessLevel(colVal);
+
+            userObj = {
+              ...data,
+              bo: isAdmin ? "TCBU" : (data.bo || ""),
+              map: resolveLevel(data.map),
+              event: resolveLevel(data.event),
+              eskalasi: resolveLevel(data.eskalasi),
+              rkm: resolveLevel(data.rkm),
+              perbaikan: resolveLevel(data.perbaikan),
+              task: resolveLevel(data.task),
+              sync: resolveLevel(data.sync),
+              log: resolveLevel(data.log),
+              item: resolveLevel(data.item),
+              tenant: resolveLevel(data.tenant),
+              hse: resolveLevel(data.hse),
+              assets: resolveLevel(data.assets),
+              acces: resolveLevel(data.acces)
+            };
+
+            const aksesMapping = {
+              MAP: userObj.map,
+              EVENT: userObj.event,
+              ESKALASI: userObj.eskalasi,
+              RKM: userObj.rkm,
+              PERBAIKAN: userObj.perbaikan,
+              TASK: userObj.task,
+              SYNC: userObj.sync,
+              LOG: userObj.log,
+              ITEM: userObj.item,
+              TENANT: userObj.tenant,
+              HSE: userObj.hse,
+              ASSETS: userObj.assets,
+              ACCESS: userObj.acces
+            };
+
+            const fullUserObj = { success: true, data: { ...userObj, akses: aksesMapping }, akses: aksesMapping, ...userObj };
             localStorage.setItem("user", JSON.stringify(fullUserObj));
+            localStorage.setItem("djurnal_user", JSON.stringify(fullUserObj.data));
+            localStorage.setItem("currentUser", JSON.stringify(fullUserObj.data));
             localStorage.setItem("sot_user", JSON.stringify(userObj));
+            sessionStorage.setItem("user", JSON.stringify(fullUserObj));
+
             if (!isRedirecting) {
               renderPermissions(userObj);
             }

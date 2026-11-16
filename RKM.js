@@ -20,14 +20,15 @@ let rawDataMap = new Map();
 // INSTANCE TABLE FILTER MANAGER
 let tableFilter;
 
-// PEMBACAAN DATA USER DARI LOCALSTORAGE
+// PEMBACAAN DATA USER DARI STORAGE
 let usernameFromStorage = "Tamu";
 try {
-  const userSession = JSON.parse(localStorage.getItem("user"));
-  if (userSession) {
+  const rawSession = localStorage.getItem("user") || sessionStorage.getItem("user");
+  if (rawSession) {
+    const userSession = JSON.parse(rawSession);
     const uData = userSession.data || userSession;
-    if (uData && uData.nama) {
-      usernameFromStorage = uData.nama;
+    if (uData && (uData.nama || uData.username)) {
+      usernameFromStorage = uData.nama || uData.username;
     }
   }
 } catch (err) {
@@ -35,8 +36,13 @@ try {
 }
 
 const CURRENT_USER = usernameFromStorage;
-const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
-const isEditor = ALLOWED_EDITORS.includes(CURRENT_USER);
+
+function canWriteRkm() {
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('rkm');
+  }
+  return window.rkmAccessLevel === 'W';
+}
 
 let globalSearchQuery = sessionStorage.getItem('rkm_globalSearchQuery') || '';
 let sortConfig = JSON.parse(sessionStorage.getItem('rkm_sortConfig')) || { column: null, direction: null };
@@ -102,7 +108,7 @@ function renderHamburgerMenuContent() {
   if (!container) return;
 
   const items = [];
-  if (isEditor) {
+  if (canWriteRkm()) {
     items.push(`
       <button onclick="openModal(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
         <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -111,8 +117,10 @@ function renderHamburgerMenuContent() {
     `);
   }
 
+  const borderClass = items.length > 0 ? 'border-t border-[#dadce0] dark:border-[#3c4043]' : '';
+
   items.push(`
-    <button onclick="exportToPDF(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer border-t border-[#dadce0] dark:border-[#3c4043]">
+    <button onclick="exportToPDF(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer ${borderClass}">
       <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
       <span>Export PDF</span>
     </button>
@@ -124,18 +132,23 @@ function renderHamburgerMenuContent() {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   initTableFilter();
 
+  if (!canWriteRkm()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
+  }
+
   const hamburgerMenuOptions = [];
-  if (isEditor) {
+  if (canWriteRkm()) {
     hamburgerMenuOptions.push({
       label: "New Agenda",
       icon: `<svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
@@ -227,7 +240,7 @@ function renderPicTags() {
   selectedPicsArray.forEach(pic => {
     const tag = document.createElement("span");
     tag.className = "pic-tag dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800";
-    tag.innerHTML = `${pic} <span class="btn-remove" onclick="removePic('${pic}')">&times;</span>`;
+    tag.innerHTML = `${pic} <span class="btn-remove" onclick="removePic('${pic}')">×</span>`;
     container.insertBefore(tag, inputSearch);
   });
 }
@@ -392,9 +405,10 @@ function createRowElement(item) {
     statusBadgeStyle = "bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 font-bold";
   }
 
-  const clickAttr = isEditor ? `onclick="openModal('${id}')"` : '';
-  const cursorClass = isEditor ? 'cursor-pointer hover:scale-105 transition' : 'cursor-default';
-  const titleAttr = isEditor ? 'Click to edit' : 'Read only';
+  const allowEdit = canWriteRkm();
+  const clickAttr = allowEdit ? `onclick="openModal('${id}')"` : '';
+  const cursorClass = allowEdit ? 'cursor-pointer hover:scale-105 transition' : 'cursor-default';
+  const titleAttr = allowEdit ? 'Click to edit' : 'Read only';
 
   const formattedCase = escapeHtml(String(caseText));
   const formattedUpdate = escapeHtml(String(updateText));
@@ -548,8 +562,8 @@ function jumpToPage() {
 }
 
 function openModal(id = null) {
-  if (!isEditor) {
-    alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read-Only).");
+  if (!canWriteRkm()) {
+    alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read Only).");
     return;
   }
 
@@ -598,7 +612,7 @@ function closeModalForm() {
 }
 
 async function submitForm() {
-  if (!isEditor) {
+  if (!canWriteRkm()) {
     alert("Akses Ditolak: Anda tidak memiliki izin untuk menyimpan data.");
     return;
   }
@@ -656,7 +670,7 @@ async function submitForm() {
 }
 
 async function deleteFromModal() {
-  if (!isEditor) {
+  if (!canWriteRkm()) {
     alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
     return;
   }

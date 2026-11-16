@@ -8,17 +8,48 @@
   <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
   <script>
     (function checkAuth() {
+      const userSessionString = localStorage.getItem("user") || sessionStorage.getItem("user");
+
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+
       try {
-        const session = localStorage.getItem("user");
-        if (!session) {
-          window.location.replace("login.html");
-          return;
-        }
-        const userData = JSON.parse(session);
+        const rawUser = JSON.parse(userSessionString);
+        const userData = rawUser.data || rawUser;
         if (!userData) {
           window.location.replace("login.html");
           return;
         }
+
+        const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
+        if (username === "dede hidayat") {
+          window.mapAccessLevel = "W";
+          return;
+        }
+
+        function normalizeLevel(val) {
+          if (!val) return "";
+          const str = String(val).trim().toUpperCase();
+          if (str === "W") return "W";
+          if (str === "R") return "R";
+          return "";
+        }
+
+        const level = normalizeLevel(userData.map) ||
+                      normalizeLevel(userData.MAP) ||
+                      (userData.akses && (
+                        normalizeLevel(userData.akses.MAP) ||
+                        normalizeLevel(userData.akses.map)
+                      )) || "";
+
+        if (level !== "R" && level !== "W") {
+          window.location.replace("dashboard.html");
+          return;
+        }
+
+        window.mapAccessLevel = level;
       } catch (err) {
         console.error("Autentikasi gagal:", err);
         window.location.replace("login.html");
@@ -258,6 +289,7 @@
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed] whitespace-nowrap">
           Denah Interaktif
         </h2>
+        <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
 
         <!-- SWITCH GEDUNG (PBC / PBM) HEADER DESKTOP & MOBILE -->
         <div class="flex items-center bg-[#f1f3f4] dark:bg-[#2d2d2d] p-0.5 rounded-lg border border-[#dadce0] dark:border-[#3c4043] shrink-0">
@@ -627,7 +659,7 @@
     <div class="bg-white dark:bg-[#1e1e1e] max-w-md w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043] max-h-[90dvh] flex flex-col">
       <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 sm:px-6 py-3.5 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center shrink-0">
         <h3 id="modalTitle" class="font-bold text-sm sm:text-base">Pengaturan Marker</h3>
-        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">×</button>
       </div>
 
       <form id="tenantForm" onsubmit="saveTenantData(event)" class="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto custom-scroll flex-1" autocomplete="off">

@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eskalasi Budget - Djurnal</title>
     
-    <!-- Auth Guard LocalStorage Fleksibel -->
+    <!-- Auth Guard LocalStorage R / W -->
     <script>
         (function checkAuth() {
-            const userSessionString = localStorage.getItem("user");
+            const userSessionString = localStorage.getItem("user") || sessionStorage.getItem("user");
             
             if (!userSessionString) {
                 window.location.replace("login.html");
@@ -26,23 +26,28 @@
 
                 const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
                 if (username === "dede hidayat") {
+                    window.eskalasiAccessLevel = "W";
                     return;
                 }
 
-                function checkVal(val) {
-                    if (!val) return false;
+                function normalizeLevel(val) {
+                    if (!val) return "";
                     const str = String(val).trim().toUpperCase();
-                    return str === "Y" || str === "TRUE" || str === "1";
+                    if (str === "W") return "W";
+                    if (str === "R") return "R";
+                    return "";
                 }
 
-                const hasAccess = checkVal(userData.eskalasi) || 
-                                  checkVal(userData.ESKALASI) || 
-                                  (userData.akses && (checkVal(userData.akses.ESKALASI) || checkVal(userData.akses.eskalasi)));
+                const level = normalizeLevel(userData.eskalasi) || 
+                              normalizeLevel(userData.ESKALASI) || 
+                              (userData.akses && (normalizeLevel(userData.akses.ESKALASI) || normalizeLevel(userData.akses.eskalasi))) || "";
 
-                if (!hasAccess) {
+                if (level !== "R" && level !== "W") {
                     window.location.replace("dashboard.html");
+                    return;
                 }
 
+                window.eskalasiAccessLevel = level;
             } catch (err) {
                 window.location.replace("login.html");
             }
@@ -66,7 +71,7 @@
     <!-- CSS Modal Eskalasi -->
     <link rel="stylesheet" href="eskin.css">
 
-    <!-- IMPORT TEMPLATE TABLE-FILTER (FILE TERPISAH, TANPA DIUBAH) -->
+    <!-- IMPORT TEMPLATE TABLE-FILTER -->
     <script src="table-filter.js"></script>
 
     <style>
@@ -181,8 +186,9 @@
         
         <!-- Topbar -->
         <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
-            <div class="flex items-center gap-1.5 shrink-0">
+            <div class="flex items-center gap-2 shrink-0">
                 <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Eskalasi Budget</h2>
+                <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
             </div>
 
             <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -200,7 +206,7 @@
                     <button id="btnClearSearch" onclick="clearGlobalSearch()" class="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs hidden">✕</button>
                 </div>
 
-                <div class="relative flex items-center shrink-0">
+                <div id="hamburgerWrapper" class="relative flex items-center shrink-0">
                     <button type="button" id="hamburgerBtn" onclick="toggleHamburgerMenu(event)" class="h-7 w-7 sm:h-8 sm:w-8 rounded-lg border transition-all flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20 cursor-pointer" title="Menu Opsi">
                         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -294,13 +300,13 @@
         </div>
     </div>
 
-    <!-- POPUP MODAL FORM ESKALASI BARU -->
+    <!-- POPUP MODAL FORM ESKALASI BARU / DETAIL -->
     <div id="modalEskalasiBaru" class="modal-overlay">
         <div class="bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-2xl border border-[#dadce0] dark:border-[#3c4043] w-full max-w-4xl max-h-[90dvh] overflow-y-auto custom-scroll flex flex-col">
             <div class="p-4 sm:p-5 border-b border-[#f1f3f4] dark:border-[#3c4043] bg-[#f8f9fa] dark:bg-[#252525] flex justify-between items-center sticky top-0 z-10 shrink-0">
                 <div>
-                    <h3 class="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f1f3f4] tracking-tight">Formulir Pengajuan Eskalasi Budget</h3>
-                    <p class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Isi data anggaran dan penanggung jawab untuk mencetak dokumen PDF</p>
+                    <h3 id="modalEskalasiTitle" class="text-sm sm:text-base font-bold text-[#202124] dark:text-[#f1f3f4] tracking-tight">Formulir Pengajuan Eskalasi Budget</h3>
+                    <p id="modalEskalasiSubtitle" class="text-xs text-[#5f6368] dark:text-[#9aa0a6]">Isi data anggaran dan penanggung jawab untuk mencetak dokumen PDF</p>
                 </div>
                 <button type="button" onclick="closeModalEskalasi()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white transition p-1 cursor-pointer">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -369,7 +375,7 @@
                     </div>
                     <div class="md:col-span-2 flex gap-3">
                         <button type="button" onclick="closeModalEskalasi()" class="w-1/3 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] font-semibold text-xs py-3 px-4 rounded-xl transition cursor-pointer">
-                            Batal
+                            Tutup
                         </button>
                         <button type="submit" id="btnSubmit" disabled class="w-2/3 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] font-semibold text-xs py-3 px-4 rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
@@ -390,6 +396,13 @@
         let rawDataFallback = [];
         let currentSort = { column: 'no', ascending: false };
 
+        function canWriteEskalasi() {
+            if (typeof window.canWriteModule === 'function') {
+                return window.canWriteModule('eskalasi');
+            }
+            return window.eskalasiAccessLevel === 'W';
+        }
+
         function toggleHamburgerMenu(e) {
             if (e) e.stopPropagation();
             const dropdown = document.getElementById('customDropdownMenu');
@@ -404,8 +417,16 @@
 
         function renderHamburgerMenuContent() {
             const container = document.getElementById('custom-hamburger-content');
+            const wrapper = document.getElementById('hamburgerWrapper');
             if (!container) return;
 
+            if (!canWriteEskalasi()) {
+                container.innerHTML = '';
+                if (wrapper) wrapper.classList.add('hidden');
+                return;
+            }
+
+            if (wrapper) wrapper.classList.remove('hidden');
             container.innerHTML = `
                 <button onclick="openModalEskalasi(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
                     <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -417,11 +438,11 @@
         function escapeHtml(str) {
             if (!str) return '';
             return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+                .replace(/&/g, '&')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/"/g, '"')
+                .replace(/'/g, ''');
         }
 
         function triggerGlobalSearch() {
@@ -554,17 +575,14 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof renderHeader === 'function') {
-                renderHeader({
-                    subtitle: "Eskalasi Budget",
-                    hamburgerItems: [
-                        {
-                            label: "Eskalasi Baru",
-                            icon: `<svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-                            onClick: "openModalEskalasi()"
-                        }
-                    ]
-                });
+                renderHeader();
             }
+
+            if (!canWriteEskalasi()) {
+                const badge = document.getElementById('readOnlyBadge');
+                if (badge) badge.classList.remove('hidden');
+            }
+
             renderHamburgerMenuContent();
 
             tableFilter = new TableFilterManager({

@@ -151,7 +151,7 @@ async function fetchTenantFromSupabase() {
 }
 
 async function saveTenantCoordinate(noTenant, xPercent, yPercent) {
-  if (appMode !== 'edit' || !isSuperAdmin()) return;
+  if (appMode !== 'edit' || !canWriteMap()) return;
 
   const target = tenantsData.find(t => t.no === noTenant);
   const currentSize = target ? target.ukuran : 38;
@@ -223,7 +223,7 @@ function renderTenantList() {
     return;
   }
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteMap();
 
   container.innerHTML = filtered.map(t => {
     const hasCoords = t.koordinat !== null;
@@ -306,7 +306,7 @@ function renderTenantMarkers() {
       selectTenant(t.no);
     });
 
-    if (appMode === 'edit' && isSuperAdmin()) {
+    if (appMode === 'edit' && canWriteMap()) {
       marker.addEventListener('mousedown', (e) => startDraggingTenantMarker(e, t.no));
     }
 
@@ -475,7 +475,7 @@ async function showTenantDetailPopup(noTenant) {
 }
 
 function startPlacement(no) {
-  if (appMode !== 'edit' || !isSuperAdmin()) return;
+  if (appMode !== 'edit' || !canWriteMap()) return;
   
   selectedTenantNo = no;
   isPlacingMode = true;
@@ -497,7 +497,7 @@ function startPlacement(no) {
 }
 
 function startDraggingTenantMarker(event, no) {
-  if (event.button !== 0 || isPlacingMode || appMode !== 'edit' || !isSuperAdmin()) return;
+  if (event.button !== 0 || isPlacingMode || appMode !== 'edit' || !canWriteMap()) return;
   event.stopPropagation();
   selectTenant(no);
 
@@ -549,7 +549,7 @@ function startDraggingTenantMarker(event, no) {
 }
 
 function deleteTenantCoordinate(no) {
-  if (appMode !== 'edit' || !isSuperAdmin()) return;
+  if (appMode !== 'edit' || !canWriteMap()) return;
   if (confirm(`Hapus titik lokasi untuk tenant #${no}?`)) {
     saveTenantCoordinate(no, null, null);
     closeFloatingCard();
@@ -557,7 +557,7 @@ function deleteTenantCoordinate(no) {
 }
 
 function openModal(mode, no = null) {
-  if (!isSuperAdmin()) return;
+  if (!canWriteMap()) return;
 
   const modal = document.getElementById('modal');
   const form = document.getElementById('tenantForm');
@@ -585,7 +585,7 @@ function closeModal() {
 
 async function saveTenantData(e) {
   e.preventDefault();
-  if (!isSuperAdmin()) return;
+  if (!canWriteMap()) return;
 
   const editNo = document.getElementById('editNo').value;
   const ukuranVal = document.getElementById('inputUkuran').value;

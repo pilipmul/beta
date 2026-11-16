@@ -13,6 +13,7 @@ let fetchedData = [];
 let dbUsersList = [];
 let selectedExportSites = [];
 let userBo = null; // Menyimpan BO user: 'PBC', 'PBM', atau 'TCBU'
+let userAssetsAccess = ''; // Menyimpan level akses kolom 'assets': 'R', 'W', atau ''
 
 // Instance TableFilterManager
 let tableFilter = null;
@@ -21,51 +22,97 @@ let selectedPhotoFile = null;
 
 function isSuperAdmin() {
   try {
-    const session = localStorage.getItem("user");
+    const session = localStorage.getItem('user');
     if (!session) return false;
-    const userData = JSON.parse(session);
-    return userData && (userData.nama === "Dede Hidayat" || userData.username === "Dede Hidayat");
+    const parsed = JSON.parse(session);
+    const userData = parsed?.data || parsed;
+    const nama = String(userData?.nama || userData?.username || '').trim().toLowerCase();
+    return nama === 'dede hidayat';
   } catch {
     return false;
   }
 }
 
-async function loadCurrentUserBo() {
+function normalizeAccessLevel(val) {
+  if (!val) return '';
+  const str = String(val).trim().toUpperCase();
+  if (str === 'W') return 'W';
+  if (str === 'R') return 'R';
+  return '';
+}
+
+function canReadAssets() {
+  if (isSuperAdmin()) return true;
+  return userAssetsAccess === 'R' || userAssetsAccess === 'W';
+}
+
+function canWriteAssets() {
+  if (isSuperAdmin()) return true;
+  return userAssetsAccess === 'W';
+}
+
+async function loadCurrentUserPermissions() {
   try {
-    const session = localStorage.getItem("user");
-    if (!session) return null;
-    const userData = JSON.parse(session);
+    // Super Admin / Owner langsung dapat akses penuh Write & semua site
+    if (isSuperAdmin()) {
+      userBo = 'TCBU';
+      userAssetsAccess = 'W';
+      return { bo: userBo, access: userAssetsAccess };
+    }
+
+    const session = localStorage.getItem('user');
+    if (!session) return { bo: null, access: '' };
+
+    const rawParsed = JSON.parse(session);
+    const userData = rawParsed?.data || rawParsed;
+    if (!userData) return { bo: null, access: '' };
 
     if (userData.bo) {
       userBo = String(userData.bo).trim().toUpperCase();
-      return userBo;
+    }
+    if (userData.assets !== undefined) {
+      userAssetsAccess = normalizeAccessLevel(userData.assets);
     }
 
-    let query = _supabase.from('users').select('bo');
+    let query = _supabase.from('users').select('bo, assets');
     if (userData.id) {
       query = query.eq('id', userData.id);
+    } else if (userData.nik) {
+      query = query.eq('nik', userData.nik);
     } else if (userData.username) {
       query = query.eq('username', userData.username);
     } else if (userData.nama) {
       query = query.eq('nama', userData.nama);
     } else {
-      return null;
+      return { bo: userBo, access: userAssetsAccess };
     }
 
     const { data, error } = await query.single();
-    if (!error && data && data.bo) {
-      userBo = String(data.bo).trim().toUpperCase();
-      userData.bo = userBo;
-      localStorage.setItem("user", JSON.stringify(userData));
+    if (!error && data) {
+      if (data.bo) {
+        userBo = String(data.bo).trim().toUpperCase();
+        userData.bo = userBo;
+      }
+      userAssetsAccess = normalizeAccessLevel(data.assets);
+      userData.assets = userAssetsAccess || null;
+
+      if (rawParsed?.data) {
+        rawParsed.data = userData;
+        localStorage.setItem('user', JSON.stringify(rawParsed));
+      } else {
+        localStorage.setItem('user', JSON.stringify(userData));
+      }
     }
-    return userBo;
+
+    return { bo: userBo, access: userAssetsAccess };
   } catch (err) {
-    console.error('Gagal memuat BO user:', err);
-    return null;
+    console.error('Gagal memuat hak akses user:', err);
+    return { bo: userBo, access: userAssetsAccess };
   }
 }
 
 function isSiteAllowed(site) {
+  if (isSuperAdmin()) return true;
   if (!userBo) return false;
   const normalizedSite = String(site || '').trim().toUpperCase();
   if (userBo === 'TCBU') {
@@ -75,6 +122,9 @@ function isSiteAllowed(site) {
 }
 
 function applyBoAccessFilter(query) {
+  if (isSuperAdmin()) {
+    return query;
+  }
   if (!userBo) {
     return query.eq('site', '__UNAUTHORIZED__');
   }
@@ -153,7 +203,7 @@ function renderHamburgerMenuContent() {
   if (!container) return;
 
   const items = [];
-  if (isSuperAdmin()) {
+  if (canWriteAssets()) {
     items.push(`
       <button onclick="openModal('add'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
         <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -172,10 +222,17 @@ function renderHamburgerMenuContent() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadCurrentUserBo();
+  await loadCurrentUserPermissions();
+
+  // Jika kolom assets kosong (tidak memiliki akses R maupun W), tolak akses halaman
+  if (!canReadAssets()) {
+    alert('Anda tidak memiliki hak akses ke modul Assets.');
+    window.location.replace('index.html');
+    return;
+  }
 
   const hamburgerMenuOptions = [];
-  if (isSuperAdmin()) {
+  if (canWriteAssets()) {
     hamburgerMenuOptions.push({
       label: "Tambah Asset",
       icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
@@ -218,8 +275,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyBoFilterToHeaderDropdown(tableFilter);
 
   fetchTableData();
-  preloadSuggestions();
-  setupDropzone();
+  if (canWriteAssets()) {
+    preloadSuggestions();
+    setupDropzone();
+  }
 
   _supabase
     .channel('public:assets')
@@ -364,9 +423,9 @@ function handleRealtimeUpdate(newRow) {
        </button>`
     : `<span class="text-[#5f6368] dark:text-[#9aa0a6] text-[11px]">-</span>`;
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteAssets();
   const noCellContent = allowEdit 
-    ? `<button onclick="openModalForNo(${newRow.no})" title="Edit Asset #${newRow.no}" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${newRow.no}</button>`
+    ? `<button onclick="openModalForNo(${newRow.no})" title="Edit Asset #${newRow.no}" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold cursor-pointer">${newRow.no}</button>`
     : `<span class="font-mono text-[#5f6368] dark:text-[#9aa0a6]">${newRow.no}</span>`;
 
   const cellValues = [
@@ -586,7 +645,7 @@ function renderTable() {
     return;
   }
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteAssets();
 
   fetchedData.forEach(row => {
     const tr = document.createElement('tr');
@@ -601,7 +660,7 @@ function renderTable() {
       : `<span class="text-[#5f6368] dark:text-[#9aa0a6] text-[11px]">-</span>`;
 
     const noCellContent = allowEdit 
-      ? `<button onclick="openModalForNo(${row.no})" title="Edit Asset #${row.no}" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold">${row.no}</button>`
+      ? `<button onclick="openModalForNo(${row.no})" title="Edit Asset #${row.no}" class="font-mono text-[#1a73e8] dark:text-[#8ab4f8] hover:underline font-bold cursor-pointer">${row.no}</button>`
       : `<span class="font-mono text-[#5f6368] dark:text-[#9aa0a6]">${row.no}</span>`;
 
     tr.innerHTML = `
@@ -678,6 +737,11 @@ function jumpToPage() {
 }
 
 function openModal(mode, data = null) {
+  if (!canWriteAssets()) {
+    alert('Akses Anda hanya Read (R). Anda tidak memiliki izin menambah atau mengubah data asset.');
+    return;
+  }
+
   const modal = document.getElementById('modal');
   const form = document.getElementById('assetsForm');
   const title = document.getElementById('modalTitle');
@@ -714,6 +778,7 @@ function openModal(mode, data = null) {
 }
 
 function openModalForNo(no) {
+  if (!canWriteAssets()) return;
   const data = rawDataMap.get(no);
   if (data) openModal('edit', data);
 }
@@ -739,6 +804,11 @@ async function getNextAssetNo() {
 
 async function saveData(e) {
   e.preventDefault();
+
+  if (!canWriteAssets()) {
+    alert('Akses Anda hanya Read (R). Perubahan tidak dapat disimpan.');
+    return;
+  }
 
   const submitBtn = document.getElementById('btnSaveSubmit');
   if (submitBtn) submitBtn.disabled = true;
@@ -803,6 +873,11 @@ async function saveData(e) {
 }
 
 async function deleteDataInModal() {
+  if (!canWriteAssets()) {
+    alert('Akses Anda hanya Read (R). Anda tidak memiliki izin menghapus data.');
+    return;
+  }
+
   const no = document.getElementById('editNo').value;
   if (!no) return;
 

@@ -17,6 +17,13 @@ let selectedFiles = { before: null, after: null };
 // INSTANCE TABLE FILTER MANAGER
 let tableFilter;
 
+function canWriteSr() {
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('sr');
+  }
+  return window.srAccessLevel === 'W';
+}
+
 let globalSearchQuery = sessionStorage.getItem('sr_globalSearchQuery') || '';
 let sortConfig = JSON.parse(sessionStorage.getItem('sr_sortConfig')) || { column: null, direction: null };
 
@@ -80,26 +87,36 @@ function renderHamburgerMenuContent() {
   const container = document.getElementById('custom-hamburger-content');
   if (!container) return;
 
-  container.innerHTML = `
-    <button onclick="openFormModal(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
-      <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-      <span>Add Report</span>
-    </button>
-    <button onclick="exportToPDF(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer border-t border-[#f1f3f4] dark:border-[#3c4043]">
+  const items = [];
+  if (canWriteSr()) {
+    items.push(`
+      <button onclick="openFormModal(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
+        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Add Report</span>
+      </button>
+    `);
+  }
+
+  const borderClass = items.length > 0 ? 'border-t border-[#f1f3f4] dark:border-[#3c4043]' : '';
+
+  items.push(`
+    <button onclick="exportToPDF(); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer ${borderClass}">
       <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
       <span>Export PDF</span>
     </button>
-  `;
+  `);
+
+  container.innerHTML = items.join('');
 }
 
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
 
 function formatDate(dateStr) {
@@ -112,16 +129,24 @@ function formatDate(dateStr) {
 document.addEventListener("DOMContentLoaded", () => {
   initTableFilter();
 
+  if (!canWriteSr()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
+  }
+
+  const hamburgerMenuOptions = [];
+  if (canWriteSr()) {
+    hamburgerMenuOptions.push({
+      label: "Add Report",
+      icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+      onClick: "openFormModal()"
+    });
+  }
+
   if (typeof renderHeader === 'function') {
     renderHeader({
       subtitle: "Dokumentasi Perbaikan",
-      hamburgerItems: [
-        {
-          label: "Add Report",
-          icon: `<svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-          onClick: "openFormModal()"
-        }
-      ]
+      hamburgerItems: hamburgerMenuOptions
     });
   }
 
@@ -270,17 +295,20 @@ function renderTable() {
   }
 
   const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const allowEdit = canWriteSr();
 
   fetchedData.forEach((row, index) => {
     const recordId = String(row.no || row.id);
     const tr = document.createElement('tr');
     tr.className = "hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors";
 
+    const noCellHtml = allowEdit
+      ? `<button onclick="editLogbook('${recordId}')" class="px-2 py-0.5 rounded font-bold text-[#1a73e8] dark:text-[#8ab4f8] hover:underline transition cursor-pointer" title="Edit Data">${startIndex + index + 1}</button>`
+      : `<span class="px-2 py-0.5 rounded font-bold text-[#5f6368] dark:text-[#9aa0a6]">${startIndex + index + 1}</span>`;
+
     tr.innerHTML = `
       <td class="p-2.5 whitespace-nowrap text-center">
-        <button onclick="editLogbook('${recordId}')" class="px-2 py-0.5 rounded font-bold text-[#1a73e8] dark:text-[#8ab4f8] hover:underline transition cursor-pointer" title="Edit Data">
-          ${startIndex + index + 1}
-        </button>
+        ${noCellHtml}
       </td>
       <td class="p-2.5 font-semibold text-[#202124] dark:text-[#f1f3f4] truncate" title="${escapeHtml(row.subject || '')}">${escapeHtml(row.subject || '-')}</td>
       <td class="p-2.5 font-medium truncate" title="${escapeHtml(row.item || '')}">${escapeHtml(row.item || '-')}</td>
@@ -450,6 +478,11 @@ function removeSelectedFile(type) {
 }
 
 function openFormModal(id = null) {
+  if (!canWriteSr()) {
+    alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read Only).");
+    return;
+  }
+
   const form = document.getElementById('logbookForm');
   const btnDelete = document.getElementById('btnDeleteModal');
   form.reset();
@@ -490,10 +523,16 @@ function closeFormModal() {
 }
 
 function editLogbook(id) {
+  if (!canWriteSr()) return;
   openFormModal(id);
 }
 
 async function handleDeleteFromModal() {
+  if (!canWriteSr()) {
+    alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
+    return;
+  }
+
   const id = document.getElementById('logbookId').value;
   if (!id) return;
 
@@ -550,6 +589,11 @@ async function uploadToGoogleDrive(file) {
 
 async function handleFormSubmit(e) {
   e.preventDefault();
+  if (!canWriteSr()) {
+    alert("Akses Ditolak: Anda tidak memiliki izin untuk menyimpan data.");
+    return;
+  }
+
   const submitBtn = document.getElementById('btnSaveSubmit');
   submitBtn.disabled = true;
 
@@ -604,6 +648,11 @@ async function handleFormSubmit(e) {
 }
 
 async function deleteLogbook(id) {
+  if (!canWriteSr()) {
+    alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
+    return;
+  }
+
   try {
     const { error } = await db
       .from('logbook')

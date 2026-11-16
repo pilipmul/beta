@@ -106,10 +106,17 @@
     let userDataNames = [];
     let currentMatches = [];
 
-    function checkAccessVal(val) {
-        if (!val) return false;
+    function normalizeAccessLevel(val) {
+        if (!val) return "";
         const str = String(val).trim().toUpperCase();
-        return str === "Y" || str === "TRUE" || str === "1";
+        if (str === "W") return "W";
+        if (str === "R") return "R";
+        return "";
+    }
+
+    function checkAccessVal(val) {
+        const level = normalizeAccessLevel(val);
+        return level === "R" || level === "W";
     }
 
     function setupAutocomplete(input, box, data) {
@@ -237,28 +244,49 @@
             if (data) {
                 msg.innerHTML = "✓ Redirecting...";
                 msg.className = baseMsgClass + "text-emerald-600 dark:text-emerald-400 font-bold";
+
+                const isAdmin = (data.nama || "").toLowerCase().trim() === "dede hidayat";
+                const resolveLevel = (colVal) => isAdmin ? "W" : normalizeAccessLevel(colVal);
+
+                const normalizedUser = {
+                    ...data,
+                    bo: isAdmin ? "TCBU" : (data.bo || ""),
+                    map: resolveLevel(data.map),
+                    event: resolveLevel(data.event),
+                    eskalasi: resolveLevel(data.eskalasi),
+                    rkm: resolveLevel(data.rkm),
+                    perbaikan: resolveLevel(data.perbaikan),
+                    task: resolveLevel(data.task),
+                    sync: resolveLevel(data.sync),
+                    log: resolveLevel(data.log),
+                    item: resolveLevel(data.item),
+                    tenant: resolveLevel(data.tenant),
+                    hse: resolveLevel(data.hse),
+                    assets: resolveLevel(data.assets),
+                    acces: resolveLevel(data.acces)
+                };
                 
                 const aksesMapping = {
-    MAP: data.map,
-    EVENT: data.event,
-    ESKALASI: data.eskalasi,
-    RKM: data.rkm,
-    PERBAIKAN: data.perbaikan,
-    TASK: data.task,
-    SYNC: data.sync,
-    LOG: data.log,
-    ITEM: data.item,
-    TENANT: data.tenant,
-    HSE: data.hse,
-    ASSETS: data.assets,
-    ACCESS: data.acces
-};
+                    MAP: normalizedUser.map,
+                    EVENT: normalizedUser.event,
+                    ESKALASI: normalizedUser.eskalasi,
+                    RKM: normalizedUser.rkm,
+                    PERBAIKAN: normalizedUser.perbaikan,
+                    TASK: normalizedUser.task,
+                    SYNC: normalizedUser.sync,
+                    LOG: normalizedUser.log,
+                    ITEM: normalizedUser.item,
+                    TENANT: normalizedUser.tenant,
+                    HSE: normalizedUser.hse,
+                    ASSETS: normalizedUser.assets,
+                    ACCESS: normalizedUser.acces
+                };
 
                 const userPayload = { 
                     success: true, 
-                    data: { ...data, akses: aksesMapping }, 
+                    data: { ...normalizedUser, akses: aksesMapping }, 
                     akses: aksesMapping,
-                    ...data 
+                    ...normalizedUser 
                 };
 
                 const userStr = JSON.stringify(userPayload);
@@ -267,35 +295,33 @@
                 localStorage.setItem("user", userStr);
                 localStorage.setItem("djurnal_user", rawUserStr);
                 localStorage.setItem("currentUser", rawUserStr);
-                localStorage.setItem("userName", data.nama || "");
-                localStorage.setItem("userNik", data.nik || "");
+                localStorage.setItem("userName", normalizedUser.nama || "");
+                localStorage.setItem("userNik", normalizedUser.nik || "");
 
                 sessionStorage.setItem("user", userStr);
                 sessionStorage.setItem("djurnal_user", rawUserStr);
-                sessionStorage.setItem("userName", data.nama || "");
-
-                const isAdmin = (data.nama || "").toLowerCase().trim() === "dede hidayat";
+                sessionStorage.setItem("userName", normalizedUser.nama || "");
                 
                 const permissions = [
-    checkAccessVal(data.map),
-    checkAccessVal(data.event),
-    checkAccessVal(data.eskalasi),
-    checkAccessVal(data.rkm),
-    checkAccessVal(data.perbaikan),
-    checkAccessVal(data.task),
-    checkAccessVal(data.sync),
-    checkAccessVal(data.log),
-    checkAccessVal(data.item),
-    checkAccessVal(data.tenant),
-    checkAccessVal(data.hse),
-    checkAccessVal(data.acces),
-    checkAccessVal(data.assets)
-];
+                    checkAccessVal(normalizedUser.map),
+                    checkAccessVal(normalizedUser.event),
+                    checkAccessVal(normalizedUser.eskalasi),
+                    checkAccessVal(normalizedUser.rkm),
+                    checkAccessVal(normalizedUser.perbaikan),
+                    checkAccessVal(normalizedUser.task),
+                    checkAccessVal(normalizedUser.sync),
+                    checkAccessVal(normalizedUser.log),
+                    checkAccessVal(normalizedUser.item),
+                    checkAccessVal(normalizedUser.tenant),
+                    checkAccessVal(normalizedUser.hse),
+                    checkAccessVal(normalizedUser.acces),
+                    checkAccessVal(normalizedUser.assets)
+                ];
 
                 const activeCount = permissions.filter(Boolean).length;
 
                 setTimeout(() => { 
-                    if (!isAdmin && activeCount === 1 && checkAccessVal(data.sync)) {
+                    if (!isAdmin && activeCount === 1 && checkAccessVal(normalizedUser.sync)) {
                         window.location.replace("syncflow.html");
                     } else {
                         window.location.replace("dashboard.html");

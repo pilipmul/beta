@@ -13,23 +13,11 @@ let fetchedData = [];
 let tableFilter = null;
 let currentSort = { column: 'no', ascending: true };
 
-// Daftar akun yang memiliki hak akses CRUD
-const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
-
-function isSuperAdmin() {
-  try {
-    const session = localStorage.getItem("user");
-    if (!session) return false;
-    
-    const userData = JSON.parse(session);
-    if (!userData) return false;
-
-    const isEditor = ALLOWED_EDITORS.includes(userData.nama) || ALLOWED_EDITORS.includes(userData.username);
-    return isEditor || userData.role === "Admin" || userData.role === "SuperAdmin";
-  } catch (err) {
-    console.error("Gagal verifikasi hak akses editor:", err);
-    return false;
+function canWriteHSE() {
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('hse');
   }
+  return window.hseAccessLevel === 'W';
 }
 
 // JSONB Parsing utilities for "update" column
@@ -77,7 +65,7 @@ function renderHamburgerMenuContent() {
   if (!container) return;
 
   let html = '';
-  if (isSuperAdmin()) {
+  if (canWriteHSE()) {
     html += `
       <button onclick="openModal('add'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
         <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -99,33 +87,21 @@ function renderHamburgerMenuContent() {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const hamburgerMenuOptions = [];
-  if (isSuperAdmin()) {
-    hamburgerMenuOptions.push({
-      label: "Tambah Data HSE",
-      icon: `<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-      onClick: "openModal('add')"
-    });
-  }
-  hamburgerMenuOptions.push({
-    label: "Export CSV",
-    icon: `<svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>`,
-    onClick: "exportCSV()"
-  });
-
   if (typeof renderHeader === 'function') {
-    renderHeader({
-      subtitle: "Health, Safety, and Environment",
-      hamburgerItems: hamburgerMenuOptions
-    });
+    renderHeader();
+  }
+
+  if (!canWriteHSE()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
   }
 
   renderHamburgerMenuContent();
@@ -288,15 +264,13 @@ function renderTable() {
     return;
   }
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteHSE();
 
   fetchedData.forEach(row => {
     const tr = document.createElement('tr');
     tr.className = 'hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors';
 
-    const noBtn = allowEdit 
-      ? `<button onclick="openModalForNo(${row.no})" title="Edit Data HSE #${row.no}" class="inline-block px-2 py-0.5 text-[#1a73e8] dark:text-[#8ab4f8] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] hover:underline rounded font-medium text-xs transition-colors cursor-pointer">${row.no}</button>`
-      : `<span class="inline-block px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] font-mono text-xs">${row.no}</span>`;
+    const noBtn = `<button onclick="openModalForNo(${row.no})" title="${allowEdit ? 'Edit Data HSE' : 'Lihat Detail HSE'} #${row.no}" class="inline-block px-2 py-0.5 text-[#1a73e8] dark:text-[#8ab4f8] hover:bg-[#e8f0fe] dark:hover:bg-[#2c384e] hover:underline rounded font-medium text-xs transition-colors cursor-pointer">${row.no}</button>`;
 
     const kondisiVal = String(row.kondisi || '').toLowerCase();
     let kondisiBadgeClass = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
@@ -397,8 +371,10 @@ function jumpToPage() {
 }
 
 function openModal(mode, data = null) {
-  if (!isSuperAdmin()) {
-    alert("Anda tidak memiliki hak akses untuk mengubah data.");
+  const allowWrite = canWriteHSE();
+
+  if (mode === 'add' && !allowWrite) {
+    alert("Anda hanya memiliki akses Read Only pada modul HSE.");
     return;
   }
 
@@ -406,6 +382,7 @@ function openModal(mode, data = null) {
   const form = document.getElementById('hseForm');
   const title = document.getElementById('modalTitle');
   const btnDelete = document.getElementById('btnDeleteInModal');
+  const btnSave = document.getElementById('btnSaveHse');
 
   form.reset();
   document.getElementById('editNo').value = '';
@@ -416,8 +393,12 @@ function openModal(mode, data = null) {
     document.getElementById('inputUpdateDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('inputUpdateNote').value = '';
   } else if (mode === 'edit' && data) {
-    title.innerText = `Edit Data HSE #${data.no}`;
-    btnDelete.classList.remove('hidden');
+    title.innerText = allowWrite ? `Edit Data HSE #${data.no}` : `Detail Data HSE #${data.no} (Read Only)`;
+    if (allowWrite) {
+      btnDelete.classList.remove('hidden');
+    } else {
+      btnDelete.classList.add('hidden');
+    }
 
     document.getElementById('editNo').value = data.no;
     document.getElementById('inputBo').value = data.bo ? String(data.bo).toUpperCase() : '';
@@ -430,6 +411,14 @@ function openModal(mode, data = null) {
     const latestUpdate = getLatestUpdateObj(data.update);
     document.getElementById('inputUpdateDate').value = latestUpdate?.date || '';
     document.getElementById('inputUpdateNote').value = latestUpdate?.note || '';
+  }
+
+  // Kunci form jika user hanya memiliki izin Read Only (R)
+  form.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(el => {
+    el.disabled = !allowWrite;
+  });
+  if (btnSave) {
+    btnSave.classList.toggle('hidden', !allowWrite);
   }
 
   modal.classList.remove('hidden');
@@ -446,7 +435,10 @@ function closeModal() {
 
 async function saveData(e) {
   e.preventDefault();
-  if (!isSuperAdmin()) return;
+  if (!canWriteHSE()) {
+    alert("Anda hanya memiliki akses Read Only pada modul HSE.");
+    return;
+  }
 
   const editNo = document.getElementById('editNo').value;
   const updateDate = document.getElementById('inputUpdateDate').value.trim();
@@ -543,7 +535,10 @@ async function saveData(e) {
 }
 
 async function deleteDataInModal() {
-  if (!isSuperAdmin()) return;
+  if (!canWriteHSE()) {
+    alert("Anda hanya memiliki akses Read Only pada modul HSE.");
+    return;
+  }
   const no = document.getElementById('editNo').value;
   if (!no) return;
 

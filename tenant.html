@@ -8,7 +8,7 @@
   <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
   <script>
     (function checkAuth() {
-      const userSessionString = localStorage.getItem("user");
+      const userSessionString = localStorage.getItem("user") || sessionStorage.getItem("user");
       
       if (!userSessionString) {
         window.location.replace("login.html");
@@ -16,20 +16,42 @@
       }
 
       try {
-        const userData = JSON.parse(userSessionString);
+        const rawUser = JSON.parse(userSessionString);
+        const userData = rawUser.data || rawUser;
+
         if (!userData) {
           window.location.replace("login.html");
           return;
         }
-        // Mengecek hak akses ke modul tenant
-        if (userData.akses) {
-          const aks = userData.akses;
-          const punyaAkses = (aks.tenant === "Y" || aks.item === "Y" || aks.inventory === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
-          if (!punyaAkses) {
-            alert("Anda tidak memiliki hak akses ke modul Tenant.");
-            window.location.replace("dashboard.html");
-          }
+
+        // Super Admin (Dede Hidayat) lolos dengan akses Write
+        const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
+        if (username === "dede hidayat") {
+          window.tenantAccessLevel = "W";
+          return;
         }
+
+        function normalizeLevel(val) {
+          if (!val) return "";
+          const str = String(val).trim().toUpperCase();
+          if (str === "W") return "W";
+          if (str === "R") return "R";
+          return "";
+        }
+
+        const level = normalizeLevel(userData.tenant) ||
+                      normalizeLevel(userData.TENANT) ||
+                      (userData.akses && (
+                        normalizeLevel(userData.akses.TENANT) ||
+                        normalizeLevel(userData.akses.tenant)
+                      )) || "";
+
+        if (level !== "R" && level !== "W") {
+          window.location.replace("dashboard.html");
+          return;
+        }
+
+        window.tenantAccessLevel = level;
       } catch (err) {
         console.error("Autentikasi gagal:", err);
         window.location.replace("login.html");
@@ -133,10 +155,11 @@
     
     <!-- HEADER -->
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
-  <div class="flex items-center gap-1.5 shrink-0">
-    <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Tenant</h2>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Tenant</h2>
         <!-- BADGE STATUS AKTIF (PBC / PBM) -->
         <span id="activeBoBadge" class="text-xs sm:text-sm font-bold text-[#5f6368] dark:text-[#9aa0a6]"></span>
+        <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -278,19 +301,19 @@
                 <div class="flex items-center gap-1">
                   <button id="btnHome" onclick="goToHome()" title="Halaman Pertama"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    |&lt;
+                    |<
                   </button>
                   <button id="btnPrev" onclick="changePage(-1)" title="Sebelumnya"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    &lt;
+                    <
                   </button>
                   <button id="btnNext" onclick="changePage(1)" title="Berikutnya"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    &gt;
+                    >
                   </button>
                   <button id="btnEnd" onclick="goToEnd()" title="Halaman Terakhir"
                           class="p-1 sm:px-1.5 text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#1a73e8] dark:hover:text-[#8ab4f8] disabled:opacity-30 disabled:cursor-not-allowed font-mono font-bold transition-colors cursor-pointer">
-                    &gt;|
+                    >|
                   </button>
                 </div>
               </div>
@@ -308,7 +331,7 @@
     <div class="bg-white dark:bg-[#1e1e1e] max-w-lg w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043] max-h-[90dvh] flex flex-col">
       <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 sm:px-6 py-3.5 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center shrink-0">
         <h3 id="modalTitle" class="font-bold text-sm sm:text-base">Form Tenant</h3>
-        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">×</button>
       </div>
 
       <form id="tenantForm" onsubmit="saveData(event)" class="p-4 sm:p-6 space-y-3.5 text-xs overflow-y-auto custom-scroll flex-1" autocomplete="off">
@@ -402,7 +425,7 @@
     <div class="bg-white dark:bg-[#1e1e1e] max-w-xs sm:max-w-sm w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043] flex flex-col">
       <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 py-3 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center">
         <h3 class="font-bold text-xs sm:text-sm">Riwayat Validasi</h3>
-        <button onclick="closeHistoryModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-lg font-bold cursor-pointer">&times;</button>
+        <button onclick="closeHistoryModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-lg font-bold cursor-pointer">×</button>
       </div>
       <div id="historyListContent" class="p-4 max-h-60 overflow-y-auto custom-scroll font-mono text-xs space-y-1.5 text-[#202124] dark:text-[#e8eaed]">
         <!-- Riwayat format 'YYYY-MM-DD Validasi' di-render di sini -->

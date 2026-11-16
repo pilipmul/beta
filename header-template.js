@@ -1,5 +1,5 @@
 /**
- * Auto-inject Favicon untuk semua modul aplikasi SOT (Kompatibel GitHub Pages & Lokal)
+ * Auto-inject Favicon untuk semua modul aplikasi Djurnal (Kompatibel GitHub Pages & Lokal)
  */
 (function injectFavicon() {
     function applyFavicon() {
@@ -25,6 +25,82 @@
         document.addEventListener('DOMContentLoaded', applyFavicon);
     }
 })();
+
+/**
+ * Helper Global Hak Akses Modul ('W', 'R', atau '')
+ * Dapat dipanggil di seluruh halaman modul (map, tenant, hse, inventory, dll.)
+ */
+window.normalizeAccessLevel = function(val) {
+    if (!val) return "";
+    const str = String(val).trim().toUpperCase();
+    if (str === "W") return "W";
+    if (str === "R") return "R";
+    return "";
+};
+
+window.isSuperAdminUser = function() {
+    try {
+        const session = localStorage.getItem("user") || sessionStorage.getItem("user");
+        if (!session) return false;
+        const parsed = JSON.parse(session);
+        const userData = parsed?.data || parsed;
+        const displayName = (userData?.nama || userData?.username || "").toString().trim().toLowerCase();
+        return displayName === "dede hidayat";
+    } catch {
+        return false;
+    }
+};
+
+window.getModuleAccess = function(moduleKey) {
+    if (window.isSuperAdminUser()) return "W";
+    try {
+        const session = localStorage.getItem("user") || sessionStorage.getItem("user");
+        if (!session) return "";
+        const parsed = JSON.parse(session);
+        const userData = parsed?.data || parsed;
+        if (!userData) return "";
+
+        const keyLower = String(moduleKey || "").trim().toLowerCase();
+        const keyUpper = keyLower.toUpperCase();
+
+        const aksMap = {
+            map: "MAP",
+            event: "EVENT",
+            eskalasi: "ESKALASI",
+            rkm: "RKM",
+            perbaikan: "PERBAIKAN",
+            task: "TASK",
+            sync: "SYNC",
+            log: "LOG",
+            item: "ITEM",
+            tenant: "TENANT",
+            hse: "HSE",
+            assets: "ASSETS",
+            acces: "ACCESS"
+        };
+
+        const directLevel = window.normalizeAccessLevel(userData[keyLower]);
+        if (directLevel) return directLevel;
+
+        const mappedKey = aksMap[keyLower] || keyUpper;
+        if (userData.akses && userData.akses[mappedKey] !== undefined) {
+            return window.normalizeAccessLevel(userData.akses[mappedKey]);
+        }
+
+        return "";
+    } catch {
+        return "";
+    }
+};
+
+window.canReadModule = function(moduleKey) {
+    const level = window.getModuleAccess(moduleKey);
+    return level === "R" || level === "W";
+};
+
+window.canWriteModule = function(moduleKey) {
+    return window.getModuleAccess(moduleKey) === "W";
+};
 
 /**
  * Global Navigation Controller - Auto Hover Expandable Sidebar
@@ -230,14 +306,14 @@ function highlightActiveMenu(path) {
 
 function handleLogout() {
     if (confirm("Apakah Anda yakin ingin keluar dari sistem?")) {
-        localStorage.removeItem("user");
+        localStorage.clear();
         sessionStorage.clear();
         window.location.replace("login.html");
     }
 }
 
 function initNavbarAccess() {
-    const session = localStorage.getItem("user");
+    const session = localStorage.getItem("user") || sessionStorage.getItem("user");
     if (!session) return;
     
     let user;
@@ -257,39 +333,28 @@ function initNavbarAccess() {
     const headerTitleEl = document.getElementById("nav-header-title");
     if (headerTitleEl) headerTitleEl.textContent = firstName;
 
-    const isSuperAdmin = displayName.toLowerCase() === "dede hidayat";
-
     const modules = [
-        { id: "nav-map",          key: "map",       aksKey: "MAP"       },
-        { id: "nav-event",        key: "event",     aksKey: "EVENT"     },
-        { id: "nav-eskalasi",     key: "eskalasi",  aksKey: "ESKALASI"  },
-        { id: "nav-rkm",          key: "rkm",       aksKey: "RKM"       },
-        { id: "nav-dokPerbaikan", key: "perbaikan", aksKey: "PERBAIKAN" },
-        { id: "nav-tasks",        key: "task",      aksKey: "TASK"      },
-        { id: "nav-syncflow",     key: "sync",      aksKey: "SYNC"      },
-        { id: "nav-logistics",    key: "log",       aksKey: "LOG"       },
-        { id: "nav-inventory",    key: "item",      aksKey: "ITEM"      },
-        { id: "nav-tenant",       key: "tenant",    aksKey: "TENANT"    },
-        { id: "nav-hse",          key: "hse",       aksKey: "HSE"       },
-        { id: "nav-assets",       key: "assets",    aksKey: "ASSETS"    },
-        { id: "nav-access",       key: "acces",     aksKey: "ACCESS"    }
+        { id: "nav-map",          key: "map"       },
+        { id: "nav-event",        key: "event"     },
+        { id: "nav-eskalasi",     key: "eskalasi"  },
+        { id: "nav-rkm",          key: "rkm"       },
+        { id: "nav-dokPerbaikan", key: "perbaikan" },
+        { id: "nav-tasks",        key: "task"      },
+        { id: "nav-syncflow",     key: "sync"      },
+        { id: "nav-logistics",    key: "log"       },
+        { id: "nav-inventory",    key: "item"      },
+        { id: "nav-tenant",       key: "tenant"    },
+        { id: "nav-hse",          key: "hse"       },
+        { id: "nav-assets",       key: "assets"    },
+        { id: "nav-access",       key: "acces"     }
     ];
 
     modules.forEach(mod => {
         const el = document.getElementById(mod.id);
         if (!el) return;
 
-        let allowed = isSuperAdmin;
-
-        if (!allowed && userData[mod.key] !== undefined && userData[mod.key] !== null) {
-            const val = String(userData[mod.key]).trim().toUpperCase();
-            allowed = (val === "Y" || val === "TRUE" || val === "1");
-        }
-
-        if (!allowed && userData.akses && userData.akses[mod.aksKey] !== undefined) {
-            const val = String(userData.akses[mod.aksKey]).trim().toUpperCase();
-            allowed = (val === "Y" || val === "TRUE" || val === "1");
-        }
+        const level = window.getModuleAccess(mod.key);
+        const allowed = level === "R" || level === "W";
 
         el.classList.toggle("hidden", !allowed);
     });

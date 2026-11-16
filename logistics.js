@@ -47,15 +47,11 @@ try {
   tableFilter.filterSelections = {};
 }
 
-function isSuperAdmin() {
-  try {
-    const session = localStorage.getItem("user");
-    if (!session) return false;
-    const userData = JSON.parse(session);
-    return userData && (userData.nama === "Dede Hidayat" || userData.username === "Dede Hidayat");
-  } catch {
-    return false;
+function canWriteLogistics() {
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('log');
   }
+  return window.logisticsAccessLevel === 'W';
 }
 
 function saveStateToSession() {
@@ -79,7 +75,7 @@ function toggleConnDropdown(e) {
 
 document.addEventListener('DOMContentLoaded', () => {
   const hamburgerMenuOptions = [];
-  if (isSuperAdmin()) {
+  if (canWriteLogistics()) {
     hamburgerMenuOptions.push({
       label: "New Trx",
       icon: `<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
@@ -97,6 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitle: "Logistics",
       hamburgerItems: hamburgerMenuOptions 
     });
+  }
+
+  if (!canWriteLogistics()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
   }
 
   const customContainer = document.getElementById('custom-hamburger-content');
@@ -178,11 +179,9 @@ function handleRealtimeUpdate(newRow) {
   const tr = document.querySelector(`tr[data-no="${newRow.no}"]`);
   if (!tr) return;
 
-  const allowEdit = isSuperAdmin();
-  const projectText = newRow.project ? escapeHtml(newRow.project) : (allowEdit ? 'Edit' : '-');
-  const projectBtn = allowEdit 
-    ? `<button onclick="openModalForNo(${newRow.no})" title="Edit Transaksi #${newRow.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`
-    : `<span class="inline-block max-w-full px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${projectText}</span>`;
+  const allowEdit = canWriteLogistics();
+  const projectText = newRow.project ? escapeHtml(newRow.project) : (allowEdit ? 'Edit' : 'Detail');
+  const projectBtn = `<button onclick="openModalForNo(${newRow.no})" title="${allowEdit ? 'Edit Transaksi' : 'Lihat Detail Transaksi'} #${newRow.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`;
 
   const cellValues = [
     { selector: '.cell-no', html: newRow.no },
@@ -224,6 +223,7 @@ async function preloadSuggestions() {
 }
 
 function handleUserSuggest() {
+  if (!canWriteLogistics()) return;
   const inputVal = document.getElementById('inputUser').value.trim().toLowerCase();
   const listEl = document.getElementById('userSuggestList');
   
@@ -255,6 +255,7 @@ function handleUserSuggest() {
 }
 
 function handleItemSuggest() {
+  if (!canWriteLogistics()) return;
   const inputVal = document.getElementById('inputItem').value.trim().toLowerCase();
   const listEl = document.getElementById('itemSuggestList');
   
@@ -398,18 +399,15 @@ function renderTable() {
     return;
   }
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteLogistics();
 
   fetchedData.forEach(row => {
     const tr = document.createElement('tr');
     tr.setAttribute('data-no', row.no);
     tr.className = 'hover:bg-[#f8f9fa] dark:hover:bg-[#252525] border-b border-[#f1f3f4] dark:border-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] transition-colors';
 
-    const projectText = row.project ? escapeHtml(row.project) : (allowEdit ? 'Edit' : '-');
-    
-    const projectBtn = allowEdit 
-      ? `<button onclick="openModalForNo(${row.no})" title="Edit Transaksi #${row.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`
-      : `<span class="inline-block max-w-full px-2 py-0.5 text-[#5f6368] dark:text-[#9aa0a6] text-[11px] truncate">${projectText}</span>`;
+    const projectText = row.project ? escapeHtml(row.project) : (allowEdit ? 'Edit' : 'Detail');
+    const projectBtn = `<button onclick="openModalForNo(${row.no})" title="${allowEdit ? 'Edit Transaksi' : 'Lihat Detail Transaksi'} #${row.no}" class="inline-block max-w-full px-2.5 py-0.5 bg-[#e8f0fe] dark:bg-[#2c384e] hover:bg-[#d2e3fc] dark:hover:bg-[#3a4963] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 dark:border-[#8ab4f8]/20 font-medium text-[11px] truncate transition cursor-pointer">${projectText}</button>`;
 
     tr.innerHTML = `
       <td class="cell-no p-2 text-center font-mono text-[#5f6368] dark:text-[#9aa0a6]">${row.no}</td>
@@ -519,10 +517,18 @@ function jumpToPage() {
 }
 
 function openModal(mode, data = null) {
+  const allowWrite = canWriteLogistics();
+
+  if (mode === 'add' && !allowWrite) {
+    alert("Anda hanya memiliki akses Read Only pada modul Logistics.");
+    return;
+  }
+
   const modal = document.getElementById('modal');
   const form = document.getElementById('inventoryForm');
   const title = document.getElementById('modalTitle');
   const btnDelete = document.getElementById('btnDeleteInModal');
+  const btnSave = document.getElementById('btnSaveTrx');
 
   form.reset();
   document.getElementById('editNo').value = '';
@@ -532,8 +538,12 @@ function openModal(mode, data = null) {
     btnDelete.classList.add('hidden');
     document.getElementById('inputDate').value = new Date().toISOString().slice(0, 10);
   } else if (mode === 'edit' && data) {
-    title.innerText = `Edit Transaksi #${data.no}`;
-    btnDelete.classList.remove('hidden');
+    title.innerText = allowWrite ? `Edit Transaksi #${data.no}` : `Detail Transaksi #${data.no} (Read Only)`;
+    if (allowWrite) {
+      btnDelete.classList.remove('hidden');
+    } else {
+      btnDelete.classList.add('hidden');
+    }
 
     document.getElementById('editNo').value = data.no;
     document.getElementById('inputUser').value = data.user || '';
@@ -543,6 +553,14 @@ function openModal(mode, data = null) {
     document.getElementById('inputDate').value = data.date || '';
     document.getElementById('inputTrxCode').value = data.trx_code || '';
     document.getElementById('inputNote').value = data.note || '';
+  }
+
+  // Kunci form jika user hanya memiliki izin Read Only (R)
+  form.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(el => {
+    el.disabled = !allowWrite;
+  });
+  if (btnSave) {
+    btnSave.classList.toggle('hidden', !allowWrite);
   }
 
   modal.classList.remove('hidden');
@@ -559,6 +577,10 @@ function closeModal() {
 
 async function saveData(e) {
   e.preventDefault();
+  if (!canWriteLogistics()) {
+    alert("Anda hanya memiliki akses Read Only pada modul Logistics.");
+    return;
+  }
 
   const no = document.getElementById('editNo').value;
   const user = document.getElementById('inputUser').value.trim();
@@ -600,6 +622,10 @@ async function saveData(e) {
 }
 
 async function deleteDataInModal() {
+  if (!canWriteLogistics()) {
+    alert("Anda hanya memiliki akses Read Only pada modul Logistics.");
+    return;
+  }
   const no = document.getElementById('editNo').value;
   if (!no) return;
 
@@ -747,9 +773,9 @@ async function processExportCSV() {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }

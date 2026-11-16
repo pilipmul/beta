@@ -35,6 +35,7 @@
       overflow: hidden;
     }
 
+    /* Checkbox khusus untuk Filter Popover */
     input[type="checkbox"] {
       -webkit-appearance: none;
       -moz-appearance: none;
@@ -72,6 +73,67 @@
       input[type="checkbox"] { border-color: #5f6368; }
       input[type="checkbox"]:checked { background-color: #8ab4f8; border-color: #8ab4f8; }
       input[type="checkbox"]:checked::after { border-color: #121212; }
+    }
+
+    /* Dropdown Akses (Kosong, R, W) */
+    .access-select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      cursor: pointer;
+      text-align: center;
+      text-align-last: center;
+      font-weight: 700;
+      font-size: 11px;
+      width: 2.6rem;
+      height: 1.55rem;
+      border-radius: 0.5rem;
+      border: 1px solid transparent;
+      outline: none;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .access-select:focus {
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.35);
+    }
+
+    /* Status: Kosong (Tidak Ada Akses) */
+    .access-none {
+      background-color: #f1f3f4;
+      color: #80868b;
+      border-color: #dadce0;
+    }
+
+    /* Status: R (Read Only) */
+    .access-r {
+      background-color: #e8f0fe;
+      color: #1967d2;
+      border-color: #aecbfa;
+    }
+
+    /* Status: W (Write / Full Access) */
+    .access-w {
+      background-color: #e6f4ea;
+      color: #137333;
+      border-color: #a8dab5;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .access-none {
+        background-color: #2d2d2d;
+        color: #9aa0a6;
+        border-color: #3c4043;
+      }
+      .access-r {
+        background-color: rgba(138, 180, 248, 0.16);
+        color: #8ab4f8;
+        border-color: rgba(138, 180, 248, 0.4);
+      }
+      .access-w {
+        background-color: rgba(129, 201, 149, 0.16);
+        color: #81c995;
+        border-color: rgba(129, 201, 149, 0.4);
+      }
     }
 
     .floating-scroll-area {
@@ -123,8 +185,14 @@
   <div id="main-content" class="flex-1 w-full h-full flex flex-col overflow-hidden">
     <!-- HEADER RESPONSIVE -->
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
-      <div class="flex items-center gap-1.5 shrink-0">
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Access Control</h2>
+        <!-- Keterangan Kode Akses -->
+        <div class="hidden md:flex items-center gap-1.5 text-[10px] font-medium">
+          <span class="px-1.5 py-0.5 rounded bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#80868b] dark:text-[#9aa0a6]">- : No Access</span>
+          <span class="px-1.5 py-0.5 rounded bg-[#e8f0fe] dark:bg-[#8ab4f8]/15 text-[#1967d2] dark:text-[#8ab4f8]">R : Read</span>
+          <span class="px-1.5 py-0.5 rounded bg-[#e6f4ea] dark:bg-[#81c995]/15 text-[#137333] dark:text-[#81c995]">W : Write</span>
+        </div>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -153,7 +221,7 @@
           <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl sm:rounded-2xl shadow-sm overflow-hidden transition-colors">
             <!-- TABLE CONTAINER -->
             <div class="relative w-full overflow-x-auto custom-scroll">
-              <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed] min-w-[1250px]">
+              <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed] min-w-[1320px]">
                 <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
                   <tr>
                     <th scope="col" class="p-2.5 relative w-12 text-center"><div class="flex items-center justify-center gap-0.5"><span class="truncate">No</span><button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button></div></th>
@@ -286,10 +354,28 @@
       sessionStorage.setItem('access_filterSelections', JSON.stringify(serializableFilters));
     }
 
-    function isAccessTrue(val) {
-      if (!val) return false;
+    // Normalisasi nilai akses dari DB ("R", "W", atau "")
+    function normalizeAccessLevel(val) {
+      if (!val) return "";
       const str = String(val).trim().toUpperCase();
-      return str === "Y" || str === "TRUE" || str === "1";
+      if (str === "R") return "R";
+      if (str === "W") return "W";
+      return "";
+    }
+
+    // Label untuk Filter Popover & Sorting
+    function getAccessFilterLabel(val) {
+      const level = normalizeAccessLevel(val);
+      if (level === "W") return "Write (W)";
+      if (level === "R") return "Read (R)";
+      return "Tidak Ada Akses";
+    }
+
+    // Class badge dropdown sesuai level akses
+    function getAccessSelectClass(level) {
+      if (level === "W") return "access-select access-w";
+      if (level === "R") return "access-select access-r";
+      return "access-select access-none";
     }
 
     async function fetchUsers() {
@@ -364,7 +450,7 @@
             } else {
               val = u[colKey];
               val = ALL_MODULE_COLUMNS.includes(colKey)
-                ? (isAccessTrue(val) ? 'Aktif' : 'Tidak')
+                ? getAccessFilterLabel(val)
                 : (val ?? '-');
             }
             return selectedSet.has(String(val));
@@ -378,8 +464,8 @@
         filtered.sort((a, b) => {
           let valA = a[key] || '', valB = b[key] || '';
           if (ALL_MODULE_COLUMNS.includes(key)) {
-            valA = isAccessTrue(valA) ? 'Aktif' : 'Tidak';
-            valB = isAccessTrue(valB) ? 'Aktif' : 'Tidak';
+            valA = getAccessFilterLabel(valA);
+            valB = getAccessFilterLabel(valB);
           }
           return String(valA).localeCompare(String(valB), undefined, { numeric: true, sensitivity: 'base' }) * dir;
         });
@@ -414,10 +500,17 @@
         `;
 
         ALL_MODULE_COLUMNS.forEach(col => {
-          const checked = isAccessTrue(u[col]) ? "checked" : "";
+          const level = normalizeAccessLevel(u[col]);
+          const selectClass = getAccessSelectClass(level);
           rowHtml += `
-            <td class="px-2.5 py-2.5 text-center">
-              <input type="checkbox" onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', '${col}', this.checked)" ${checked}>
+            <td class="px-2 py-2 text-center">
+              <select aria-label="Akses ${col} untuk ${userNama}"
+                      class="${selectClass}"
+                      onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', '${col}', this)">
+                <option value="" ${level === "" ? "selected" : ""}>-</option>
+                <option value="R" ${level === "R" ? "selected" : ""}>R</option>
+                <option value="W" ${level === "W" ? "selected" : ""}>W</option>
+              </select>
             </td>
           `;
         });
@@ -427,15 +520,20 @@
       });
     }
 
-    async function autoSaveAccess(encodedNik, encodedNama, fieldName, isChecked) {
+    async function autoSaveAccess(encodedNik, encodedNama, fieldName, selectEl) {
       const nik = decodeURIComponent(encodedNik).trim();
       const nama = decodeURIComponent(encodedNama).trim();
-      const updatedValue = isChecked ? "Y" : null;
+      const selectedLevel = normalizeAccessLevel(selectEl.value);
+      const updatedValue = selectedLevel || null;
+
+      // Update tampilan badge select secara instan
+      selectEl.className = getAccessSelectClass(selectedLevel);
 
       const labelMap = {
         map: 'MAP', event: 'EVENT', item: 'INVENTORY', log: 'LOGISTICS', tenant: 'TENANT', hse: 'HSE', acces: 'ACCESS CONTROL', perbaikan: 'DOK. PERBAIKAN'
       };
       const displayFieldName = labelMap[fieldName] || fieldName.toUpperCase();
+      const statusText = selectedLevel === "W" ? "Write (W)" : selectedLevel === "R" ? "Read (R)" : "No Access";
 
       try {
         let query = supabaseClient.from('users').update({ [fieldName]: updatedValue });
@@ -448,8 +546,14 @@
         if (targetUser) targetUser[fieldName] = updatedValue;
 
         dbFilterOptions = {};
-        showToast("Saved", `${nama} access to ${displayFieldName} updated.`, "success");
+        showToast("Saved", `${nama} (${displayFieldName}): ${statusText}`, "success");
       } catch (err) {
+        // Kembalikan nilai dropdown ke state sebelumnya jika gagal
+        const targetUser = allUsers.find(u => (nik && u.nik?.trim() === nik) || (nama && u.nama?.trim() === nama));
+        const prevLevel = normalizeAccessLevel(targetUser ? targetUser[fieldName] : "");
+        selectEl.value = prevLevel;
+        selectEl.className = getAccessSelectClass(prevLevel);
+
         showToast("Update Failed", err.message || "Failed to update database.", "error");
       }
     }
@@ -469,7 +573,7 @@
 
       if (!dbFilterOptions[columnKey]) {
         if (ALL_MODULE_COLUMNS.includes(columnKey)) {
-          dbFilterOptions[columnKey] = ['Aktif', 'Tidak'];
+          dbFilterOptions[columnKey] = ['Write (W)', 'Read (R)', 'Tidak Ada Akses'];
         } else if (columnKey === 'nama') {
           dbFilterOptions[columnKey] = Array.from(new Set(allUsers.map(u => u.nama || '-'))).sort();
         } else if (columnKey === 'no') {

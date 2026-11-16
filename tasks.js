@@ -18,10 +18,17 @@ let searchQuery = "";
 // State Global simpan status collapse/expand bulan
 let collapsedGroups = {};
 
-// AMBIL AKUN USER YANG LOGIN DARI LOCALSTORAGE
+function canWriteTasks() {
+    if (typeof window.canWriteModule === 'function') {
+        return window.canWriteModule('tasks') || window.canWriteModule('task');
+    }
+    return window.tasksAccessLevel === 'W';
+}
+
+// AMBIL AKUN USER YANG LOGIN DARI STORAGE
 function getCurrentUser() {
     try {
-        const session = localStorage.getItem("user");
+        const session = localStorage.getItem("user") || sessionStorage.getItem("user");
         if (session) {
             const raw = JSON.parse(session);
             const userData = raw.data || raw;
@@ -33,21 +40,51 @@ function getCurrentUser() {
     return "";
 }
 
+function applyTasksReadOnlyUI() {
+    if (canWriteTasks()) return;
+
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
+
+    const addTaskContainer = document.getElementById('addTaskContainer');
+    if (addTaskContainer) addTaskContainer.style.display = 'none';
+
+    const btnCreateNewList = document.getElementById('btnCreateNewList');
+    if (btnCreateNewList) btnCreateNewList.style.display = 'none';
+
+    const detailPanelTitle = document.getElementById('detailPanelTitle');
+    if (detailPanelTitle) detailPanelTitle.innerText = 'Detail Tugas (Read Only)';
+
+    const btnSaveDetail = document.getElementById('btnSaveDetailPanel');
+    if (btnSaveDetail) btnSaveDetail.style.display = 'none';
+
+    ['edit-task-title', 'edit-task-due', 'edit-task-repeat', 'edit-task-list', 'edit-task-note'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+    });
+}
+
 // INISIALISASI HALAMAN SAAT DOM SIAP
 document.addEventListener("DOMContentLoaded", function() {
-    if (typeof renderHeader === 'function') {
-        renderHeader({
-            subtitle: "Tasks Management",
-            hamburgerItems: [
-                {
-                    label: "New List / Group",
-                    icon: `<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
-                    onClick: "openNewListModal()"
-                }
-            ]
+    const allowWrite = canWriteTasks();
+    const hamburgerItems = [];
+
+    if (allowWrite) {
+        hamburgerItems.push({
+            label: "New List / Group",
+            icon: `<svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>`,
+            onClick: "openNewListModal()"
         });
     }
 
+    if (typeof renderHeader === 'function') {
+        renderHeader({
+            subtitle: "Tasks Management",
+            hamburgerItems: hamburgerItems
+        });
+    }
+
+    applyTasksReadOnlyUI();
     setupEventListeners();
     fetchTasksFromSOT();
 });
@@ -169,6 +206,7 @@ async function fetchTasksFromSOT() {
 
 // SAVE / UPDATE DATA KE SUPABASE (MENYERTAKAN KOLOM PIC)
 async function saveTaskToSupabase(taskData) {
+    if (!canWriteTasks()) return;
     showLoading(true);
     try {
         const currentUser = getCurrentUser();
@@ -202,6 +240,7 @@ async function saveTaskToSupabase(taskData) {
 
 // DELETE DATA DARI SUPABASE
 async function deleteTaskFromSupabase(taskId) {
+    if (!canWriteTasks()) return;
     showLoading(true);
     try {
         const { error } = await _supabase
@@ -224,6 +263,7 @@ function renderSidebarLists() {
     if (!container) return;
     container.innerHTML = '';
 
+    const allowWrite = canWriteTasks();
     const uniqueLists = [];
     localTasks.forEach(t => {
         if (t.listName && t.listName.trim() !== '' && !uniqueLists.includes(t.listName.trim())) {
@@ -242,24 +282,26 @@ function renderSidebarLists() {
             <span>${listName}</span>
         `;
 
-        const actionRight = document.createElement('div');
-        actionRight.style.cssText = "display:flex; align-items:center;";
-
-        const btnEdit = document.createElement('i');
-        btnEdit.className = "fas fa-pen list-action-icon";
-        btnEdit.title = "Edit Nama List";
-        btnEdit.addEventListener('click', function(e) { openEditListModal(listName, e); });
-
-        const btnDelete = document.createElement('i');
-        btnDelete.className = "far fa-trash-alt list-action-icon list-delete-icon";
-        btnDelete.title = "Hapus List";
-        btnDelete.addEventListener('click', function(e) { openDeleteListModal(listName, e); });
-
-        actionRight.appendChild(btnEdit);
-        actionRight.appendChild(btnDelete);
-
         nav.appendChild(contentLeft);
-        nav.appendChild(actionRight);
+
+        if (allowWrite) {
+            const actionRight = document.createElement('div');
+            actionRight.style.cssText = "display:flex; align-items:center;";
+
+            const btnEdit = document.createElement('i');
+            btnEdit.className = "fas fa-pen list-action-icon";
+            btnEdit.title = "Edit Nama List";
+            btnEdit.addEventListener('click', function(e) { openEditListModal(listName, e); });
+
+            const btnDelete = document.createElement('i');
+            btnDelete.className = "far fa-trash-alt list-action-icon list-delete-icon";
+            btnDelete.title = "Hapus List";
+            btnDelete.addEventListener('click', function(e) { openDeleteListModal(listName, e); });
+
+            actionRight.appendChild(btnEdit);
+            actionRight.appendChild(btnDelete);
+            nav.appendChild(actionRight);
+        }
 
         nav.addEventListener('click', function(e) {
             if (!e.target.closest('.list-action-icon')) {
@@ -273,6 +315,7 @@ function renderSidebarLists() {
 
 function openEditListModal(targetListName = null, event = null) {
     if (event) event.stopPropagation();
+    if (!canWriteTasks()) return;
     
     const targetName = targetListName || currentFilter;
     const isSystemFilter = ['all', 'important', 'recurring', 'completed'].includes(targetName);
@@ -289,6 +332,8 @@ function closeEditListModal() {
 }
 
 async function submitRenameList() {
+    if (!canWriteTasks()) return;
+
     const oldName = document.getElementById('old-list-name').value;
     const newName = document.getElementById('edit-list-name-input').value.trim();
 
@@ -328,6 +373,8 @@ async function submitRenameList() {
 }
 
 async function addTask() {
+    if (!canWriteTasks()) return;
+
     const input = document.getElementById('task-input');
     const title = input.value.trim();
     if (!title) return;
@@ -361,6 +408,8 @@ async function addTask() {
 }
 
 function openNewListModal() {
+    if (!canWriteTasks()) return;
+
     const nameInput = document.getElementById('new-list-name');
     const titleInput = document.getElementById('new-list-task-title');
     if (nameInput) nameInput.value = '';
@@ -396,6 +445,8 @@ function closeNewListModal() {
 
 function openDeleteListModal(listName, event) {
     if (event) event.stopPropagation();
+    if (!canWriteTasks()) return;
+
     listNameToDelete = listName;
 
     const count = localTasks.filter(t => t.listName === listName).length;
@@ -412,7 +463,7 @@ function closeDeleteListModal() {
 }
 
 async function confirmDeleteList() {
-    if (!listNameToDelete) return;
+    if (!canWriteTasks() || !listNameToDelete) return;
 
     const option = document.querySelector('input[name="delete-list-option"]:checked').value;
     const targetListName = listNameToDelete;
@@ -460,6 +511,8 @@ function onMethodChange() {
 }
 
 async function submitNewListCustom() {
+    if (!canWriteTasks()) return;
+
     const listName = document.getElementById('new-list-name').value.trim();
     if (!listName) {
         alert("Nama List / Grup Baru wajib diisi!");
@@ -539,6 +592,7 @@ function toggleCompletedVisibility() {
 }
 
 function createTaskElement(t) {
+    const allowWrite = canWriteTasks();
     const isSelected = selectedTaskId === t.id ? 'selected-task' : '';
     const item = document.createElement('div');
     item.className = `task-item ${t.completed ? 'completed' : ''} ${isSelected}`;
@@ -556,21 +610,25 @@ function createTaskElement(t) {
     if (t.repeat && t.repeat !== 'none') metaHtml.push(`<span><i class="fas fa-sync-alt"></i> Berulang</span>`);
 
     const cleanNote = t.note ? t.note.trim() : '';
+    const readOnlyPointer = allowWrite ? '' : 'style="cursor: default; opacity: 0.65;"';
+    const trashHtml = allowWrite ? `<i class="far fa-trash-alt trash-icon"></i>` : '';
 
     item.innerHTML = `
-        <div class="task-checkbox"></div>
+        <div class="task-checkbox" ${readOnlyPointer}></div>
         <div class="task-info">
             <div class="task-title">${t.title}</div>
             ${metaHtml.length > 0 ? `<div class="task-meta">${metaHtml.join('')}</div>` : ''}
         </div>
         <div class="task-inline-note">${cleanNote}</div>
-        <i class="${t.important ? 'fas' : 'far'} fa-star star-icon ${t.important ? 'active' : ''}"></i>
-        <i class="far fa-trash-alt trash-icon"></i>
+        <i class="${t.important ? 'fas' : 'far'} fa-star star-icon ${t.important ? 'active' : ''}" ${readOnlyPointer}></i>
+        ${trashHtml}
     `;
 
-    item.querySelector('.task-checkbox').addEventListener('click', function(e) { toggleComplete(e, t.id); });
-    item.querySelector('.star-icon').addEventListener('click', function(e) { toggleImportant(e, t.id); });
-    item.querySelector('.trash-icon').addEventListener('click', function(e) { deleteTask(e, t.id); });
+    if (allowWrite) {
+        item.querySelector('.task-checkbox').addEventListener('click', function(e) { toggleComplete(e, t.id); });
+        item.querySelector('.star-icon').addEventListener('click', function(e) { toggleImportant(e, t.id); });
+        item.querySelector('.trash-icon')?.addEventListener('click', function(e) { deleteTask(e, t.id); });
+    }
 
     return item;
 }
@@ -794,6 +852,7 @@ function renderTasks() {
 
 async function toggleComplete(event, id) {
     if (event) event.stopPropagation();
+    if (!canWriteTasks()) return;
     
     const task = localTasks.find(t => t.id === id);
     if (!task) return;
@@ -825,6 +884,8 @@ async function toggleComplete(event, id) {
 
 async function toggleImportant(event, id) {
     if (event) event.stopPropagation();
+    if (!canWriteTasks()) return;
+
     const task = localTasks.find(t => t.id === id);
     if (task) {
         task.important = !task.important;
@@ -835,6 +896,8 @@ async function toggleImportant(event, id) {
 
 async function deleteTask(event, id) {
     if (event) event.stopPropagation();
+    if (!canWriteTasks()) return;
+
     if (confirm("Apakah Anda yakin ingin menghapus tugas ini secara permanen?")) {
         const taskIndex = localTasks.findIndex(t => t.id === id);
         if (taskIndex > -1) {
@@ -886,6 +949,8 @@ function closeDetailPanel() {
 }
 
 async function saveTaskDetails() {
+    if (!canWriteTasks()) return;
+
     const id = document.getElementById('edit-task-id').value;
     const task = localTasks.find(t => t.id === id);
     if (task) {

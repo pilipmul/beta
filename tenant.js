@@ -20,23 +20,29 @@ let tableFilter = null;
 let globalSearchQuery = sessionStorage.getItem('tenant_globalSearchQuery') || '';
 let sortConfig = JSON.parse(sessionStorage.getItem('tenant_sortConfig')) || { column: null, direction: null };
 
-// Daftar akun yang memiliki hak akses CRUD (Create, Update, Delete)
-const ALLOWED_EDITORS = ["Dede Hidayat", "Sutriono", "Herliana Oktavianti"];
-
 function getuserData() {
   try {
-    const session = localStorage.getItem("user");
-    return session ? JSON.parse(session) : null;
+    const session = localStorage.getItem("user") || sessionStorage.getItem("user");
+    if (!session) return null;
+    const raw = JSON.parse(session);
+    return raw.data || raw;
   } catch (err) {
     console.error("Gagal membaca session user:", err);
     return null;
   }
 }
 
+function canWriteTenant() {
+  if (typeof window.canWriteModule === 'function') {
+    return window.canWriteModule('tenant');
+  }
+  return window.tenantAccessLevel === 'W';
+}
+
 function initUserBoAccess() {
   const userData = getuserData();
   if (userData && userData.bo) {
-    userBo = String(userData.bo).toLowerCase();
+    userBo = String(userData.bo).toLowerCase().trim();
   }
 
   // Set default tabel aktif berdasarkan hak akses BO
@@ -48,14 +54,6 @@ function initUserBoAccess() {
     // Untuk 'tcbu' atau fallback
     currentSourceTable = sessionStorage.getItem('tenant_activeTable') || 'tenant';
   }
-}
-
-function isSuperAdmin() {
-  const userData = getuserData();
-  if (!userData) return false;
-
-  const isEditor = ALLOWED_EDITORS.includes(userData.nama) || ALLOWED_EDITORS.includes(userData.username);
-  return isEditor || userData.role === "Admin" || userData.role === "SuperAdmin";
 }
 
 function initTableFilter() {
@@ -147,7 +145,7 @@ function renderHamburgerMenuContent() {
 
   let html = '';
 
-  // --- TOGGLE PBC & PBM BERDASARKAN BO (Teks Header "Kategori Tenant" Telah Dihapus) ---
+  // --- TOGGLE PBC & PBM BERDASARKAN BO ---
   if (userBo === 'tcbu') {
     // Bisa beralih PBC dan PBM
     html += `
@@ -183,7 +181,7 @@ function renderHamburgerMenuContent() {
   html += `<div class="border-t border-[#dadce0] dark:border-[#3c4043] my-1"></div>`;
 
   // --- MENU CRUD & EXPORT ---
-  if (isSuperAdmin()) {
+  if (canWriteTenant()) {
     html += `
       <button onclick="openModal('add'); toggleHamburgerMenu();" class="w-full text-left px-3 py-2 text-[#202124] dark:text-[#e8eaed] hover:bg-[#f1f3f4] dark:hover:bg-[#2d2d2d] flex items-center gap-2.5 transition cursor-pointer">
         <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -205,11 +203,11 @@ function renderHamburgerMenuContent() {
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/"/g, '"')
+    .replace(/'/g, '');
 }
 
 // Helper untuk mengambil nilai paling baru dari data array JSONB / string
@@ -243,6 +241,11 @@ function setupRealtimeSubscription() {
 document.addEventListener('DOMContentLoaded', () => {
   initUserBoAccess();
   initTableFilter();
+
+  if (!canWriteTenant()) {
+    const badge = document.getElementById('readOnlyBadge');
+    if (badge) badge.classList.remove('hidden');
+  }
 
   if (typeof renderHeader === 'function') {
     renderHeader({
@@ -325,12 +328,10 @@ function updateFilterButtonStyles() {
 }
 
 function applySupabaseFilters(query) {
-  // Sync globalSearchQuery into tableFilter if available
   if (tableFilter) {
     tableFilter.globalSearchQuery = globalSearchQuery;
   }
 
-  // Safe Supabase ILIKE filters for standard string columns only
   if (globalSearchQuery) {
     const rawTerm = globalSearchQuery.trim();
     const q = `%${rawTerm}%`;
@@ -345,7 +346,6 @@ function applySupabaseFilters(query) {
       `cp.ilike.${q}`
     ];
 
-    // Safe query for numeric 'no' column without type mismatch
     if (!isNaN(rawTerm) && rawTerm !== '') {
       searchConditions.push(`no.eq.${parseInt(rawTerm, 10)}`);
     }
@@ -353,7 +353,6 @@ function applySupabaseFilters(query) {
     query = query.or(searchConditions.join(','));
   }
 
-  // Apply column-specific popover filters if tableFilter exists
   if (tableFilter && typeof tableFilter.applyToSupabaseQuery === 'function') {
     query = tableFilter.applyToSupabaseQuery(query, [
       'lokasi', 'nama_toko', 'tipe', 'penyewa', 'status', 'komoditi', 'cp'
@@ -370,11 +369,9 @@ async function fetchTableData() {
   try {
     let dataQuery = _supabase.from(currentSourceTable).select('*');
     
-    // Fetch base query filtered by search text
     if (!globalSearchQuery) {
       dataQuery = applySupabaseFilters(dataQuery);
     } else {
-      // If searching, fetch all matching database records to perform safe all-column matching
       const rawTerm = globalSearchQuery.trim();
       const q = `%${rawTerm}%`;
       const conditions = [
@@ -403,7 +400,6 @@ async function fetchTableData() {
 
     let rows = data || [];
 
-    // Complete all-column matching client-side (including 'luas', 'validasi', 'update', 'no')
     if (globalSearchQuery) {
       const term = globalSearchQuery.trim().toLowerCase();
       rows = rows.filter(row => {
@@ -464,7 +460,7 @@ function renderTable() {
     return;
   }
 
-  const allowEdit = isSuperAdmin();
+  const allowEdit = canWriteTenant();
 
   fetchedData.forEach(row => {
     const tr = document.createElement('tr');
@@ -653,8 +649,8 @@ function jumpToPage() {
 }
 
 function openModal(mode, data = null) {
-  if (!isSuperAdmin()) {
-    alert("Anda tidak memiliki hak akses untuk mengubah data.");
+  if (!canWriteTenant()) {
+    alert("Akses Terbatas: Anda hanya memiliki hak akses membaca (Read Only).");
     return;
   }
 
@@ -692,6 +688,7 @@ function openModal(mode, data = null) {
 }
 
 function openModalForNo(no) {
+  if (!canWriteTenant()) return;
   const data = rawDataMap.get(no);
   if (data) openModal('edit', data);
 }
@@ -702,7 +699,10 @@ function closeModal() {
 
 async function saveData(e) {
   e.preventDefault();
-  if (!isSuperAdmin()) return;
+  if (!canWriteTenant()) {
+    alert("Akses Ditolak: Anda tidak memiliki izin untuk menyimpan data.");
+    return;
+  }
 
   const editNo = document.getElementById('editNo').value;
   const currentDate = new Date().toISOString().split('T')[0];
@@ -810,7 +810,11 @@ async function saveData(e) {
 }
 
 async function deleteDataInModal() {
-  if (!isSuperAdmin()) return;
+  if (!canWriteTenant()) {
+    alert("Akses Ditolak: Anda tidak memiliki izin untuk menghapus data.");
+    return;
+  }
+
   const no = document.getElementById('editNo').value;
   if (!no) return;
 

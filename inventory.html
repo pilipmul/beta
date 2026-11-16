@@ -8,25 +8,51 @@
   <!-- PROTEKSI LOGIN INSTAN SEBELUM ELEMEN TAMPILAN DIDERENDER -->
   <script>
     (function checkAuth() {
+      const userSessionString = localStorage.getItem("user") || sessionStorage.getItem("user");
+
+      if (!userSessionString) {
+        window.location.replace("login.html");
+        return;
+      }
+
       try {
-        const session = localStorage.getItem("user");
-        if (!session) {
-          window.location.replace("login.html");
-          return;
-        }
-        const userData = JSON.parse(session);
+        const rawUser = JSON.parse(userSessionString);
+        const userData = rawUser.data || rawUser;
         if (!userData) {
           window.location.replace("login.html");
           return;
         }
-        if (userData.akses) {
-          const aks = userData.akses;
-          const punyaAkses = (aks.item === "Y" || aks.inventory === "Y" || aks.acces === "Y" || aks.accesControl === "Y");
-          if (!punyaAkses) {
-            alert("Anda tidak memiliki hak akses ke modul Item Master.");
-            window.location.replace("login.html");
-          }
+
+        const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
+        if (username === "dede hidayat") {
+          window.inventoryAccessLevel = "W";
+          return;
         }
+
+        function normalizeLevel(val) {
+          if (!val) return "";
+          const str = String(val).trim().toUpperCase();
+          if (str === "W") return "W";
+          if (str === "R") return "R";
+          return "";
+        }
+
+        const level = normalizeLevel(userData.item) ||
+                      normalizeLevel(userData.ITEM) ||
+                      normalizeLevel(userData.inventory) ||
+                      (userData.akses && (
+                        normalizeLevel(userData.akses.ITEM) ||
+                        normalizeLevel(userData.akses.item) ||
+                        normalizeLevel(userData.akses.INVENTORY) ||
+                        normalizeLevel(userData.akses.inventory)
+                      )) || "";
+
+        if (level !== "R" && level !== "W") {
+          window.location.replace("dashboard.html");
+          return;
+        }
+
+        window.inventoryAccessLevel = level;
       } catch (err) {
         console.error("Autentikasi gagal:", err);
         window.location.replace("login.html");
@@ -134,6 +160,7 @@
       <div class="flex items-center gap-2 shrink-0">
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Inventory</h2>
         <span id="viewModeBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">Casual View</span>
+        <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -185,13 +212,13 @@
     <div class="bg-white dark:bg-[#1e1e1e] max-w-md w-full rounded-2xl shadow-2xl overflow-hidden border border-[#dadce0] dark:border-[#3c4043] max-h-[90dvh] flex flex-col">
       <div class="bg-[#f8f9fa] dark:bg-[#252525] px-4 sm:px-6 py-3.5 text-[#202124] dark:text-[#e8eaed] border-b border-[#f1f3f4] dark:border-[#3c4043] flex justify-between items-center shrink-0">
         <h3 id="modalTitle" class="font-bold text-sm sm:text-base">Form Master Item</h3>
-        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">&times;</button>
+        <button onclick="closeModal()" class="text-[#5f6368] dark:text-[#9aa0a6] hover:text-[#202124] dark:hover:text-white text-xl font-bold cursor-pointer">×</button>
       </div>
 
       <form id="itemForm" onsubmit="saveData(event)" class="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto custom-scroll flex-1" autocomplete="off">
         <input type="hidden" id="editNo" />
         
-        <!-- Row 1: Item Name (70%) & Unit (30%) -->
+        <!-- Row 1: Item Name (80%) & Unit (20%) -->
         <div class="flex gap-3">
           <div class="w-[80%]">
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Item Name</label>
@@ -228,8 +255,8 @@
             </button>
           </div>
           <div class="flex gap-2.5">
-            <button type="button" onclick="closeModal()" class="px-3.5 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg font-semibold transition cursor-pointer">Batal</button>
-            <button type="submit" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg font-semibold transition cursor-pointer">Simpan</button>
+            <button type="button" onclick="closeModal()" class="px-3.5 py-2 bg-[#f1f3f4] dark:bg-[#2d2d2d] hover:bg-[#e8eaed] dark:hover:bg-[#3c4043] text-[#5f6368] dark:text-[#bdc1c6] rounded-lg font-semibold transition cursor-pointer">Tutup</button>
+            <button type="submit" id="btnSaveItem" class="px-4 py-2 bg-[#1a73e8] dark:bg-[#8ab4f8] hover:bg-[#1557b0] dark:hover:bg-[#a6c8ff] text-white dark:text-[#202124] rounded-lg font-semibold transition cursor-pointer">Simpan</button>
           </div>
         </div>
       </form>
