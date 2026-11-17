@@ -85,7 +85,7 @@
       text-align-last: center;
       font-weight: 700;
       font-size: 11px;
-      width: 2.6rem;
+      width: 2.5rem;
       height: 1.55rem;
       border-radius: 0.5rem;
       border: 1px solid transparent;
@@ -134,6 +134,79 @@
         color: #81c995;
         border-color: rgba(129, 201, 149, 0.4);
       }
+    }
+
+    /* Tooltip mengambang di atas header kolom */
+    .col-tooltip {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background-color: #202124;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: normal;
+      padding: 4px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      z-index: 60;
+    }
+
+    .col-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 4px;
+      border-style: solid;
+      border-color: #202124 transparent transparent transparent;
+    }
+
+    /* Khusus kolom paling kanan agar tooltip tidak terpotong batas kanan tabel */
+    th.col-last .col-tooltip {
+      left: auto;
+      right: 4px;
+      transform: translateY(4px);
+    }
+
+    th.col-last .col-tooltip::after {
+      left: auto;
+      right: 22px;
+      transform: none;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .col-tooltip {
+        background-color: #e8eaed;
+        color: #202124;
+      }
+      .col-tooltip::after {
+        border-color: #e8eaed transparent transparent transparent;
+      }
+    }
+
+    /* Munculkan tooltip & efek ikon saat kolom disorot (tanpa highlight background kolom) */
+    th.col-hovered .col-tooltip {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    th.col-last.col-hovered .col-tooltip {
+      transform: translateY(0);
+    }
+
+    th.col-hovered .module-icon {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 5px currentColor);
     }
 
     .floating-scroll-area {
@@ -187,12 +260,6 @@
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
       <div class="flex items-center gap-2 sm:gap-3 shrink-0">
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Access Control</h2>
-        <!-- Keterangan Kode Akses -->
-        <div class="hidden md:flex items-center gap-1.5 text-[10px] font-medium">
-          <span class="px-1.5 py-0.5 rounded bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#80868b] dark:text-[#9aa0a6]">- : No Access</span>
-          <span class="px-1.5 py-0.5 rounded bg-[#e8f0fe] dark:bg-[#8ab4f8]/15 text-[#1967d2] dark:text-[#8ab4f8]">R : Read</span>
-          <span class="px-1.5 py-0.5 rounded bg-[#e6f4ea] dark:bg-[#81c995]/15 text-[#137333] dark:text-[#81c995]">W : Write</span>
-        </div>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -215,30 +282,28 @@
     </header>
 
     <div class="flex-1 w-full relative overflow-hidden">
-      <main class="floating-scroll-area custom-scroll p-2 sm:p-4">
-        <div class="max-w-7xl mx-auto space-y-4">
+      <main class="floating-scroll-area custom-scroll p-2 sm:p-4 pt-6 sm:pt-7">
+        <div class="max-w-6xl mx-auto space-y-4">
 
-          <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl sm:rounded-2xl shadow-sm overflow-hidden transition-colors">
+          <div class="bg-white dark:bg-[#1e1e1e] border border-[#dadce0] dark:border-[#3c4043] rounded-xl sm:rounded-2xl shadow-sm transition-colors">
             <!-- TABLE CONTAINER -->
-            <div class="relative w-full overflow-x-auto custom-scroll">
-              <table class="w-full text-left text-xs text-[#202124] dark:text-[#e8eaed] min-w-[1320px]">
+            <div class="relative w-full overflow-x-auto custom-scroll pt-7 -mt-7">
+              <table id="accessTable" class="w-full table-fixed text-left text-xs text-[#202124] dark:text-[#e8eaed] min-w-[994px]">
                 <thead class="bg-[#f8f9fa] dark:bg-[#252525] text-[#5f6368] dark:text-[#bdc1c6] uppercase tracking-wider font-semibold border-b border-[#dadce0] dark:border-[#3c4043]">
                   <tr>
-                    <th scope="col" class="p-2.5 relative w-12 text-center"><div class="flex items-center justify-center gap-0.5"><span class="truncate">No</span><button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 relative"><div class="flex items-center justify-between gap-0.5"><span class="truncate">Nama Pengguna</span><button id="btn-filter-nama" onclick="toggleFilterMenu('nama', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Map</span><button id="btn-filter-map" onclick="toggleFilterMenu('map', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Event</span><button id="btn-filter-event" onclick="toggleFilterMenu('event', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Eskalasi</span><button id="btn-filter-eskalasi" onclick="toggleFilterMenu('eskalasi', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">RKM</span><button id="btn-filter-rkm" onclick="toggleFilterMenu('rkm', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Dok. Perbaikan</span><button id="btn-filter-perbaikan" onclick="toggleFilterMenu('perbaikan', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Tasks</span><button id="btn-filter-task" onclick="toggleFilterMenu('task', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Syncflow</span><button id="btn-filter-sync" onclick="toggleFilterMenu('sync', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Logistics</span><button id="btn-filter-log" onclick="toggleFilterMenu('log', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Inventory</span><button id="btn-filter-item" onclick="toggleFilterMenu('item', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Tenant</span><button id="btn-filter-tenant" onclick="toggleFilterMenu('tenant', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">HSE</span><button id="btn-filter-hse" onclick="toggleFilterMenu('hse', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Assets</span><button id="btn-filter-assets" onclick="toggleFilterMenu('assets', event)"></button></div></th>
-                    <th scope="col" class="p-2.5 text-center relative"><div class="flex items-center justify-center gap-0.5"><span class="truncate">Access</span><button id="btn-filter-acces" onclick="toggleFilterMenu('acces', event)"></button></div></th>
+                    <th scope="col" class="p-2.5 relative w-12 text-center rounded-tl-xl sm:rounded-tl-2xl">
+                      <div class="flex items-center justify-center gap-0.5">
+                        <span>No</span>
+                        <button id="btn-filter-no" onclick="toggleFilterMenu('no', event)"></button>
+                      </div>
+                    </th>
+                    <th scope="col" class="p-2.5 relative w-48">
+                      <div class="flex items-center justify-between gap-0.5">
+                        <span class="truncate">Nama Pengguna</span>
+                        <button id="btn-filter-nama" onclick="toggleFilterMenu('nama', event)"></button>
+                      </div>
+                    </th>
+                    <!-- Header 13 modul dirender otomatis lewat JS -->
                   </tr>
                 </thead>
                 <tbody id="userTableBody" class="divide-y divide-[#f1f3f4] dark:divide-[#2d2d2d] font-medium">
@@ -319,10 +384,151 @@
       filterSelections = {};
     }
 
-    const ALL_MODULE_COLUMNS = ['map', 'event', 'eskalasi', 'rkm', 'perbaikan', 'task', 'sync', 'log', 'item', 'tenant', 'hse', 'assets', 'acces'];
+    // Metadata Ikon & Warna (sesuai header-template.js)
+    const MODULE_META = [
+      {
+        key: 'map',
+        label: 'Map',
+        colorClass: 'text-sky-500 dark:text-sky-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>`
+      },
+      {
+        key: 'event',
+        label: 'Event',
+        colorClass: 'text-amber-500 dark:text-amber-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>`
+      },
+      {
+        key: 'eskalasi',
+        label: 'Eskalasi',
+        colorClass: 'text-blue-500 dark:text-blue-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>`
+      },
+      {
+        key: 'rkm',
+        label: 'RKM',
+        colorClass: 'text-red-500 dark:text-red-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>`
+      },
+      {
+        key: 'perbaikan',
+        label: 'Dok. Perbaikan',
+        colorClass: 'text-amber-500 dark:text-amber-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>`
+      },
+      {
+        key: 'task',
+        label: 'Tasks',
+        colorClass: 'text-emerald-500 dark:text-emerald-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012 2h2a2 2 0 012-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>`
+      },
+      {
+        key: 'sync',
+        label: 'Syncflow',
+        colorClass: 'text-blue-500 dark:text-blue-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>`
+      },
+      {
+        key: 'log',
+        label: 'Logistics',
+        colorClass: 'text-emerald-500 dark:text-emerald-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>`
+      },
+      {
+        key: 'item',
+        label: 'Inventory',
+        colorClass: 'text-red-500 dark:text-red-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>`
+      },
+      {
+        key: 'tenant',
+        label: 'Tenant',
+        colorClass: 'text-teal-500 dark:text-teal-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h5m-5 0V10m0 0V5m0 5h5m-5 0H7"/>`
+      },
+      {
+        key: 'hse',
+        label: 'HSE',
+        colorClass: 'text-emerald-500 dark:text-emerald-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>`
+      },
+      {
+        key: 'assets',
+        label: 'Assets',
+        colorClass: 'text-purple-500 dark:text-purple-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 01-2-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>`
+      },
+      {
+        key: 'acces',
+        label: 'Access Control',
+        colorClass: 'text-amber-500 dark:text-amber-400',
+        svg: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>`
+      }
+    ];
+
+    const ALL_MODULE_COLUMNS = MODULE_META.map(m => m.key);
+
+    function renderModuleHeaders() {
+      const headerRow = document.querySelector('#accessTable thead tr');
+      if (!headerRow) return;
+
+      MODULE_META.forEach((mod, idx) => {
+        const th = document.createElement('th');
+        th.scope = 'col';
+        th.dataset.col = mod.key;
+        const isLast = idx === MODULE_META.length - 1;
+        th.className = `py-2.5 px-1 w-[58px] text-center relative transition-colors ${isLast ? 'col-last rounded-tr-xl sm:rounded-tr-2xl' : ''}`;
+        th.innerHTML = `
+          <span class="col-tooltip">${mod.label}</span>
+          <div class="flex items-center justify-center gap-0.5">
+            <svg class="module-icon w-4 h-4 ${mod.colorClass} shrink-0 transition-all duration-150" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-label="${mod.label}">
+              ${mod.svg}
+            </svg>
+            <button id="btn-filter-${mod.key}" onclick="toggleFilterMenu('${mod.key}', event)"></button>
+          </div>
+        `;
+        headerRow.appendChild(th);
+      });
+    }
+
+    // Tampilkan tooltip di header saat bagian mana pun di sepanjang kolom disorot
+    function initColumnTooltipTrigger() {
+      const table = document.getElementById('accessTable');
+      if (!table) return;
+
+      let currentHoveredCol = null;
+
+      function setHoveredHeader(colKey) {
+        if (currentHoveredCol === colKey) return;
+
+        if (currentHoveredCol) {
+          const prevTh = table.querySelector(`th[data-col="${currentHoveredCol}"]`);
+          if (prevTh) prevTh.classList.remove('col-hovered');
+        }
+
+        currentHoveredCol = colKey;
+
+        if (colKey) {
+          const nextTh = table.querySelector(`th[data-col="${colKey}"]`);
+          if (nextTh) nextTh.classList.add('col-hovered');
+        }
+      }
+
+      table.addEventListener('mouseover', (e) => {
+        const cell = e.target.closest('th[data-col], td[data-col]');
+        setHoveredHeader(cell ? cell.dataset.col : null);
+      });
+
+      table.addEventListener('mouseleave', () => {
+        setHoveredHeader(null);
+      });
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
       if (typeof renderHeader === 'function') renderHeader({ subtitle: "Access Control" });
+
+      renderModuleHeaders();
+      initColumnTooltipTrigger();
 
       if (globalSearchQuery) {
         const searchInput = document.getElementById('globalSearchInput');
@@ -496,14 +702,14 @@
 
         let rowHtml = `
           <td class="px-2 py-2.5 text-center text-[#5f6368] dark:text-[#bdc1c6] font-mono text-xs">${idx + 1}</td>
-          <td class="px-3 py-2.5"><div class="font-medium text-[#202124] dark:text-[#e8eaed] text-xs">${userNama || '-'}</div></td>
+          <td class="px-3 py-2.5"><div class="font-medium text-[#202124] dark:text-[#e8eaed] text-xs truncate">${userNama || '-'}</div></td>
         `;
 
         ALL_MODULE_COLUMNS.forEach(col => {
           const level = normalizeAccessLevel(u[col]);
           const selectClass = getAccessSelectClass(level);
           rowHtml += `
-            <td class="px-2 py-2 text-center">
+            <td data-col="${col}" class="px-1 py-2 text-center">
               <select aria-label="Akses ${col} untuk ${userNama}"
                       class="${selectClass}"
                       onchange="autoSaveAccess('${encodeURIComponent(userNik)}', '${encodeURIComponent(userNama)}', '${col}', this)">
