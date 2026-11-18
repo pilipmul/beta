@@ -23,9 +23,12 @@
           return;
         }
 
+        window.currentUserData = userData;
+
         const username = (userData.nama || userData.username || "").toString().trim().toLowerCase();
         if (username === "dede hidayat") {
           window.hseAccessLevel = "W";
+          window.userBo = "TCBU";
           return;
         }
 
@@ -47,6 +50,7 @@
         }
 
         window.hseAccessLevel = level;
+        window.userBo = (userData.bo || userData.BO || "").toString().trim().toUpperCase();
       } catch (err) {
         console.error("Autentikasi gagal:", err);
         window.location.replace("login.html");
@@ -191,7 +195,6 @@
     <header class="bg-white dark:bg-[#1e1e1e] border-b border-[#dadce0] dark:border-[#3c4043] px-3 sm:px-4 py-2 sticky top-0 z-40 flex items-center justify-between gap-2 shrink-0">
       <div class="flex items-center gap-2 shrink-0">
         <h2 class="font-bold text-xs sm:text-sm text-[#202124] dark:text-[#e8eaed]">Health, Safety, and Environment</h2>
-        <span id="readOnlyBadge" class="hidden px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">Read Only</span>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-4 flex-1 justify-end max-w-xs sm:max-w-md">
@@ -378,7 +381,10 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Branch Office (BO)</label>
-            <input type="text" id="inputBo" placeholder="PBC / PBM..." class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <select id="inputBo" class="w-full bg-[#f1f3f4] dark:bg-[#2d2d2d] text-[#202124] dark:text-[#e8eaed] border border-[#dadce0] dark:border-[#3c4043] rounded-lg px-3 py-2 uppercase focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <option value="PBC">PBC</option>
+              <option value="PBM">PBM</option>
+            </select>
           </div>
           <div>
             <label class="block font-semibold text-[#5f6368] dark:text-[#9aa0a6] uppercase mb-1">Kategori</label>

@@ -9,6 +9,9 @@ let totalRows = 0;
 let rawDataMap = new Map();
 let fetchedData = [];
 
+// Hak akses BO pengguna ('PBM' | 'PBC' | 'TCBU')
+let userAllowedBo = (window.userBo || '').toString().trim().toUpperCase();
+
 // Instance TableFilterManager
 let tableFilter = null;
 let currentSort = { column: 'no', ascending: true };
@@ -18,6 +21,101 @@ function canWriteHSE() {
     return window.canWriteModule('hse');
   }
   return window.hseAccessLevel === 'W';
+}
+
+// Ambil kolom 'bo' dari tabel 'users' di Supabase
+async function loadUserBoFromSupabase() {
+  try {
+    const rawSession = localStorage.getItem('user') || sessionStorage.getItem('user');
+    const parsedSession = rawSession ? JSON.parse(rawSession) : null;
+    const userData = window.currentUserData || (parsedSession && (parsedSession.data || parsedSession)) || null;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUser = urlParams.get('user');
+
+    const uname = (
+      (userData && (userData.nama || userData.username)) ||
+      urlUser ||
+      ''
+    ).toString().trim().toLowerCase();
+
+    if (uname === 'dede hidayat') {
+      userAllowedBo = 'TCBU';
+      applyBoModalRestriction();
+      return;
+    }
+
+    let query = _supabase.from('users').select('bo');
+
+    if (userData && userData.id) {
+      query = query.eq('id', userData.id);
+    } else if (userData && userData.email) {
+      query = query.ilike('email', userData.email.trim());
+    } else if (userData && userData.username) {
+      query = query.ilike('username', userData.username.trim());
+    } else if (userData && userData.nama) {
+      query = query.ilike('nama', userData.nama.trim());
+    } else if (urlUser) {
+      query = query.ilike('nama', urlUser.trim());
+    } else {
+      applyBoModalRestriction();
+      return;
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      console.error('Gagal mengambil kolom bo dari tabel users:', error);
+    } else if (data && data.bo) {
+      userAllowedBo = String(data.bo).trim().toUpperCase();
+      window.userBo = userAllowedBo;
+
+      // Sinkronkan kembali ke session storage agar konsisten
+      if (parsedSession) {
+        if (parsedSession.data) parsedSession.data.bo = userAllowedBo;
+        else parsedSession.bo = userAllowedBo;
+
+        if (localStorage.getItem('user')) {
+          localStorage.setItem('user', JSON.stringify(parsedSession));
+        }
+        if (sessionStorage.getItem('user')) {
+          sessionStorage.setItem('user', JSON.stringify(parsedSession));
+        }
+      }
+    }
+
+    applyBoModalRestriction();
+  } catch (err) {
+    console.error('Error saat memuat BO user:', err);
+  }
+}
+
+// Terapkan pembatasan BO ke query Supabase
+function applyUserBoFilter(query) {
+  if (userAllowedBo === 'PBM') {
+    return query.ilike('bo', 'PBM');
+  }
+  if (userAllowedBo === 'PBC') {
+    return query.ilike('bo', 'PBC');
+  }
+  if (userAllowedBo === 'TCBU') {
+    return query.in('bo', ['PBM', 'PBC', 'pbm', 'pbc']);
+  }
+  // Jika BO user belum terdaftar/tidak valid, blokir hasil query
+  return query.eq('bo', '__NO_ACCESS__');
+}
+
+// Kunci atau buka pilihan BO di form modal sesuai hak akses
+function applyBoModalRestriction() {
+  const inputBo = document.getElementById('inputBo');
+  if (!inputBo) return;
+
+  if (userAllowedBo === 'PBM' || userAllowedBo === 'PBC') {
+    inputBo.value = userAllowedBo;
+    inputBo.disabled = true;
+  } else if (userAllowedBo === 'TCBU') {
+    inputBo.disabled = !canWriteHSE();
+  }
 }
 
 // JSONB Parsing utilities for "update" column
@@ -85,26 +183,26 @@ function renderHamburgerMenuContent() {
 }
 
 function escapeHtml(str) {
-  if (!str) return '';
+  if (str === null || str === undefined) return '';
+  const qDouble = String.fromCharCode(34);
+  const qSingle = String.fromCharCode(39);
   return String(str)
-    .replace(/&/g, '&')
-    .replace(/</g, '<')
-    .replace(/>/g, '>')
-    .replace(/"/g, '"')
-    .replace(/'/g, '');
+    .split('&').join('&')
+    .split('<').join('<')
+    .split('>').join('>')
+    .split(qDouble).join('"')
+    .split(qSingle).join('');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (typeof renderHeader === 'function') {
     renderHeader();
   }
 
-  if (!canWriteHSE()) {
-    const badge = document.getElementById('readOnlyBadge');
-    if (badge) badge.classList.remove('hidden');
-  }
-
   renderHamburgerMenuContent();
+
+  // Ambil BO pengguna terlebih dahulu sebelum inisialisasi filter & fetch data
+  await loadUserBoFromSupabase();
 
   // Inisialisasi TableFilterManager
   tableFilter = new TableFilterManager({
@@ -149,7 +247,7 @@ document.addEventListener('click', (e) => {
 
   const popover = document.getElementById('filterPopover');
   if (popover && !popover.contains(e.target) && !e.target.closest('.filter-icon-btn')) {
-    tableFilter.closePopover();
+    if (tableFilter) tableFilter.closePopover();
   }
 });
 
@@ -206,7 +304,12 @@ async function fetchTableData() {
   tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-[#5f6368] dark:text-[#9aa0a6]">Memuat data...</td></tr>`;
 
   try {
+    if (!userAllowedBo) {
+      await loadUserBoFromSupabase();
+    }
+
     let countQuery = _supabase.from('hse').select('*', { count: 'exact', head: true });
+    countQuery = applyUserBoFilter(countQuery);
     countQuery = tableFilter.applyToSupabaseQuery(countQuery, ['bo', 'lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
 
     const { count, error: countErr } = await countQuery;
@@ -229,6 +332,7 @@ async function fetchTableData() {
     const toIndex = Math.min(currentPage * PAGE_SIZE - 1, totalRows - 1);
 
     let dataQuery = _supabase.from('hse').select('*');
+    dataQuery = applyUserBoFilter(dataQuery);
     dataQuery = tableFilter.applyToSupabaseQuery(dataQuery, ['bo', 'lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
 
     if (currentSort.column) {
@@ -242,7 +346,15 @@ async function fetchTableData() {
     const { data, error } = await dataQuery;
     if (error) throw error;
 
-    fetchedData = data || [];
+    // Lapis pengaman tambahan di sisi FE agar hanya BO sesuai hak akses yang tampil
+    fetchedData = (data || []).filter(row => {
+      const rowBo = String(row.bo || '').trim().toUpperCase();
+      if (userAllowedBo === 'PBM') return rowBo === 'PBM';
+      if (userAllowedBo === 'PBC') return rowBo === 'PBC';
+      if (userAllowedBo === 'TCBU') return rowBo === 'PBM' || rowBo === 'PBC';
+      return false;
+    });
+
     rawDataMap.clear();
     fetchedData.forEach(row => rawDataMap.set(row.no, row));
 
@@ -250,7 +362,7 @@ async function fetchTableData() {
     updateFilterUI();
 
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${err.message}</span></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-red-500 font-medium">Gagal memuat data dari Supabase.<br><span class="text-xs text-[#5f6368] dark:text-[#9aa0a6] font-normal">Error: ${escapeHtml(err.message)}</span></td></tr>`;
   }
 }
 
@@ -390,10 +502,21 @@ function openModal(mode, data = null) {
   if (mode === 'add') {
     title.innerText = 'Tambah Data HSE Baru';
     btnDelete.classList.add('hidden');
+    if (userAllowedBo === 'PBM' || userAllowedBo === 'PBC') {
+      document.getElementById('inputBo').value = userAllowedBo;
+    } else {
+      document.getElementById('inputBo').value = 'PBC';
+    }
     document.getElementById('inputUpdateDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('inputUpdateNote').value = '';
   } else if (mode === 'edit' && data) {
-    title.innerText = allowWrite ? `Edit Data HSE #${data.no}` : `Detail Data HSE #${data.no} (Read Only)`;
+    const rowBo = data.bo ? String(data.bo).trim().toUpperCase() : '';
+    if (userAllowedBo !== 'TCBU' && rowBo !== userAllowedBo) {
+      alert("Anda tidak memiliki akses untuk membuka data BO ini.");
+      return;
+    }
+
+    title.innerText = allowWrite ? `Edit Data HSE #${data.no}` : `Detail Data HSE #${data.no}`;
     if (allowWrite) {
       btnDelete.classList.remove('hidden');
     } else {
@@ -401,7 +524,7 @@ function openModal(mode, data = null) {
     }
 
     document.getElementById('editNo').value = data.no;
-    document.getElementById('inputBo').value = data.bo ? String(data.bo).toUpperCase() : '';
+    document.getElementById('inputBo').value = rowBo;
     document.getElementById('inputLokasi').value = data.lokasi || '';
     document.getElementById('inputKondisi').value = data.kondisi || '';
     document.getElementById('inputSpek').value = data.spek || '';
@@ -417,6 +540,12 @@ function openModal(mode, data = null) {
   form.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(el => {
     el.disabled = !allowWrite;
   });
+
+  // Kunci field BO khusus jika user hanya punya 1 BO (PBM atau PBC)
+  if (allowWrite && (userAllowedBo === 'PBM' || userAllowedBo === 'PBC')) {
+    document.getElementById('inputBo').disabled = true;
+  }
+
   if (btnSave) {
     btnSave.classList.toggle('hidden', !allowWrite);
   }
@@ -443,6 +572,16 @@ async function saveData(e) {
   const editNo = document.getElementById('editNo').value;
   const updateDate = document.getElementById('inputUpdateDate').value.trim();
   const updateNote = document.getElementById('inputUpdateNote').value.trim();
+
+  // Pastikan nilai BO sesuai hak akses pengguna
+  const boVal = (userAllowedBo === 'PBM' || userAllowedBo === 'PBC')
+    ? userAllowedBo
+    : (document.getElementById('inputBo').value.trim().toUpperCase() || null);
+
+  if (boVal !== 'PBM' && boVal !== 'PBC') {
+    alert("Branch Office (BO) harus PBM atau PBC.");
+    return;
+  }
 
   let updatedHistory = [];
 
@@ -485,7 +624,7 @@ async function saveData(e) {
   }
 
   const payload = {
-    bo: document.getElementById('inputBo').value.trim().toUpperCase() || null,
+    bo: boVal,
     lokasi: document.getElementById('inputLokasi').value.trim() || null,
     kondisi: document.getElementById('inputKondisi').value.trim() || null,
     update: updatedHistory,
@@ -564,6 +703,7 @@ async function deleteDataInModal() {
 async function exportCSV() {
   try {
     let query = _supabase.from('hse').select('*').order('no', { ascending: true });
+    query = applyUserBoFilter(query);
     query = tableFilter.applyToSupabaseQuery(query, ['bo', 'lokasi', 'kondisi', 'kategori', 'spek', 'dokumentasi']);
 
     const { data, error } = await query;
@@ -577,12 +717,14 @@ async function exportCSV() {
     const headers = ['no', 'bo', 'lokasi', 'kondisi', 'update', 'dokumentasi', 'kategori', 'spek'];
     const csvRows = [headers.join(',')];
 
+    const qDouble = String.fromCharCode(34);
     data.forEach(row => {
       const values = headers.map(header => {
         let rawVal = row[header];
         if (header === 'update') rawVal = formatUpdateDisplay(rawVal);
         if (header === 'bo' && rawVal) rawVal = String(rawVal).toUpperCase();
-        return `"${String(rawVal ?? '').replace(/"/g, '""')}"`;
+        const escaped = String(rawVal ?? '').split(qDouble).join(qDouble + qDouble);
+        return `${qDouble}${escaped}${qDouble}`;
       });
       csvRows.push(values.join(','));
     });
