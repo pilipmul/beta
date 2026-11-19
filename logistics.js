@@ -583,19 +583,29 @@ async function saveData(e) {
   }
 
   const no = document.getElementById('editNo').value;
-  const user = document.getElementById('inputUser').value.trim();
-  const item = document.getElementById('inputItem').value.trim();
+  const userInput = document.getElementById('inputUser').value.trim();
+  const itemInput = document.getElementById('inputItem').value.trim();
+
+  // Restriction: Check if the entered user exists in dbUsersList
+  const matchedUser = dbUsersList.find(name => name && name.toLowerCase() === userInput.toLowerCase());
+  if (!matchedUser) {
+    alert('Nama tidak terdaftar! Silakan pilih nama dari daftar saran yang tersedia.');
+    return;
+  }
 
   // Restriction: Check if the entered item exists in dbItemsList
-  const isValidItem = dbItemsList.some(d => {
+  const matchedItem = dbItemsList.find(d => {
     const itemName = typeof d === 'object' ? d.item : d;
-    return itemName && itemName.toLowerCase() === item.toLowerCase();
+    return itemName && itemName.toLowerCase() === itemInput.toLowerCase();
   });
 
-  if (!isValidItem) {
+  if (!matchedItem) {
     alert('Item tidak terdaftar! Silakan pilih item dari daftar yang tersedia.');
     return;
   }
+
+  const user = matchedUser;
+  const item = typeof matchedItem === 'object' ? matchedItem.item : matchedItem;
 
   const inVal = document.getElementById('inputIn').value ? parseInt(document.getElementById('inputIn').value, 10) : null;
   const outVal = document.getElementById('inputOut').value ? parseInt(document.getElementById('inputOut').value, 10) : null;
