@@ -1,6 +1,6 @@
 const SUPABASE_URL = 'https://sfblelnbczlvykqemhtm.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_9k7sUNqlqhRqjkUtSNpFPQ_VAspSZT0';
-const GOOGLE_DRIVE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1hEe3lHhkLKX_lM0JiG1YB0_3sFsTXzjsT3-wUfwVFbMUSFiOBGZ2sSAKUVBLO/exec";
+const GOOGLE_DRIVE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1hEe3lHhkLKX_lM0JiG1YB0_3sFsTXzjsT3-wUfwVFdHFbMUSFiOBGZ2sSAKUVBLO/exec";
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -461,7 +461,8 @@ function renderTable() {
       ? `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-800">In Progress</span>`
       : `<span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800">Open</span>`;
 
-    const photoBtn = row.link 
+    const hasPhoto = row.link && (row.link.startsWith('http://') || row.link.startsWith('https://'));
+    const photoBtn = hasPhoto 
       ? `<button onclick="openPhotoModal('${escapeHtml(row.link)}', 'Log #${row.id}')" class="px-2.5 py-1 bg-[#e8f0fe] dark:bg-[#2c384e] text-[#1a73e8] dark:text-[#8ab4f8] rounded-full border border-[#1a73e8]/20 text-[11px] font-medium active:scale-95 transition">Foto</button>`
       : `<span class="text-[#5f6368] dark:text-[#9aa0a6] text-xs">-</span>`;
 
@@ -682,6 +683,7 @@ function closeModal() {
   document.getElementById('modal').classList.add('hidden');
 }
 
+// UPLOAD KE GOOGLE DRIVE (LOKASI STORAGE SAMA DENGAN sr.js)
 async function uploadToGoogleDrive(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -704,8 +706,12 @@ async function uploadToGoogleDrive(file) {
 
         try {
           resData = JSON.parse(rawText);
-        } catch {
-          throw new Error("Respon server Google Apps Script tidak valid.");
+        } catch (parseErr) {
+          if (rawText.includes("<!DOCTYPE") || rawText.includes("<html")) {
+            throw new Error("Server Google Apps Script mengembalikan halaman HTML/Error. Pastikan Web App diset ke 'Anyone' (Siapa Saja).");
+          } else {
+            throw new Error(`Respon server bukan JSON valid: "${rawText}"`);
+          }
         }
 
         if (resData.status === 'success') {
@@ -796,9 +802,7 @@ function handleFileSelected(files) {
 
   const reader = new FileReader();
   reader.onload = (e) => {
-    const base64Url = e.target.result;
-    document.getElementById('inputLink').value = base64Url;
-    showImagePreview(base64Url, file.name);
+    showImagePreview(e.target.result, file.name);
   };
   reader.readAsDataURL(file);
 }
@@ -856,15 +860,18 @@ function capturePhotoFromCamera() {
   ctx.drawImage(video, 0, 0, width, height);
 
   canvas.toBlob((blob) => {
+    if (!blob) {
+      alert("Gagal memproses tangkapan kamera.");
+      return;
+    }
     selectedImageFile = new File([blob], `event_camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+    const previewUrl = URL.createObjectURL(blob);
+    showImagePreview(previewUrl, `Foto Kamera (${new Date().toLocaleTimeString('id-ID')})`);
+
+    stopCameraStream();
+    switchDocMode('upload');
   }, 'image/jpeg', 0.85);
-
-  const base64Url = canvas.toDataURL('image/jpeg', 0.85);
-  document.getElementById('inputLink').value = base64Url;
-
-  showImagePreview(base64Url, `Foto Kamera (${new Date().toLocaleTimeString('id-ID')})`);
-  stopCameraStream();
-  switchDocMode('upload');
 }
 
 function applyUrlLink() {
@@ -885,6 +892,8 @@ function showImagePreview(url, name = 'Foto Terpilih') {
 
 function removeSelectedFile() {
   selectedImageFile = null;
+  const fileInput = document.getElementById('fileInputPhoto');
+  if (fileInput) fileInput.value = '';
   document.getElementById('inputLink').value = '';
   document.getElementById('previewContainerPhoto').classList.add('hidden');
 }
@@ -911,7 +920,11 @@ async function saveData(e) {
   if (submitBtn) submitBtn.disabled = true;
 
   const idVal = document.getElementById('editId').value;
-  let photoUrl = document.getElementById('inputLink').value;
+  let photoUrl = document.getElementById('inputLink').value.trim();
+
+  if (photoUrl.startsWith('data:image')) {
+    photoUrl = '';
+  }
 
   try {
     if (selectedImageFile) {
